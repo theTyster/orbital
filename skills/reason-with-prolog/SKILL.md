@@ -4,7 +4,7 @@ description: >
   Formal reasoning skill using SWI-Prolog and C4 model ontologies to analyze
   codebases before planning implementation. Use when a task requires understanding
   system structure, dependency impact, or implementation ordering across a codebase.
-  Triggers: "analyze this codebase", "plan this change formally", "what's the impact of changing X".
+  Triggers: "analyze this codebase", "plan this change formally", "what's the impact of changing X", "explore relationships".
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: [target directory or description of change]

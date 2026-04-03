@@ -14,7 +14,7 @@ Formally verify code properties using Lean 4 theorem prover. Translates code int
 
 Formal reasoning using SWI-Prolog and C4 model ontologies to analyze codebases before planning implementation. Maps codebases to C4 architectural facts, validates with Prolog, and produces implementation plans grounded in formal analysis.
 
-**Triggers**: "analyze this codebase", "plan this change formally", "what's the impact of changing X"
+**Triggers**: "analyze this codebase", "plan this change formally", "what's the impact of changing X", "explore relationships"
 
 ### multi-plan
 
