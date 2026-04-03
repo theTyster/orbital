@@ -1,0 +1,38 @@
+.env
+# Claude Code session files
+/.claude/
+!skills/**/.claude/
+*.local.md
+thoughts
+CLAUDE.md
+
+# Lean build artifacts
+.lake/
+lake-packages/
+
+# Skill runtime artifacts
+skills/prove-with-lean/plan/
+skills/prove-with-lean/research/
+skills/prove-with-lean/thoughts/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/

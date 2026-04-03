@@ -1,0 +1,15 @@
+{
+  "name": "logic-focused-plugins",
+  "version": "1.0.0",
+  "description": "Logic-focused skills for Claude Code: formal verification, formal reasoning, parallel planning, and logical commits.",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theTyster/logic-focused-claude"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0"
+}
