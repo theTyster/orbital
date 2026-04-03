@@ -1,6 +1,6 @@
 # logic-focused-claude
 
-Logic-focused skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): formal verification with Lean 4, formal reasoning with SWI-Prolog, parallel multi-plan orchestration, and logical commit generation.
+Logic-focused skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): formal verification with Lean 4, formal reasoning with SWI-Prolog, logical pseudocode scaffolding, parallel multi-plan orchestration, and logical commit generation.
 
 ## Skills
 
@@ -16,9 +16,15 @@ Formal reasoning using SWI-Prolog and C4 model ontologies to analyze codebases b
 
 **Triggers**: "analyze this codebase", "plan this change formally", "what's the impact of changing X", "explore relationships"
 
+### scaffold-pseudocode
+
+Produce a logical pattern document (proof-of-concept scaffold) for a code enhancement. Captures invariants, type relations, logic flow, and edge predicates in a form that feeds directly into Prolog reasoning and Lean verification. Used standalone or as the first step in the multi-plan pipeline.
+
+**Triggers**: "scaffold this feature", "write pseudocode for X", "logical pattern for this change"
+
 ### multi-plan
 
-Orchestrate multiple enhancements in parallel, each with a dedicated worktree/branch, through a plan > review > human-vetting > implement > commit pipeline. Integrates with both prove-with-lean and reason-with-prolog for plan validation.
+Orchestrate multiple enhancements in parallel, each with a dedicated worktree/branch, through a plan > review > human-vetting > implement > commit pipeline. Integrates with scaffold-pseudocode, prove-with-lean, and reason-with-prolog for plan validation.
 
 **Triggers**: "plan and implement these enhancements", "multi-plan X, Y, Z", "parallel feature development"
 

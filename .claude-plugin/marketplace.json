@@ -9,7 +9,7 @@
     {
       "name": "logic-focused",
       "description": "Logic-focused skills for Claude Code providing formal verification (Lean 4), formal reasoning (SWI-Prolog), parallel multi-plan orchestration, and logical commit generation.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "source": "./",
       "author": {
         "name": "ty",

@@ -22,6 +22,7 @@ PROLOG_QUERY=${PROLOG}/scripts/run-query.sh
 PROLOG_TEMPLATE=${PROLOG}/prolog/test_facts.pl
 LEAN_PROJECT=${CLAUDE_SKILL_DIR}/../prove-with-lean/lean
 LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
+PSEUDOCODE_SKILL=${CLAUDE_SKILL_DIR}/../scaffold-pseudocode
 ```
 
 Prolog: `${PROLOG_QUERY} <facts_file> <command>` (logs all queries automatically)
@@ -62,7 +63,7 @@ Branch: `enhancement/<kebab-slug>` derived from enhancement description.
 
 | Artifact | Path | Content |
 |----------|------|---------|
-| Pseudo-code | `plan/pseudocode.md` | Plain-English description, algorithm sketches, types, edge cases |
+| Pseudo-code | `plan/pseudocode.md` | Logical pattern scaffold (see `${PSEUDOCODE_SKILL}/SKILL.md`) |
 | Prolog analysis | `plan/reasoning.pl` | C4 facts following orbital flow (3 loops: Find → Define → Condense) |
 | Lean4 proofs | `${LEAN_PROOFS}/<Enhancement>.lean` | Invariant theorems + tactic proofs; `sorry` only with justification |
 | Proof summary | `plan/proof_summary.md` | Proved vs sorry-stubbed invariants, strategies, file path |
@@ -87,6 +88,8 @@ Type: {TYPE} | Branch: {BRANCH}
 
 Produce artifacts in `plan/` (Lean proofs go in ${LEAN_PROOFS}).
 
+Pseudocode: Read ${PSEUDOCODE_SKILL}/SKILL.md and follow its process to produce plan/pseudocode.md
+
 Prolog: ${PROLOG_QUERY} <facts_file> <command>
   Template: ${PROLOG_TEMPLATE}
   Orbital flow: write facts → validate → summary/describe/coupling/crosscut → full <targets>
@@ -94,7 +97,7 @@ Prolog: ${PROLOG_QUERY} <facts_file> <command>
 Lean: write to ${LEAN_PROOFS}/<name>.lean → cd ${LEAN_PROJECT} && lake build
   Self-correct up to 5x. Use exact?/apply?/simp? to discover lemmas.
 
-FOR CODE: pseudocode.md → reasoning.pl (3 loops) → .lean proofs → proof_summary.md
+FOR CODE: pseudocode.md (via scaffold-pseudocode) → reasoning.pl (3 loops) → .lean proofs → proof_summary.md
 FOR ARCHITECTURE: solutions.md (≥3) → reasoning.pl (validate+summary) → recommendations.md
 
 Do NOT implement code. Do NOT modify files outside plan/ (except Lean proofs).
