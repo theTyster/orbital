@@ -16,6 +16,7 @@
 plugin(logic_focused, 'Formal logic reasoning pipeline — help LLMs think rigorously').
 plugin(c4_prolog, 'C4 architectural modeling and Prolog-based codebase analysis').
 plugin(multi_plan, 'Parallel worktree orchestration with review cycles').
+plugin(utilities, 'Standalone developer utilities').
 
 %% ============================================================
 %% Skills — all skills across both existing and new
@@ -43,7 +44,7 @@ skill(make_commits, 'Organize unstaged changes into logical commits').
 % translate_to_prolog (currently C4-coupled, needs decoupling)
 capability(translate_to_prolog, prolog_fact_generation).
 capability(translate_to_prolog, prolog_validation).
-capability(translate_to_prolog, c4_ontology_mapping).      % TO REMOVE
+% c4_ontology_mapping removed — translate_to_prolog is general-purpose
 
 % query_hypothesis
 capability(query_hypothesis, hypothesis_formulation).
@@ -161,16 +162,18 @@ assigned_to(formalize_in_lean, logic_focused).
 assigned_to(translate_proof_llm, logic_focused).
 assigned_to(translate_proof_human, logic_focused).
 assigned_to(plan_from_proof, logic_focused).
-assigned_to(make_commits, logic_focused).
+assigned_to(make_commits, utilities).
 
 % c4_prolog gets architecture-specific skills
 assigned_to(reason_with_prolog, c4_prolog).
-assigned_to(scaffold_pseudocode, c4_prolog).
 
 % multi_plan gets orchestration
 assigned_to(orchestrate_multi_plan, multi_plan).
 
-% existing lean/proof skills — infrastructure absorbed into formalize_in_lean
+% scaffold_pseudocode stays separate — translation, not hypothesis testing
+assigned_to(scaffold_pseudocode, logic_focused).
+
+% prove_with_lean infrastructure absorbed into formalize_in_lean
 assigned_to(prove_with_lean, logic_focused).  % absorbed, not standalone
 
 %% ============================================================
