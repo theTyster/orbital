@@ -1,6 +1,6 @@
 {
   "name": "logic-focused-plugins",
-  "description": "Logic-focused skills for Claude Code: formal verification with Lean 4, formal reasoning with SWI-Prolog, parallel planning orchestration, and logical commit generation",
+  "description": "Logic-focused skills for Claude Code: formal reasoning pipeline, proof verification, architectural analysis, parallel orchestration, and developer utilities.",
   "owner": {
     "name": "ty",
     "email": "noreply@mail.thetyster.dev"
@@ -8,9 +8,9 @@
   "plugins": [
     {
       "name": "logic-focused",
-      "description": "Logic-focused skills for Claude Code providing formal verification (Lean 4), formal reasoning (SWI-Prolog), parallel multi-plan orchestration, and logical commit generation.",
-      "version": "1.2.0",
-      "source": "./",
+      "description": "Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lean 4 proof verification, proof translation, and proof-grounded planning.",
+      "version": "2.0.0",
+      "source": "../plugins/logic-focused",
       "author": {
         "name": "ty",
         "email": "noreply@mail.thetyster.dev",
@@ -19,8 +19,56 @@
           "prolog",
           "formal-verification",
           "formal-reasoning",
-          "planning",
           "logic"
+        ]
+      },
+      "homepage": "https://github.com/theTyster/logic-focused-claude"
+    },
+    {
+      "name": "c4-prolog",
+      "description": "C4 architectural modeling and Prolog-based codebase analysis with orbital flow.",
+      "version": "2.0.0",
+      "source": "../plugins/c4-prolog",
+      "author": {
+        "name": "ty",
+        "email": "noreply@mail.thetyster.dev",
+        "keywords": [
+          "prolog",
+          "c4-model",
+          "architecture",
+          "analysis"
+        ]
+      },
+      "homepage": "https://github.com/theTyster/logic-focused-claude"
+    },
+    {
+      "name": "multi-plan",
+      "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles.",
+      "version": "2.0.0",
+      "source": "../plugins/multi-plan",
+      "author": {
+        "name": "ty",
+        "email": "noreply@mail.thetyster.dev",
+        "keywords": [
+          "orchestration",
+          "worktree",
+          "planning"
+        ]
+      },
+      "homepage": "https://github.com/theTyster/logic-focused-claude"
+    },
+    {
+      "name": "utilities",
+      "description": "Standalone developer utilities: logical commit generation and presentation creation.",
+      "version": "2.0.0",
+      "source": "../plugins/utilities",
+      "author": {
+        "name": "ty",
+        "email": "noreply@mail.thetyster.dev",
+        "keywords": [
+          "commits",
+          "presentation",
+          "utilities"
         ]
       },
       "homepage": "https://github.com/theTyster/logic-focused-claude"
