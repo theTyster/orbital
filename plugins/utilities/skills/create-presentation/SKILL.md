@@ -15,7 +15,7 @@ Generate a self-contained HTML slideshow from source material. The output is a d
 ## Project Context
 
 - **Directory**: !`pwd`
-- **Repo name**: !`basename $(git rev-parse --show-toplevel 2>/dev/null || pwd)`
+- **Repo name**: !`git rev-parse --show-toplevel 2>/dev/null | xargs basename 2>/dev/null || pwd | xargs basename`
 - **Git branch**: !`git rev-parse --abbrev-ref HEAD 2>/dev/null || echo no-git`
 - **README preview**: !`head -30 README.md 2>/dev/null || echo no-README`
 - **Docs available**: !`find . -maxdepth 3 -name '*.md' -not -path '*/node_modules/*' -not -path '*/.git/*' 2>/dev/null | head -15 | tr '\n' ','`
