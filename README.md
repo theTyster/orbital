@@ -42,12 +42,6 @@ Standalone developer utilities.
 - **make-commits** — Review all unstaged changes and organize them into logical commits
 - **create-presentation** — Generate a self-contained HTML slideshow from any source material
 
-## Shared Infrastructure
-
-### lib/prolog-runtime
-
-The C4 ontology schema, reasoning procedures, query runner, and validation hook — shared by translate-to-prolog, query-hypothesis, reason-with-prolog, and multi-plan. Extracted to avoid cross-plugin coupling.
-
 ## Prerequisites
 
 - **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for formalize-in-lean and prove-with-lean. First build (`lake build` in `plugins/logic-focused/skills/prove-with-lean/lean/`) takes 10-20 minutes for Mathlib compilation.

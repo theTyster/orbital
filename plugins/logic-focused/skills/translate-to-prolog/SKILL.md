@@ -21,9 +21,8 @@ is a `.pl` file ready for querying.
 - **SWI-Prolog** (`swipl`): `swipl --version` must succeed.
 
 ```
-PROLOG_RUNTIME=${CLAUDE_SKILL_DIR}/../../../../lib/prolog-runtime
-PROLOG_QUERY=${PROLOG_RUNTIME}/scripts/run-query.sh
-PROLOG_TEMPLATE=${PROLOG_RUNTIME}/prolog/test_facts.pl
+PROLOG_QUERY=${CLAUDE_SKILL_DIR}/scripts/run-query.sh
+PROLOG_TEMPLATE=${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
 ```
 
 ## Input

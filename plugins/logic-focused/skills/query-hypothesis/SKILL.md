@@ -21,8 +21,7 @@ interpret results, and write a hypothesis file that can be formalized in Lean4.
 - **A validated facts file**: Output from translate-to-prolog or reason-with-prolog.
 
 ```
-PROLOG_RUNTIME=${CLAUDE_SKILL_DIR}/../../../../lib/prolog-runtime
-PROLOG_QUERY=${PROLOG_RUNTIME}/scripts/run-query.sh
+PROLOG_QUERY=${CLAUDE_SKILL_DIR}/scripts/run-query.sh
 ```
 
 ## Input

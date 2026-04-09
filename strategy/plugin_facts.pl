@@ -8,7 +8,9 @@
 :- discontiguous
     plugin/2, skill/2, capability/2, depends_on/2,
     assigned_to/2, concern_domain/2, weakness/2,
-    strength/2.
+    strength/2,
+    runtime_module/2, runtime_script/2, runtime_asset/2,
+    command_exercises/2, invokes_command/2, uses_asset/2.
 
 %% ============================================================
 %% Plugins — each plugin is one coherent capability
@@ -45,7 +47,7 @@ skill(make_commits, 'Organize unstaged changes into logical commits').
 %% Capabilities — what each skill provides
 %% ============================================================
 
-% translate_to_prolog (uses shared prolog-runtime lib)
+% translate_to_prolog
 capability(translate_to_prolog, prolog_fact_generation).
 capability(translate_to_prolog, prolog_validation).
 
@@ -84,8 +86,6 @@ capability(reason_with_prolog, impact_analysis).
 capability(reason_with_prolog, implementation_ordering).
 capability(reason_with_prolog, dependency_analysis).
 capability(reason_with_prolog, orbital_flow).
-% reusable_prolog_infrastructure moved to shared lib/prolog-runtime
-
 % prove_with_lean (existing)
 capability(prove_with_lean, lean4_proof).
 capability(prove_with_lean, posttooluse_hooks).
@@ -157,8 +157,6 @@ concern_domain(impact_analysis, architecture).
 concern_domain(implementation_ordering, architecture).
 concern_domain(dependency_analysis, architecture).
 concern_domain(orbital_flow, architecture).
-% reusable_prolog_infrastructure moved to shared lib/prolog-runtime
-
 concern_domain(parallel_worktree_orchestration, orchestration).
 concern_domain(plan_review_iterate_cycle, orchestration).
 concern_domain(human_vetting_gate, orchestration).
@@ -216,7 +214,6 @@ depends_on(prove_with_lean, scaffold_pseudocode).
 %% Weaknesses — known issues to address
 %% ============================================================
 
-% weakness(translate_to_prolog, coupled_to_c4_ontology) — RESOLVED: extracted shared lib/prolog-runtime
 weakness(reason_with_prolog, monolithic).
 weakness(orchestrate_multi_plan, too_many_concerns).
 weakness(orchestrate_multi_plan, tightly_coupled_to_old_skills).
@@ -227,14 +224,96 @@ strength(create_presentation, zero_dependencies).
 strength(create_presentation, consumes_pipeline_outputs).
 
 %% ============================================================
-%% Shared infrastructure — lib/prolog-runtime
-%%   Extracted from reason_with_prolog to decouple cross-plugin deps.
-%%   Used by: translate_to_prolog, query_hypothesis, reason_with_prolog,
-%%            orchestrate_multi_plan
+%% Prolog runtime — modules, scripts, and assets
+%%   Each skill carries its own copy under prolog/ and scripts/.
 %% ============================================================
 
-shared_lib(prolog_runtime, 'C4 ontology, reasoning procedures, query runner, and validation').
-uses_shared_lib(translate_to_prolog, prolog_runtime).
-uses_shared_lib(query_hypothesis, prolog_runtime).
-uses_shared_lib(reason_with_prolog, prolog_runtime).
-uses_shared_lib(orchestrate_multi_plan, prolog_runtime).
+runtime_module(ontology, 'C4 schema predicates, display, queries, and validation').
+runtime_module(reasoning, 'Analysis procedures: impact, ordering, scope, coupling, crosscut').
+runtime_module(run, 'Command dispatch — loads ontology + reasoning, routes CLI commands').
+
+runtime_script(run_query, 'Wrapper around swipl that logs every query and its output').
+runtime_script(validate_facts, 'PostToolUse hook — auto-validates .pl files after Write/Edit').
+
+runtime_asset(test_facts_template, 'Example C4 facts file used as format reference').
+
+%% ============================================================
+%% Commands — which runtime modules each command exercises
+%% ============================================================
+
+command_exercises(validate, ontology).
+command_exercises(summary, reasoning).
+command_exercises(describe, ontology).
+command_exercises(impact, reasoning).
+command_exercises(order, reasoning).
+command_exercises(scope, reasoning).
+command_exercises(chain, reasoning).
+command_exercises(coupling, reasoning).
+command_exercises(crosscut, reasoning).
+command_exercises(full, ontology).    % validate step
+command_exercises(full, reasoning).   % all analysis procedures
+
+%% ============================================================
+%% Skill → command invocations (derived from each SKILL.md)
+%% ============================================================
+
+% translate_to_prolog — generates facts, validates, done
+invokes_command(translate_to_prolog, validate).
+
+% query_hypothesis — explores KB with every available query
+invokes_command(query_hypothesis, summary).
+invokes_command(query_hypothesis, describe).
+invokes_command(query_hypothesis, impact).
+invokes_command(query_hypothesis, chain).
+invokes_command(query_hypothesis, coupling).
+invokes_command(query_hypothesis, scope).
+invokes_command(query_hypothesis, crosscut).
+invokes_command(query_hypothesis, order).
+invokes_command(query_hypothesis, full).
+
+% reason_with_prolog — orbital flow: validate → summary/describe → full
+invokes_command(reason_with_prolog, validate).
+invokes_command(reason_with_prolog, summary).
+invokes_command(reason_with_prolog, describe).
+invokes_command(reason_with_prolog, coupling).
+invokes_command(reason_with_prolog, crosscut).
+invokes_command(reason_with_prolog, full).
+
+% orchestrate_multi_plan — delegates to planning/review agents
+invokes_command(orchestrate_multi_plan, validate).
+invokes_command(orchestrate_multi_plan, summary).
+invokes_command(orchestrate_multi_plan, describe).
+invokes_command(orchestrate_multi_plan, coupling).
+invokes_command(orchestrate_multi_plan, crosscut).
+invokes_command(orchestrate_multi_plan, full).
+
+%% ============================================================
+%% Skill → asset usage
+%% ============================================================
+
+uses_asset(translate_to_prolog, test_facts_template).
+uses_asset(reason_with_prolog, test_facts_template).
+uses_asset(orchestrate_multi_plan, test_facts_template).
+
+%% ============================================================
+%% Derived: which runtime modules a skill actually exercises
+%%
+%%   skill_exercises_module(Skill, Module) :-
+%%       invokes_command(Skill, Cmd),
+%%       command_exercises(Cmd, Module).
+%%
+%% Example queries:
+%%   ?- skill_exercises_module(translate_to_prolog, M).
+%%   M = ontology.          % reasoning is never reached
+%%
+%%   ?- skill_exercises_module(query_hypothesis, M).
+%%   M = ontology ; M = reasoning.
+%%
+%%   ?- setof(S, skill_exercises_module(S, reasoning), Skills).
+%%   Skills = [orchestrate_multi_plan, query_hypothesis, reason_with_prolog].
+%% ============================================================
+
+skill_exercises_module(Skill, Module) :-
+    invokes_command(Skill, Cmd),
+    command_exercises(Cmd, Module).
+
