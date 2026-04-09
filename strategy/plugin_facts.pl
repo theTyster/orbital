@@ -45,10 +45,9 @@ skill(make_commits, 'Organize unstaged changes into logical commits').
 %% Capabilities — what each skill provides
 %% ============================================================
 
-% translate_to_prolog (currently C4-coupled, needs decoupling)
+% translate_to_prolog (uses shared prolog-runtime lib)
 capability(translate_to_prolog, prolog_fact_generation).
 capability(translate_to_prolog, prolog_validation).
-% c4_ontology_mapping removed — translate_to_prolog is general-purpose
 
 % query_hypothesis
 capability(query_hypothesis, hypothesis_formulation).
@@ -85,7 +84,7 @@ capability(reason_with_prolog, impact_analysis).
 capability(reason_with_prolog, implementation_ordering).
 capability(reason_with_prolog, dependency_analysis).
 capability(reason_with_prolog, orbital_flow).
-capability(reason_with_prolog, reusable_prolog_infrastructure).
+% reusable_prolog_infrastructure moved to shared lib/prolog-runtime
 
 % prove_with_lean (existing)
 capability(prove_with_lean, lean4_proof).
@@ -158,7 +157,7 @@ concern_domain(impact_analysis, architecture).
 concern_domain(implementation_ordering, architecture).
 concern_domain(dependency_analysis, architecture).
 concern_domain(orbital_flow, architecture).
-concern_domain(reusable_prolog_infrastructure, architecture).
+% reusable_prolog_infrastructure moved to shared lib/prolog-runtime
 
 concern_domain(parallel_worktree_orchestration, orchestration).
 concern_domain(plan_review_iterate_cycle, orchestration).
@@ -217,7 +216,7 @@ depends_on(prove_with_lean, scaffold_pseudocode).
 %% Weaknesses — known issues to address
 %% ============================================================
 
-weakness(translate_to_prolog, coupled_to_c4_ontology).
+% weakness(translate_to_prolog, coupled_to_c4_ontology) — RESOLVED: extracted shared lib/prolog-runtime
 weakness(reason_with_prolog, monolithic).
 weakness(orchestrate_multi_plan, too_many_concerns).
 weakness(orchestrate_multi_plan, tightly_coupled_to_old_skills).
@@ -226,3 +225,16 @@ weakness(scaffold_pseudocode, outputs_not_consumed_downstream).
 
 strength(create_presentation, zero_dependencies).
 strength(create_presentation, consumes_pipeline_outputs).
+
+%% ============================================================
+%% Shared infrastructure — lib/prolog-runtime
+%%   Extracted from reason_with_prolog to decouple cross-plugin deps.
+%%   Used by: translate_to_prolog, query_hypothesis, reason_with_prolog,
+%%            orchestrate_multi_plan
+%% ============================================================
+
+shared_lib(prolog_runtime, 'C4 ontology, reasoning procedures, query runner, and validation').
+uses_shared_lib(translate_to_prolog, prolog_runtime).
+uses_shared_lib(query_hypothesis, prolog_runtime).
+uses_shared_lib(reason_with_prolog, prolog_runtime).
+uses_shared_lib(orchestrate_multi_plan, prolog_runtime).

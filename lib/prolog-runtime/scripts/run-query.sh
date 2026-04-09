@@ -9,8 +9,8 @@
 
 set -euo pipefail
 
-SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-RUNNER="${SKILL_DIR}/prolog/run.pl"
+RUNTIME_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RUNNER="${RUNTIME_DIR}/prolog/run.pl"
 
 if [[ $# -lt 1 ]]; then
   echo "Usage: run-query.sh <facts_file> [command] [args...]" >&2

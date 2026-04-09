@@ -9,8 +9,8 @@
 
 set -euo pipefail
 
-SKILL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-RUNNER="${SKILL_DIR}/prolog/run.pl"
+RUNTIME_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RUNNER="${RUNTIME_DIR}/prolog/run.pl"
 
 # Read hook input from stdin
 INPUT=$(cat)

@@ -19,13 +19,11 @@ is a `.pl` file ready for querying.
 ## Prerequisites
 
 - **SWI-Prolog** (`swipl`): `swipl --version` must succeed.
-- **Prolog infrastructure**: The reason-with-prolog skill must be available.
-  Set `PROLOG_SKILL` to the path of the reason-with-prolog skill directory.
 
 ```
-PROLOG_SKILL=${CLAUDE_SKILL_DIR}/../reason-with-prolog
-PROLOG_QUERY=${PROLOG_SKILL}/scripts/run-query.sh
-PROLOG_TEMPLATE=${PROLOG_SKILL}/prolog/test_facts.pl
+PROLOG_RUNTIME=${CLAUDE_SKILL_DIR}/../../../../lib/prolog-runtime
+PROLOG_QUERY=${PROLOG_RUNTIME}/scripts/run-query.sh
+PROLOG_TEMPLATE=${PROLOG_RUNTIME}/prolog/test_facts.pl
 ```
 
 ## Input

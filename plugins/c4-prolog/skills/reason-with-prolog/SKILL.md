@@ -18,11 +18,15 @@ externalize your understanding as typed, provable facts — not prose.
 
 ## Key Paths
 
-- **Query runner**: `${CLAUDE_SKILL_DIR}/scripts/run-query.sh`
-- **Prolog runner**: `${CLAUDE_SKILL_DIR}/prolog/run.pl`
-- **Ontology schema**: `${CLAUDE_SKILL_DIR}/prolog/ontology.pl`
-- **Reasoning procedures**: `${CLAUDE_SKILL_DIR}/prolog/reasoning.pl`
-- **Facts template**: `${CLAUDE_SKILL_DIR}/prolog/test_facts.pl`
+```
+PROLOG_RUNTIME=${CLAUDE_SKILL_DIR}/../../../../lib/prolog-runtime
+```
+
+- **Query runner**: `${PROLOG_RUNTIME}/scripts/run-query.sh`
+- **Prolog runner**: `${PROLOG_RUNTIME}/prolog/run.pl`
+- **Ontology schema**: `${PROLOG_RUNTIME}/prolog/ontology.pl`
+- **Reasoning procedures**: `${PROLOG_RUNTIME}/prolog/reasoning.pl`
+- **Facts template**: `${PROLOG_RUNTIME}/prolog/test_facts.pl`
 - **Query log**: Written automatically next to facts file as `<name>_queries.md`
 
 ## How to invoke queries
@@ -31,7 +35,7 @@ All Prolog commands go through the query runner, which logs every invocation
 and its output to `<facts_basename>_queries.md` next to the facts file:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> <command> [args]
+${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> <command> [args]
 ```
 
 Commands: `validate`, `summary`, `describe`, `describe <system>`, `impact <component>`,
@@ -86,7 +90,7 @@ and a typed output. Do not skip loops or proceed when validation fails.
 
 4. **Validate.** Run:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> validate
+   ${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> validate
    ```
    - If `PASS`: proceed to Loop 2.
    - If warnings: fix the facts file and re-validate. Common issues:
@@ -104,20 +108,20 @@ and a typed output. Do not skip loops or proceed when validation fails.
 
 1. **Run system summary** to confirm the ontology matches your understanding:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> summary
+   ${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> summary
    ```
    Check: Do the counts match what you explored? If not, go back to Loop 1.
 
 2. **Run describe** to see the full C4 tree:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> describe
+   ${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> describe
    ```
    Check: Does the hierarchy look right? Are components in the right containers?
 
 3. **Run coupling and crosscut** to understand system boundaries:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> coupling
-   ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> crosscut
+   ${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> coupling
+   ${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> crosscut
    ```
    These reveal which containers depend on each other and which components
    are shared infrastructure.
@@ -133,7 +137,7 @@ and a typed output. Do not skip loops or proceed when validation fails.
 
 2. **Run targeted analysis:**
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> full <comp1>,<comp2>
+   ${PROLOG_RUNTIME}/scripts/run-query.sh <facts_file> full <comp1>,<comp2>
    ```
    This runs: validate → summary → change_scope → impact per target → implementation_order → crosscut → coupling
 

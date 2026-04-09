@@ -17,9 +17,9 @@ Manage a pipeline of parallel enhancement agents across isolated worktrees.
 ## Shared Paths
 
 ```
-PROLOG=${CLAUDE_SKILL_DIR}/../reason-with-prolog
-PROLOG_QUERY=${PROLOG}/scripts/run-query.sh
-PROLOG_TEMPLATE=${PROLOG}/prolog/test_facts.pl
+PROLOG_RUNTIME=${CLAUDE_SKILL_DIR}/../../../../lib/prolog-runtime
+PROLOG_QUERY=${PROLOG_RUNTIME}/scripts/run-query.sh
+PROLOG_TEMPLATE=${PROLOG_RUNTIME}/prolog/test_facts.pl
 LEAN_PROJECT=${CLAUDE_SKILL_DIR}/../prove-with-lean/lean
 LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
 PSEUDOCODE_SKILL=${CLAUDE_SKILL_DIR}/../scaffold-pseudocode
