@@ -22,7 +22,6 @@ is a `.pl` file ready for querying.
 
 ```
 PROLOG_QUERY=${CLAUDE_SKILL_DIR}/scripts/run-query.sh
-PROLOG_TEMPLATE=${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
 ```
 
 ## Input
@@ -60,7 +59,11 @@ Extract dependency relationships:
 
 ### 3. Write the Facts File
 
-Generate a `.pl` file. Use the template at `${PROLOG_TEMPLATE}` as format reference.
+Generate a `.pl` file using this format reference:
+
+```!
+cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
+```
 
 The file MUST include:
 ```prolog

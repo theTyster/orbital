@@ -18,10 +18,20 @@ Manage a pipeline of parallel enhancement agents across isolated worktrees.
 
 ```
 PROLOG_QUERY=${CLAUDE_SKILL_DIR}/scripts/run-query.sh
-PROLOG_TEMPLATE=${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
 LEAN_PROJECT=${CLAUDE_SKILL_DIR}/../prove-with-lean/lean
 LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
-PSEUDOCODE_SKILL=${CLAUDE_SKILL_DIR}/../scaffold-pseudocode
+```
+
+### Prolog facts template
+
+```!
+cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
+```
+
+### Scaffold pseudocode process
+
+```!
+cat ${CLAUDE_SKILL_DIR}/../scaffold-pseudocode/SKILL.md
 ```
 
 Prolog: `${PROLOG_QUERY} <facts_file> <command>` (logs all queries automatically)
@@ -62,12 +72,12 @@ Branch: `enhancement/<kebab-slug>` derived from enhancement description.
 
 | Artifact | Path | Content |
 |----------|------|---------|
-| Pseudo-code | `plan/pseudocode.md` | Logical pattern scaffold (see `${PSEUDOCODE_SKILL}/SKILL.md`) |
+| Pseudo-code | `plan/pseudocode.md` | Logical pattern scaffold (see "Scaffold pseudocode process" above) |
 | Prolog analysis | `plan/reasoning.pl` | C4 facts following orbital flow (3 loops: Find → Define → Condense) |
 | Lean4 proofs | `${LEAN_PROOFS}/<Enhancement>.lean` | Invariant theorems + tactic proofs; `sorry` only with justification |
 | Proof summary | `plan/proof_summary.md` | Proved vs sorry-stubbed invariants, strategies, file path |
 
-Prolog orbital flow: write C4 facts (`${PROLOG_TEMPLATE}` format) → `validate` until PASS → `summary`/`describe`/`coupling`/`crosscut` → `full <targets>` for CHANGE SCOPE, IMPACT, ORDER.
+Prolog orbital flow: write C4 facts (see facts template above) → `validate` until PASS → `summary`/`describe`/`coupling`/`crosscut` → `full <targets>` for CHANGE SCOPE, IMPACT, ORDER.
 
 Lean: `.lean` with `set_option autoImplicit false`, `import Mathlib`, theorems + tactics → `lake build` (self-correct up to 5x, use `exact?`/`apply?`/`simp?`).
 
@@ -87,10 +97,10 @@ Type: {TYPE} | Branch: {BRANCH}
 
 Produce artifacts in `plan/` (Lean proofs go in ${LEAN_PROOFS}).
 
-Pseudocode: Read ${PSEUDOCODE_SKILL}/SKILL.md and follow its process to produce plan/pseudocode.md
+Pseudocode: Follow the "Scaffold pseudocode process" (injected above) to produce plan/pseudocode.md
 
 Prolog: ${PROLOG_QUERY} <facts_file> <command>
-  Template: ${PROLOG_TEMPLATE}
+  Use the facts template format injected above.
   Orbital flow: write facts → validate → summary/describe/coupling/crosscut → full <targets>
 
 Lean: write to ${LEAN_PROOFS}/<name>.lean → cd ${LEAN_PROJECT} && lake build

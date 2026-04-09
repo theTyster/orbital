@@ -19,11 +19,25 @@ externalize your understanding as typed, provable facts — not prose.
 ## Key Paths
 
 - **Query runner**: `${CLAUDE_SKILL_DIR}/scripts/run-query.sh`
-- **Prolog runner**: `${CLAUDE_SKILL_DIR}/prolog/run.pl`
-- **Ontology schema**: `${CLAUDE_SKILL_DIR}/prolog/ontology.pl`
-- **Reasoning procedures**: `${CLAUDE_SKILL_DIR}/prolog/reasoning.pl`
-- **Facts template**: `${CLAUDE_SKILL_DIR}/prolog/test_facts.pl`
 - **Query log**: Written automatically next to facts file as `<name>_queries.md`
+
+### Ontology schema
+
+```!
+cat ${CLAUDE_SKILL_DIR}/prolog/ontology.pl
+```
+
+### Reasoning procedures
+
+```!
+cat ${CLAUDE_SKILL_DIR}/prolog/reasoning.pl
+```
+
+### Facts template
+
+```!
+cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
+```
 
 ## How to invoke queries
 
@@ -63,8 +77,7 @@ and a typed output. Do not skip loops or proceed when validation fails.
    - **C3 Component** — What are the logical groupings within each container?
      (modules, classes, significant files with distinct responsibilities)
 
-3. **Write `facts.pl`.** Generate a Prolog facts file. Use the template at
-   `${CLAUDE_SKILL_DIR}/prolog/test_facts.pl` as your format reference.
+3. **Write `facts.pl`.** Generate a Prolog facts file using the facts template above as your format reference.
 
    The file MUST include the discontiguous directive and use ONLY these predicates:
    ```prolog

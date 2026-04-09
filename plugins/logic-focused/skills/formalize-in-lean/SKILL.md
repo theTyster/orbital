@@ -23,8 +23,7 @@ loop back to query-hypothesis to refine.
 2. **Lean project built**: A Lean project with Mathlib must be available.
 
 ```
-LEAN_SKILL=${CLAUDE_SKILL_DIR}/../prove-with-lean
-LEAN_PROJECT=${LEAN_SKILL}/lean
+LEAN_PROJECT=${CLAUDE_SKILL_DIR}/../prove-with-lean/lean
 LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
 ```
 If `${LEAN_PROJECT}/.lake/build/` doesn't exist, run `cd ${LEAN_PROJECT} && lake build`.
