@@ -9,7 +9,7 @@
     {
       "name": "logic-focused",
       "description": "Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lean 4 proof verification, proof translation, and proof-grounded planning.",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "source": "./plugins/logic-focused",
       "author": {
         "name": "ty",
@@ -27,7 +27,7 @@
     {
       "name": "c4-prolog",
       "description": "C4 architectural modeling and Prolog-based codebase analysis with orbital flow.",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "source": "./plugins/c4-prolog",
       "author": {
         "name": "ty",
@@ -44,7 +44,7 @@
     {
       "name": "multi-plan",
       "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles.",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "source": "./plugins/multi-plan",
       "author": {
         "name": "ty",
