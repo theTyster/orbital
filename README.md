@@ -75,6 +75,12 @@ Orchestrate multiple enhancements in parallel, each with a dedicated worktree/br
 
 **Triggers**: "plan and implement these enhancements", "multi-plan X, Y, Z", "parallel feature development"
 
+### create-presentation
+
+Generate a self-contained HTML slideshow from a topic, document, or handoff. No external dependencies — opens in any browser.
+
+**Triggers**: "make a presentation", "create slides", "build a deck about X"
+
 ### make-commits
 
 Review all unstaged changes and organize them into logical commits.
