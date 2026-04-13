@@ -15,10 +15,11 @@ Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lea
 
 ## Additional Skills
 
+- **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
 - **prove-with-lean** — Direct code verification using Lean 4 with PostToolUse hooks
 - **scaffold-pseudocode** — Logical pattern documents capturing invariants, types, and edge predicates
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan))
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)) — use `setup-lean-mathlib` for initial setup
 - **SWI-Prolog** (`swipl`)

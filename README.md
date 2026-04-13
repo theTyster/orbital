@@ -20,6 +20,7 @@ Formal logic reasoning pipeline — from Prolog translation through Lean 4 proof
 ```
 
 Also includes:
+- **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
 - **prove-with-lean** — Direct code verification using Lean 4 with PostToolUse hooks
 - **scaffold-pseudocode** — Logical pattern documents capturing invariants, types, and edge predicates
 
@@ -44,7 +45,7 @@ Standalone developer utilities.
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for formalize-in-lean and prove-with-lean. First build (`lake build` in `plugins/logic-focused/skills/prove-with-lean/lean/`) takes 10-20 minutes for Mathlib compilation.
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for formalize-in-lean, prove-with-lean, and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
 - **SWI-Prolog** (`swipl`): Required for translate-to-prolog, query-hypothesis, reason-with-prolog, and multi-plan.
 
 ## Installation

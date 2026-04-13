@@ -18,15 +18,36 @@ You are an orchestrator (P) for formal code verification using Lean 4.
 
 ## Prerequisites
 
-Before anything else, verify all three:
+Before anything else, verify all four:
 
 1. **Lean installed**: `lean --version` must succeed
-2. **Project built**: `${CLAUDE_SKILL_DIR}/lean/.lake/build/` must exist. If not:
+2. **Shared Mathlib clone exists**: Check for `~/.lean/mathlib4`:
+   ```bash
+   MATHLIB_ROOT="$(cd ~/.lean/mathlib4 2>/dev/null && pwd)" || echo "NOT FOUND"
    ```
-   cd ${CLAUDE_SKILL_DIR}/lean && lake build
-   ```
-   Warn the user: first build takes 10-20 minutes (Mathlib compilation).
-3. **Hook active**: `${CLAUDE_SKILL_DIR}/.claude/settings.json` must contain a PostToolUse hook for Edit|Write. If missing, the prover will get no feedback — a silent failure mode.
+   If not found, tell the user to run the `setup-lean-mathlib` skill first and stop.
+3. **Project configured and built**:
+   a. Check if `${CLAUDE_SKILL_DIR}/lean/lakefile.lean` contains a `require mathlib from` line.
+      If not, append one using the absolute path:
+      ```bash
+      MATHLIB_ROOT="$(cd ~/.lean/mathlib4 && pwd)"
+      echo "" >> ${CLAUDE_SKILL_DIR}/lean/lakefile.lean
+      echo "require mathlib from \"$MATHLIB_ROOT\"" >> ${CLAUDE_SKILL_DIR}/lean/lakefile.lean
+      ```
+   b. Copy the toolchain from the shared clone:
+      ```bash
+      cp "$MATHLIB_ROOT/lean-toolchain" ${CLAUDE_SKILL_DIR}/lean/lean-toolchain
+      ```
+   c. Generate the manifest (no network access needed):
+      ```bash
+      cd ${CLAUDE_SKILL_DIR}/lean
+      python3 ${CLAUDE_SKILL_DIR}/../setup-lean-mathlib/scripts/generate_manifest.py proveWithLean
+      ```
+   d. If `${CLAUDE_SKILL_DIR}/lean/.lake/build/` does not exist, build:
+      ```bash
+      cd ${CLAUDE_SKILL_DIR}/lean && LAKE_ARTIFACT_CACHE=true lake build
+      ```
+4. **Hook active**: `${CLAUDE_SKILL_DIR}/.claude/settings.json` must contain a PostToolUse hook for Edit|Write. If missing, the prover will get no feedback — a silent failure mode.
 
 If any prerequisite fails, report the issue and stop.
 

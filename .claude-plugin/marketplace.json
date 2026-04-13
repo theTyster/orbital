@@ -9,7 +9,7 @@
     {
       "name": "logic-focused",
       "description": "Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lean 4 proof verification, proof translation, and proof-grounded planning.",
-      "version": "2.3.0",
+      "version": "2.4.0",
       "source": "./plugins/logic-focused",
       "author": {
         "name": "ty",
