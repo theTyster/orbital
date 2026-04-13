@@ -24,17 +24,14 @@ These exist because Lake's default behavior wastes enormous time when a shared c
    dependencies from GitHub every time, ignoring both `--packages` overrides and
    `package-overrides.json`. Use the bundled manifest generator instead.
 
-2. **Never use `lake new <name> math`** to create projects. The `math` template clones Mathlib
-   as a git dependency, bypassing the shared clone entirely. Use `lake init` + path require.
-
-3. **Never lock `.lake/build/` read-only.** Lake writes small `.olean.hash` files (16 bytes,
+2. **Never lock `.lake/build/` read-only.** Lake writes small `.olean.hash` files (16 bytes,
    idempotent) for rebuild checking. Making the directory read-only causes build failures.
 
-4. **Always read the toolchain from the shared clone.** Never hardcode a Lean version. The
+3. **Always read the toolchain from the shared clone.** Never hardcode a Lean version. The
    project's `lean-toolchain` must exactly match the shared Mathlib's toolchain — mismatch is
    the most common build failure.
 
-5. **Always use fully expanded absolute paths** in `lakefile.toml`/`lakefile.lean` require
+4. **Always use fully expanded absolute paths** in `lakefile.toml`/`lakefile.lean` require
    statements. Lake does not expand `~`, `$HOME`, or any shell/environment variables.
 
 ## Locating the Shared Clone
@@ -57,57 +54,8 @@ The clone contains:
 
 ## Creating a New Project
 
-### Step 1: Read the toolchain and init
-
-```bash
-MATHLIB_ROOT="$(cd ~/.lean/mathlib4 && pwd)"
-TOOLCHAIN=$(cat "$MATHLIB_ROOT/lean-toolchain")
-lake +"$TOOLCHAIN" init <ProjectName>
-```
-
-Then ensure the project's `lean-toolchain` matches:
-
-```
-lean-toolchain contents: exactly what $MATHLIB_ROOT/lean-toolchain contains
-```
-
-### Step 2: Add Mathlib require
-
-Append to `lakefile.toml`:
-
-```toml
-[[require]]
-name = "mathlib"
-path = "<MATHLIB_ROOT expanded to absolute path>"
-```
-
-Or if the project uses `lakefile.lean`:
-
-```lean
-require mathlib from "<MATHLIB_ROOT expanded to absolute path>"
-```
-
-### Step 3: Generate the manifest
-
-Run the bundled manifest generator from the project root:
-
-```bash
-python3 <this-skill-dir>/scripts/generate_manifest.py <ProjectName>
-```
-
-This reads `$MATHLIB_ROOT/lake-manifest.json` and rewrites every dependency as a path entry
-pointing at the shared clone's local checkouts. No network access needed.
-
-The `MATHLIB_ROOT` environment variable can override the default `~/.lean/mathlib4` location.
-
-### Step 4: Build
-
-```bash
-LAKE_ARTIFACT_CACHE=true lake build
-```
-
-No `lake exe cache get` needed — the oleans are already in the shared clone's build directory.
-`LAKE_ARTIFACT_CACHE=true` enables cross-project olean deduplication by content hash (Lean 4.22+).
+Use the `setup-lean-project` skill. It writes the project files directly (no `lake init`)
+and handles toolchain, manifest, and build in one step.
 
 ## Updating the Shared Clone
 
@@ -170,8 +118,8 @@ chmod -R u+w ~/.lean/mathlib4/.lake/build
 ```
 
 **Build is downloading/compiling Mathlib from scratch:**
-You likely ran `lake update` or used the `math` template. Delete `.lake/` and
-`lake-manifest.json`, then redo steps 2-4 from [Creating a New Project](#creating-a-new-project).
+You likely ran `lake update`. Delete `.lake/` and `lake-manifest.json`, then re-run
+`setup-lean-project` to regenerate the manifest and rebuild.
 
 **`lake exe cache get` is slow or fails:**
 The `.ltar` download cache at `~/.cache/mathlib/` may be stale. Safe to delete and re-run:
