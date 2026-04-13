@@ -6,7 +6,7 @@ Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lea
 
 ```
 1. translate-to-prolog    — Translate logic into Prolog facts
-2. query-hypothesis       — Query Prolog to explore and write a hypothesis
+2. hypothesize            — Explore a proposition and form falsifiable hypotheses
 3. formalize-in-lean      — Formalize hypothesis in Lean4 (loops back to 2 if unprovable)
 4a. translate-proof-llm   — Translate proven Lean4 into logical description for LLM consumption
 4b. translate-proof-human — Translate proven Lean4 into human-readable summary

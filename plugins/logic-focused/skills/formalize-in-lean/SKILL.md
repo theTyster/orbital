@@ -3,7 +3,7 @@ name: formalize-in-lean
 description: >
   Formalize a hypothesis as Lean4 theorems with machine-checked proofs.
   Reads a hypothesis file, translates properties into Lean4, and attempts
-  to prove them. Loops back to query-hypothesis if unprovable.
+  to prove them. Loops back to hypothesize if unprovable.
   Use when: "formalize this hypothesis", "prove this in lean", "verify this formally".
 user-invocable: true
 model: opus
@@ -15,7 +15,7 @@ argument-hint: "[hypothesis file path] [optional: prolog facts file for fallback
 
 Read a structured hypothesis file and translate each formal property into a
 Lean4 theorem with a machine-checked proof. If a property is unprovable,
-loop back to query-hypothesis to refine.
+loop back to hypothesize to refine.
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
 ```
 If `${LEAN_PROJECT}/.lake/build/` doesn't exist, run `cd ${LEAN_PROJECT} && lake build`.
 
-3. **Hypothesis file**: A `thoughts/hypothesis.md` from the query-hypothesis skill.
+3. **Hypothesis file**: A `thoughts/hypothesis.md` from the hypothesize skill.
 
 ## Process
 
@@ -94,10 +94,10 @@ If a property exhausts correction attempts (5 inner × 3 outer = 15 total):
 | Logical contradiction | Property may be false | **Loop back** |
 | Timeout | Property too complex for automation | Decompose into sub-properties |
 
-**Loop back to query-hypothesis:**
+**Loop back to hypothesize:**
 
 When a property appears genuinely unprovable (logical contradiction or persistent
-type mismatches after modeling revisions), invoke the query-hypothesis skill:
+type mismatches after modeling revisions), invoke the hypothesize skill:
 
 ```
 The following property from hypothesis "{title}" could not be proven:
@@ -143,7 +143,7 @@ Write results to `thoughts/proof_results.md` (create `thoughts/` if it doesn't e
 - **Statement**: {attempted Lean theorem}
 - **Failure mode**: {tactic | type mismatch | contradiction | timeout}
 - **Diagnostics**: {final error}
-- **Action taken**: {looped back to query-hypothesis / decomposed / weakened}
+- **Action taken**: {looped back to hypothesize / decomposed / weakened}
 
 ## Lean Files
 {list of all .lean files written}
@@ -155,7 +155,7 @@ All artifacts are written to the `thoughts/` directory (create it if it doesn't 
 
 - One or more `.lean` files in `${LEAN_PROOFS}/`
 - A `thoughts/proof_results.md`
-- If any properties looped back: a request to re-run query-hypothesis
+- If any properties looped back: a request to re-run hypothesize
 
 ## Configuration
 
