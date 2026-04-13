@@ -12,7 +12,7 @@ Formal logic reasoning pipeline — from Prolog translation through Lean 4 proof
 
 ```
 1. translate-to-prolog    — Translate logic into Prolog facts
-2. query-hypothesis       — Query Prolog to explore and write a hypothesis
+2. hypothesize            — Explore a proposition and form falsifiable hypotheses
 3. formalize-in-lean      — Formalize hypothesis in Lean4 (loops back to 2 if unprovable)
 4a. translate-proof-llm   — Translate proven Lean4 into logical description for LLM consumption
 4b. translate-proof-human — Translate proven Lean4 into human-readable summary
@@ -46,7 +46,7 @@ Standalone developer utilities.
 ## Prerequisites
 
 - **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for formalize-in-lean, prove-with-lean, and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
-- **SWI-Prolog** (`swipl`): Required for translate-to-prolog, query-hypothesis, reason-with-prolog, and multi-plan.
+- **SWI-Prolog** (`swipl`): Required for translate-to-prolog, hypothesize, reason-with-prolog, and multi-plan.
 
 ## Installation
 
