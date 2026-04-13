@@ -1,104 +1,88 @@
 /**
- * test_facts.pl — Example facts for validating the ontology modules
+ * test_facts.pl — Example knowledge base for testing introspect.pl
  *
- * Models a hypothetical full-stack app to exercise all predicates.
- * This file doubles as a template showing the expected format
- * for generated facts files.
+ * Models a software library ecosystem using plain Prolog facts.
+ * No specific ontology — demonstrates that introspect.pl works
+ * with arbitrary predicates.
  */
-:- discontiguous context/2, container/3, component/4,
-                  file_mapping/3, depends_on/2.
+:- discontiguous module_type/2, depends_on/2, exports/2,
+                  has_test/2, maintainer/2, license/2.
 
 %% ============================================================
-%% C1: System Contexts
+%% Module types
 %% ============================================================
 
-context(webapp, 'Full-stack web application with API and SPA frontend').
-context(shared_infra, 'Shared infrastructure services (auth, logging)').
-
-%% ============================================================
-%% C2: Containers
-%% ============================================================
-
-container(webapp, frontend, 'React/TypeScript').
-container(webapp, api_server, 'Node.js/Express').
-container(webapp, postgres, 'PostgreSQL 16').
-container(webapp, redis_cache, 'Redis 7').
-
-container(shared_infra, auth_service, 'Go').
-container(shared_infra, log_collector, 'Fluentd').
-
-%% ============================================================
-%% C3: Components
-%% ============================================================
-
-% Frontend components
-component(webapp, frontend, app_shell, 'Root layout and routing').
-component(webapp, frontend, auth_ui, 'Login/signup forms').
-component(webapp, frontend, dashboard, 'Main user dashboard').
-component(webapp, frontend, api_client, 'HTTP client wrapper').
-
-% API server components
-component(webapp, api_server, auth_middleware, 'JWT validation middleware').
-component(webapp, api_server, user_controller, 'User CRUD endpoints').
-component(webapp, api_server, order_controller, 'Order management endpoints').
-component(webapp, api_server, db_pool, 'Database connection pool').
-component(webapp, api_server, cache_layer, 'Redis caching abstraction').
-
-% Shared infra components
-component(shared_infra, auth_service, token_issuer, 'JWT token generation').
-component(shared_infra, auth_service, user_store, 'User credential storage').
-component(shared_infra, log_collector, log_parser, 'Structured log parsing').
+module_type(web_framework, framework).
+module_type(auth_lib, library).
+module_type(db_adapter, library).
+module_type(cache_lib, library).
+module_type(logging, library).
+module_type(cli_tool, application).
+module_type(test_runner, tool).
 
 %% ============================================================
 %% Dependencies
 %% ============================================================
 
-% Frontend deps
-depends_on(auth_ui, api_client).
-depends_on(dashboard, api_client).
-depends_on(app_shell, auth_ui).
-depends_on(app_shell, dashboard).
-
-% API server deps
-depends_on(user_controller, auth_middleware).
-depends_on(user_controller, db_pool).
-depends_on(order_controller, auth_middleware).
-depends_on(order_controller, db_pool).
-depends_on(order_controller, cache_layer).
-depends_on(auth_middleware, token_issuer).
-
-% Cross-system deps
-depends_on(api_client, auth_middleware).
-depends_on(cache_layer, db_pool).
+depends_on(web_framework, auth_lib).
+depends_on(web_framework, logging).
+depends_on(web_framework, db_adapter).
+depends_on(auth_lib, db_adapter).
+depends_on(auth_lib, cache_lib).
+depends_on(db_adapter, logging).
+depends_on(cache_lib, logging).
+depends_on(cli_tool, web_framework).
+depends_on(cli_tool, logging).
+depends_on(test_runner, logging).
 
 %% ============================================================
-%% File Mappings
+%% Exports (what each module provides)
 %% ============================================================
 
-% Context roots
-file_mapping(context, webapp, '/project').
-file_mapping(context, shared_infra, '/infra').
+exports(web_framework, handle_request).
+exports(web_framework, route).
+exports(web_framework, middleware).
+exports(auth_lib, authenticate).
+exports(auth_lib, authorize).
+exports(db_adapter, query).
+exports(db_adapter, transaction).
+exports(cache_lib, get_cached).
+exports(cache_lib, invalidate).
+exports(logging, log_info).
+exports(logging, log_error).
 
-% Container paths
-file_mapping(container, frontend, '/project/frontend/src').
-file_mapping(container, api_server, '/project/api/src').
-file_mapping(container, postgres, '/project/db').
-file_mapping(container, redis_cache, '/project/config/redis').
-file_mapping(container, auth_service, '/infra/auth').
-file_mapping(container, log_collector, '/infra/logging').
+%% ============================================================
+%% Test coverage
+%% ============================================================
 
-% Component files
-file_mapping(component, app_shell, '/project/frontend/src/App.tsx').
-file_mapping(component, auth_ui, '/project/frontend/src/components/Auth.tsx').
-file_mapping(component, dashboard, '/project/frontend/src/components/Dashboard.tsx').
-file_mapping(component, api_client, '/project/frontend/src/lib/api.ts').
+has_test(web_framework, true).
+has_test(auth_lib, true).
+has_test(db_adapter, false).
+has_test(cache_lib, true).
+has_test(logging, false).
+has_test(cli_tool, false).
+has_test(test_runner, true).
 
-file_mapping(component, auth_middleware, '/project/api/src/middleware/auth.ts').
-file_mapping(component, user_controller, '/project/api/src/controllers/user.ts').
-file_mapping(component, order_controller, '/project/api/src/controllers/order.ts').
-file_mapping(component, db_pool, '/project/api/src/db/pool.ts').
-file_mapping(component, cache_layer, '/project/api/src/cache/redis.ts').
+%% ============================================================
+%% Maintainers
+%% ============================================================
 
-file_mapping(component, token_issuer, '/infra/auth/issuer.go').
-file_mapping(component, user_store, '/infra/auth/store.go').
-file_mapping(component, log_parser, '/infra/logging/parser.conf').
+maintainer(web_framework, alice).
+maintainer(auth_lib, alice).
+maintainer(db_adapter, bob).
+maintainer(cache_lib, bob).
+maintainer(logging, charlie).
+maintainer(cli_tool, charlie).
+maintainer(test_runner, alice).
+
+%% ============================================================
+%% Licenses
+%% ============================================================
+
+license(web_framework, mit).
+license(auth_lib, mit).
+license(db_adapter, apache2).
+license(cache_lib, mit).
+license(logging, bsd3).
+license(cli_tool, gpl3).
+license(test_runner, mit).
