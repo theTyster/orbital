@@ -18,35 +18,21 @@ You are an orchestrator (P) for formal code verification using Lean 4.
 
 ## Prerequisites
 
-Before anything else, verify all four:
+Before anything else, verify all three:
 
-1. **Lean installed**: `lean --version` must succeed
+1. **Lean installed**: `lean --version` must succeed.
 2. **Shared Mathlib clone exists**: Check for `~/.lean/mathlib4`:
    ```bash
    MATHLIB_ROOT="$(cd ~/.lean/mathlib4 2>/dev/null && pwd)" || echo "NOT FOUND"
    ```
    If not found, tell the user to run the `setup-lean-mathlib` skill first and stop.
-3. **Project configured and built**:
-   a. Check if `${CLAUDE_SKILL_DIR}/lean/lakefile.lean` contains a `require mathlib from` line.
-      If not, append one using the absolute path:
-      ```bash
-      MATHLIB_ROOT="$(cd ~/.lean/mathlib4 && pwd)"
-      echo "" >> ${CLAUDE_SKILL_DIR}/lean/lakefile.lean
-      echo "require mathlib from \"$MATHLIB_ROOT\"" >> ${CLAUDE_SKILL_DIR}/lean/lakefile.lean
-      ```
-   b. Copy the toolchain from the shared clone:
-      ```bash
-      cp "$MATHLIB_ROOT/lean-toolchain" ${CLAUDE_SKILL_DIR}/lean/lean-toolchain
-      ```
-   c. Generate the manifest (no network access needed):
-      ```bash
-      cd ${CLAUDE_SKILL_DIR}/lean
-      python3 ${CLAUDE_SKILL_DIR}/../setup-lean-mathlib/scripts/generate_manifest.py proveWithLean
-      ```
-   d. If `${CLAUDE_SKILL_DIR}/lean/.lake/build/` does not exist, build:
-      ```bash
-      cd ${CLAUDE_SKILL_DIR}/lean && LAKE_ARTIFACT_CACHE=true lake build
-      ```
+3. **Lean project exists in working directory**: Check for `thoughts/lean/.lake/build/`:
+   ```bash
+   LEAN_PROJECT="thoughts/lean"
+   LEAN_PROOFS="${LEAN_PROJECT}/Proofs"
+   ```
+   If `${LEAN_PROJECT}/.lake/build/` does not exist, invoke the `setup-lean-project` skill
+   to create and build it before continuing.
 4. **Hook active**: `${CLAUDE_SKILL_DIR}/.claude/settings.json` must contain a PostToolUse hook for Edit|Write. If missing, the prover will get no feedback — a silent failure mode.
 
 If any prerequisite fails, report the issue and stop.
@@ -82,12 +68,11 @@ Use the Agent tool to spawn a fresh prover (L). Pass this prompt, filling in the
 > {property_description}
 >
 > ## Lean Project
-> - Working directory: `${CLAUDE_SKILL_DIR}/lean`
-> - Write proofs to: `${CLAUDE_SKILL_DIR}/lean/ProveWithLean/Proofs/`
-> - Specs available at: `${CLAUDE_SKILL_DIR}/lean/ProveWithLean/Specs/`
+> - Working directory: `thoughts/lean`
+> - Write proofs to: `thoughts/lean/Proofs/`
 >
 > ## Instructions
-> 1. Create a `.lean` file in `ProveWithLean/Proofs/` containing:
+> 1. Create a `.lean` file in `thoughts/lean/Proofs/` containing:
 >    - `import Mathlib` and any needed Mathlib submodules
 >    - Lean 4 definitions modeling the target code's types and logic
 >    - A `theorem` statement expressing the property
@@ -163,4 +148,4 @@ Report to the user:
 - **Outer iterations** (P spawns fresh L): 3
 - **Inner corrections** (L self-fixes per spawn): 5
 - **Hook timeout**: 120 seconds
-- **Proof directory**: `${CLAUDE_SKILL_DIR}/lean/ProveWithLean/Proofs/`
+- **Proof directory**: `thoughts/lean/Proofs/`
