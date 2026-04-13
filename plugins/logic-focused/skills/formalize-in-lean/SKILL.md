@@ -20,13 +20,36 @@ loop back to hypothesize to refine.
 ## Prerequisites
 
 1. **Lean installed**: `lean --version` must succeed.
-2. **Lean project built**: A Lean project with Mathlib must be available.
-
-```
-LEAN_PROJECT=${CLAUDE_SKILL_DIR}/../prove-with-lean/lean
-LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
-```
-If `${LEAN_PROJECT}/.lake/build/` doesn't exist, run `cd ${LEAN_PROJECT} && lake build`.
+2. **Shared Mathlib clone exists**: Check for `~/.lean/mathlib4`:
+   ```bash
+   MATHLIB_ROOT="$(cd ~/.lean/mathlib4 2>/dev/null && pwd)" || echo "NOT FOUND"
+   ```
+   If not found, tell the user to run the `setup-lean-mathlib` skill first and stop.
+3. **Project configured and built**:
+   ```
+   LEAN_PROJECT=${CLAUDE_SKILL_DIR}/lean
+   LEAN_PROOFS=${LEAN_PROJECT}/FormalizeInLean/Proofs
+   ```
+   a. Check if `${LEAN_PROJECT}/lakefile.lean` contains a `require mathlib from` line.
+      If not, append one using the absolute path:
+      ```bash
+      MATHLIB_ROOT="$(cd ~/.lean/mathlib4 && pwd)"
+      echo "" >> ${LEAN_PROJECT}/lakefile.lean
+      echo "require mathlib from \"$MATHLIB_ROOT\"" >> ${LEAN_PROJECT}/lakefile.lean
+      ```
+   b. Copy the toolchain from the shared clone:
+      ```bash
+      cp "$MATHLIB_ROOT/lean-toolchain" ${LEAN_PROJECT}/lean-toolchain
+      ```
+   c. Generate the manifest (no network access needed):
+      ```bash
+      cd ${LEAN_PROJECT}
+      python3 ${CLAUDE_SKILL_DIR}/../setup-lean-mathlib/scripts/generate_manifest.py formalizeInLean
+      ```
+   d. If `${LEAN_PROJECT}/.lake/build/` does not exist, build:
+      ```bash
+      cd ${LEAN_PROJECT} && LAKE_ARTIFACT_CACHE=true lake build
+      ```
 
 3. **Hypothesis file**: A `thoughts/hypothesis.md` from the hypothesize skill.
 
@@ -42,7 +65,7 @@ Read the hypothesis file. Extract:
 
 ### 2. Translate to Lean4
 
-For each formal property, create a `.lean` file in `${LEAN_PROOFS}/`:
+For each formal property, create a `.lean` file in `${LEAN_PROOFS}/` (i.e. `${CLAUDE_SKILL_DIR}/lean/FormalizeInLean/Proofs/`):
 
 ```lean
 import Mathlib
@@ -70,7 +93,7 @@ theorem {property_name} : {formal statement} := by
 
 After writing each `.lean` file:
 ```bash
-cd ${LEAN_PROJECT} && lake build
+cd ${CLAUDE_SKILL_DIR}/lean && lake build
 ```
 
 **On success**: The property is machine-checked. Record it as proven.
