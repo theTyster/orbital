@@ -1,0 +1,14 @@
+{
+  "eval_id": 1,
+  "eval_name": "basic-setup",
+  "prompt": "Set up a Lean project in this directory so I can start writing proofs with Mathlib.",
+  "assertions": [
+    "lakefile.lean exists at thoughts/lean/lakefile.lean",
+    "lakefile.lean contains a 'require mathlib from' line pointing to an absolute path (not a git URL)",
+    "lean-toolchain exists at thoughts/lean/lean-toolchain and matches the content of ~/.lean/mathlib4/lean-toolchain",
+    "lake-manifest.json exists at thoughts/lean/lake-manifest.json",
+    "lake-manifest.json contains only path-type entries (no git-type entries)",
+    "thoughts/lean/Proofs/ directory exists",
+    "lake build succeeded (thoughts/lean/.lake/build/ exists or result.md reports success)"
+  ]
+}

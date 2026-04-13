@@ -1,0 +1,89 @@
+{
+ "version": "1.1.0",
+ "packagesDir": ".lake/packages",
+ "packages": [
+  {
+   "type": "path",
+   "name": "mathlib",
+   "dir": "/Users/ty/.lean/mathlib4",
+   "inherited": false,
+   "scope": "",
+   "configFile": "lakefile.lean",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "plausible",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/plausible",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "LeanSearchClient",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/LeanSearchClient",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "importGraph",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/importGraph",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "proofwidgets",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/proofwidgets",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.lean",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "aesop",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/aesop",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "Qq",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/Qq",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "batteries",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/batteries",
+   "inherited": false,
+   "scope": "leanprover-community",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  },
+  {
+   "type": "path",
+   "name": "Cli",
+   "dir": "/Users/ty/.lean/mathlib4/.lake/packages/Cli",
+   "inherited": true,
+   "scope": "leanprover",
+   "configFile": "lakefile.toml",
+   "manifestFile": "lake-manifest.json"
+  }
+ ],
+ "name": "leanProofs",
+ "lakeDir": ".lake"
+}
