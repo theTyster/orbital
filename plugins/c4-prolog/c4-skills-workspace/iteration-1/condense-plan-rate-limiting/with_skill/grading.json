@@ -1,0 +1,40 @@
+{
+  "expectations": [
+    {
+      "text": "The full command was run against test_facts.pl with auth_middleware and cache_layer as targets",
+      "passed": true,
+      "evidence": "Query log shows: 'full auth_middleware,cache_layer' executed with complete output including validation, summary, change scope, impact, order, crosscut, coupling"
+    },
+    {
+      "text": "The implementation plan references specific file paths from the Prolog output",
+      "passed": true,
+      "evidence": "Plan references 10 specific files: /project/api/src/middleware/auth.ts, /project/api/src/cache/redis.ts, /infra/auth/issuer.go, etc. — all matching Prolog files_to_review output"
+    },
+    {
+      "text": "The plan mentions upstream dependencies (token_issuer)",
+      "passed": true,
+      "evidence": "Plan explicitly states 'Upstream (must understand): token_issuer, db_pool' and dedicates Phase 1 step 1 to understanding token_issuer"
+    },
+    {
+      "text": "The plan mentions downstream components that may be affected",
+      "passed": true,
+      "evidence": "Plan lists all 6 downstream components: user_controller, order_controller, api_client, auth_ui, dashboard, app_shell — with Phase 3 and 4 addressing each"
+    },
+    {
+      "text": "The plan follows the implementation order from the topological sort",
+      "passed": true,
+      "evidence": "Plan phases follow topo order: Phase 1 (understand prerequisites at positions 2,4), Phase 2 (cache_layer position 5, auth_middleware position 6), Phase 3 (api_client position 9, auth_ui position 11), Phase 4 (verify remaining downstream)"
+    },
+    {
+      "text": "An implementation plan file was saved to disk",
+      "passed": true,
+      "evidence": "File exists at outputs/implementation_plan.md with 169 lines of structured plan"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

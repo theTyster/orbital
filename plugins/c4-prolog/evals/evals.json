@@ -1,0 +1,34 @@
+{
+  "skill_name": "c4-prolog-atomized",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Map the plugins/c4-prolog directory of this repo to C4 ontology facts. The target directory is /Users/ty/Projects/mine/wt/logic-focused-claude/reason-with-prolog-atomize/plugins/c4-prolog. Focus on the shared Prolog infrastructure and the skill definitions as components.",
+      "expected_output": "A validated facts.pl file with C4 predicates covering the c4-prolog plugin structure",
+      "files": [],
+      "expectations": [
+        "A facts.pl file was created and saved to disk",
+        "The facts.pl file passes swipl validation (no warnings)",
+        "The facts file contains at least one context/2 predicate",
+        "The facts file contains at least one container/3 predicate",
+        "The facts file contains at least 3 component/4 predicates",
+        "The facts file contains file_mapping/3 predicates",
+        "The validate command was run and reported PASS"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Using the test facts file at /Users/ty/Projects/mine/wt/logic-focused-claude/reason-with-prolog-atomize/plugins/c4-prolog/shared/prolog/test_facts.pl, create an implementation plan for adding rate limiting to the auth_middleware component. The rate limiter should use Redis via the cache_layer component.",
+      "expected_output": "A structured implementation plan grounded in Prolog analysis output, referencing specific files and following implementation order",
+      "files": [],
+      "expectations": [
+        "The full command was run against test_facts.pl with auth_middleware and cache_layer as targets",
+        "The implementation plan references specific file paths from the Prolog output",
+        "The plan mentions upstream dependencies (token_issuer)",
+        "The plan mentions downstream components that may be affected",
+        "The plan follows the implementation order from the topological sort",
+        "An implementation plan file was saved to disk"
+      ]
+    }
+  ]
+}
