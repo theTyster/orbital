@@ -1,0 +1,136 @@
+{
+  "metadata": {
+    "skill_name": "c4-prolog-atomized",
+    "skill_path": "/Users/ty/Projects/mine/wt/logic-focused-claude/reason-with-prolog-atomize/plugins/c4-prolog/skills",
+    "executor_model": "claude-opus-4-6",
+    "analyzer_model": "claude-opus-4-6",
+    "timestamp": "2026-04-13T14:48:00Z",
+    "evals_run": [1, 2],
+    "runs_per_configuration": 1
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "eval_name": "find-patterns-on-c4-prolog",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 90.9,
+        "tokens": 34339,
+        "tool_calls": 22,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "A facts.pl file was created and saved to disk", "passed": true, "evidence": "File exists at outputs/facts.pl with 129 lines"},
+        {"text": "The facts.pl file passes swipl validation (no warnings)", "passed": true, "evidence": "PASS: no issues found"},
+        {"text": "The facts file contains at least one context/2 predicate", "passed": true, "evidence": "1 context defined"},
+        {"text": "The facts file contains at least one container/3 predicate", "passed": true, "evidence": "8 containers defined"},
+        {"text": "The facts file contains at least 3 component/4 predicates", "passed": true, "evidence": "12 components defined"},
+        {"text": "The facts file contains file_mapping/3 predicates", "passed": true, "evidence": "21 file_mapping predicates"},
+        {"text": "The validate command was run and reported PASS", "passed": true, "evidence": "Query log confirms PASS"}
+      ]
+    },
+    {
+      "eval_id": 1,
+      "eval_name": "find-patterns-on-c4-prolog",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 99.4,
+        "tokens": 37796,
+        "tool_calls": 24,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "A facts.pl file was created and saved to disk", "passed": true, "evidence": "File exists at outputs/facts.pl with 138 lines"},
+        {"text": "The facts.pl file passes swipl validation (no warnings)", "passed": true, "evidence": "PASS: no issues found"},
+        {"text": "The facts file contains at least one context/2 predicate", "passed": true, "evidence": "1 context defined"},
+        {"text": "The facts file contains at least one container/3 predicate", "passed": true, "evidence": "5 containers defined"},
+        {"text": "The facts file contains at least 3 component/4 predicates", "passed": true, "evidence": "14 components defined"},
+        {"text": "The facts file contains file_mapping/3 predicates", "passed": true, "evidence": "file_mapping predicates present"},
+        {"text": "The validate command was run and reported PASS", "passed": true, "evidence": "Agent reported PASS"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "condense-plan-rate-limiting",
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 77.3,
+        "tokens": 22782,
+        "tool_calls": 10,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The full command was run against test_facts.pl with auth_middleware and cache_layer as targets", "passed": true, "evidence": "Query log shows full auth_middleware,cache_layer"},
+        {"text": "The implementation plan references specific file paths from the Prolog output", "passed": true, "evidence": "10 specific file paths referenced"},
+        {"text": "The plan mentions upstream dependencies (token_issuer)", "passed": true, "evidence": "token_issuer explicitly listed as upstream"},
+        {"text": "The plan mentions downstream components that may be affected", "passed": true, "evidence": "All 6 downstream components listed with handling phases"},
+        {"text": "The plan follows the implementation order from the topological sort", "passed": true, "evidence": "Phases follow topo order: prerequisites -> cache_layer -> auth_middleware -> downstream"},
+        {"text": "An implementation plan file was saved to disk", "passed": true, "evidence": "File exists at outputs/implementation_plan.md, 169 lines"}
+      ]
+    },
+    {
+      "eval_id": 2,
+      "eval_name": "condense-plan-rate-limiting",
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 108.0,
+        "tokens": 32161,
+        "tool_calls": 15,
+        "errors": 0
+      },
+      "expectations": [
+        {"text": "The full command was run against test_facts.pl with auth_middleware and cache_layer as targets", "passed": true, "evidence": "Query log shows full auth_middleware,cache_layer plus chain and describe queries"},
+        {"text": "The implementation plan references specific file paths from the Prolog output", "passed": true, "evidence": "10 specific file paths referenced"},
+        {"text": "The plan mentions upstream dependencies (token_issuer)", "passed": true, "evidence": "token_issuer explicitly listed with rationale"},
+        {"text": "The plan mentions downstream components that may be affected", "passed": true, "evidence": "All 6 downstream components listed with specific handling"},
+        {"text": "The plan follows the implementation order from the topological sort", "passed": true, "evidence": "5 steps follow topo order: review -> cache_layer -> auth_middleware -> downstream -> config"},
+        {"text": "An implementation plan file was saved to disk", "passed": true, "evidence": "File exists at outputs/implementation_plan.md"}
+      ]
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 84.1, "stddev": 9.6, "min": 77.3, "max": 90.9},
+      "tokens": {"mean": 28561, "stddev": 8170, "min": 22782, "max": 34339}
+    },
+    "without_skill": {
+      "pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1.0, "max": 1.0},
+      "time_seconds": {"mean": 103.7, "stddev": 6.1, "min": 99.4, "max": 108.0},
+      "tokens": {"mean": 34979, "stddev": 3985, "min": 32161, "max": 37796}
+    },
+    "delta": {
+      "pass_rate": "+0.00",
+      "time_seconds": "-19.6",
+      "tokens": "-6418"
+    }
+  },
+  "notes": [
+    "Both configurations achieve 100% pass rate — the atomized skills produce equivalent correctness to the monolithic skill",
+    "Atomized skills are ~19% faster on average (84s vs 104s) due to focused instructions reducing context overhead",
+    "Atomized skills use ~18% fewer tokens (28.5k vs 35k) — the focused SKILL.md loads less redundant context",
+    "The condense-patterns new skill ran exactly 1 query (full) vs old skill running 4 queries (full + chain + chain + describe) — more focused execution",
+    "The find-patterns new skill produced 8 containers (one per skill dir) while old skill grouped into 5 containers — different but equally valid modeling choices",
+    "All assertions pass for both configurations, so they are non-discriminating for correctness. The differentiation is in efficiency (time/tokens)."
+  ]
+}

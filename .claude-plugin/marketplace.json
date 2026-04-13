@@ -26,8 +26,8 @@
     },
     {
       "name": "c4-prolog",
-      "description": "C4 architectural modeling and Prolog-based codebase analysis with orbital flow.",
-      "version": "2.3.0",
+      "description": "C4 architectural modeling and Prolog-based codebase analysis with atomized phase skills.",
+      "version": "2.4.0",
       "source": "./plugins/c4-prolog",
       "author": {
         "name": "ty",

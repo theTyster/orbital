@@ -28,7 +28,11 @@ Also includes:
 
 C4 architectural modeling and Prolog-based codebase analysis.
 
-- **reason-with-prolog** — Maps codebases to C4 facts via orbital flow (Find > Define > Condense) and produces implementation plans grounded in formal analysis
+- **c4-find-patterns** — Map a codebase to C4 ontology facts
+- **c4-define-patterns** — Verify a C4 facts file with structural queries
+- **c4-condense-patterns** — Transform Prolog analysis into an implementation plan
+- **c4-analyze** — Orchestrate the full pipeline (find > define > condense)
+- **reason-with-prolog** — Legacy wrapper, redirects to c4-analyze
 
 ### multi-plan
 
