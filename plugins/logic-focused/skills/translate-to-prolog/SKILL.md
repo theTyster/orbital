@@ -20,10 +20,6 @@ record of what is true, how things relate, and what constraints must hold.
 
 - **SWI-Prolog** (`swipl`): `swipl --version` must succeed.
 
-```
-PROLOG_QUERY=${CLAUDE_SKILL_DIR}/scripts/run-query.sh
-```
-
 ## Input
 
 Accept any of:
@@ -53,11 +49,35 @@ Understand what you're modeling before choosing predicates. Ask:
 
 ### 3. Validate
 
+Run each tier in order. Do not advance to the next tier until the current one passes.
+
+**Tier 1 — Load cleanly.** The file must load without errors or warnings.
+
 ```bash
-${PROLOG_QUERY} <facts_file> validate
+swipl -g "halt" <file>
 ```
 
-Fix any load errors (syntax, undefined predicates) and re-validate until it passes.
+Fix syntax errors, missing operators, and undefined predicates before continuing.
+
+**Tier 2 — Referential integrity.** Every predicate referenced in a rule body must be defined (as a fact or another rule). Query for orphan references:
+
+```bash
+swipl -g "use_module(library(check)), check, halt" <file>
+```
+
+If the KB declares `:- discontiguous` predicates, confirm each one actually appears.
+
+**Tier 3 — Spot-check ground truth.** Pick 3–5 representative facts and verify them against the source material. For each, run a query and confirm the result matches reality:
+
+```prolog
+?- <predicate>(X, Y), write(X-Y), nl, fail ; true.
+```
+
+If any fact is wrong, audit neighboring facts from the same source — errors tend to cluster.
+
+**Tier 4 — Run constraints.** If the KB includes constraint rules (`:- \+ ...` or validation predicates), invoke them and confirm no violations fire. If a constraint fires, determine whether the constraint is wrong or the facts are wrong — fix the correct one.
+
+**Tier 5 — Coverage check.** Revisit the domain survey from Step 1. For each key entity and relationship identified, confirm at least one predicate covers it. Flag any domain concept that was surveyed but has zero corresponding facts — it was either intentionally excluded (document why in a comment) or accidentally missed.
 
 ## Output
 
@@ -73,7 +93,7 @@ Report:
 
 ## References
 
-SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
+SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it before you write when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
 
 ## Guidance
 
