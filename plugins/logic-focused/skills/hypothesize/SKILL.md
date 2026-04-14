@@ -186,6 +186,14 @@ Properties to prove in Lean4:
   remained open}
 ```
 
+## References
+
+### SWI-Prolog Extensions
+Documentation for SWI-Prolog extension modules is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult the README there when you need guidance on advanced Prolog features (tabling, DCGs, constraint logic programming, etc.).
+
+### Mathlib Lemmas & Theorems
+When writing Lean sketches in the "Formal Properties" section, consult the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` for accurate theorem names and type signatures. The wiki index at `references/wiki/index.md` is organized by mathematical domain. Using real Mathlib names in sketches gives `prove-hypothesis` a head start.
+
 ## Output
 
 Write `thoughts/hypothesis.md` structured for the prove-hypothesis skill.

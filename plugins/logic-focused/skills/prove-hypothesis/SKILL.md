@@ -33,6 +33,66 @@ Read a structured hypothesis file and translate each formal property into a Lean
 
 3. **Hypothesis file**: A `thoughts/hypothesis.md` from the hypothesize skill.
 
+## Proof Methodology
+
+Read `references/lean-proof-method.md` before writing any proofs. The key principles are summarized here but the reference has full detail with examples.
+
+### One Step at a Time
+
+Write one tactic, check diagnostics (use `done` to see unsolved goals), repeat. Never write multiple tactics before checking. This is the single most important discipline — multi-tactic writes cause cascading errors that waste correction attempts.
+
+- `by sorry` is acceptable for placeholders you're not actively working on.
+- `done` is required when you expect there to be next steps in an active proof.
+
+### Error Priority
+
+Fix errors in this exact order — higher-priority errors make lower-priority ones unreliable:
+
+1. **Syntax errors** → 2. **Type errors** → 3. **Unsolved goals / tactic failures** → 4. **Linter warnings**
+
+"Unsolved goals" errors appear on `by` or `=>` lines, NOT where you add tactics. If there's an "unsolved goals" on line 59 but a tactic error on line 65 — fix line 65 FIRST.
+
+Stop writing tactics after any error.
+
+### Work on the Hardest Case First
+
+**Across theorems**: Go directly to the target theorem. Don't fill in `sorry`s in helper lemmas first — Lean treats `sorry` as an axiom, so dependent theorems still work. Move sorries earlier in the file by factoring into lemmas:
+
+```lean
+-- Before:
+theorem main_theorem : A = C := by sorry
+
+-- After:
+theorem lemma1 : A = B := by sorry
+theorem lemma2 : B = C := by sorry
+theorem main_theorem : A = C := by
+  rw [lemma1, lemma2]
+```
+
+**Within a proof**: When a proof has multiple cases, `sorry` the easy cases and work on the hardest one first. If the hard case fails, effort on easy cases is wasted.
+
+### Dependent Type Rewriting
+
+When you encounter "motive is not type correct" or similar errors during rewriting, the cause is usually rewriting a term that appears in dependent types. The fix is to generalize first, instantiate last:
+
+```lean
+suffices ∀ s, statement_about s by
+  have h_specific := the_equality_you_have
+  convert this ?_ <;> exact h_specific
+intro s
+-- Now prove the general statement for arbitrary s
+```
+
+## Mathlib Reference
+
+A wiki of Mathlib lemmas and theorems is available at `${CLAUDE_SKILL_DIR}/../../references/wiki/`. Consult it when searching for applicable lemmas:
+
+- `references/wiki/index.md` — full index organized by mathematical domain
+- `references/wiki/lemmas/` — individual lemma pages with descriptions and usage examples
+- `references/wiki/theorems/` — famous theorems with Lean4 examples
+
+Read the relevant wiki page before falling back to search tactics (`exact?`, `apply?`, `simp?`). The wiki covers common patterns for: natural number arithmetic, ordering, divisibility, algebra (groups, rings, fields), sets, lists, topology, linear algebra, and more.
+
 ## Process
 
 ### 1. Read the Hypothesis
@@ -58,7 +118,7 @@ set_option autoImplicit false
 {Lean definitions modeling the domain}
 
 theorem {property_name} : {formal statement} := by
-  {tactic proof}
+  sorry -- start with sorry, then prove one tactic at a time
 ```
 
 **Translation guidelines:**
@@ -68,25 +128,56 @@ theorem {property_name} : {formal statement} := by
 - Set properties → use `Finset` or `Set`
 - Ordering properties → use `PartialOrder`, `LinearOrder`
 - Numeric properties → try `omega` first
+- Consult the wiki for appropriate lemmas before inventing custom definitions
 
 ### 3. Verify Each Property
 
-After writing each `.lean` file:
+Write one tactic at a time, building the proof incrementally:
+
 ```bash
 cd thoughts/lean && lake build
 ```
 
-**On success**: The property is machine-checked. Record it as proven.
+After each build:
+- If it succeeds with no errors, add the next tactic
+- If it fails, stop and fix the error before writing any more tactics
+- Use `done` to check what goals remain
 
-**On failure**: Self-correct up to 5 attempts per property:
-- Syntax/tactic errors → fix based on error message
-- Type mismatches → reconsider the Lean modeling
-- Timeout → simplify the proof strategy
-- Use `exact?`, `apply?`, `simp?` to discover applicable lemmas
+**On success** (no `sorry` remaining): The property is machine-checked. Record it as proven.
 
-### 4. Handle Unprovable Properties
+**On failure**: Self-correct following error priority order:
+1. Fix syntax errors first
+2. Fix type errors second
+3. Fix tactic failures / unsolved goals last
+4. Linter warnings are lowest priority
 
-If a property exhausts correction attempts (5 inner × 3 outer = 15 total):
+**Tactic discovery** (in order of preference):
+1. Check the Mathlib wiki (`references/wiki/`) for known lemmas that match your goal
+2. Use `exact?` to find an exact lemma match
+3. Use `apply?` to find applicable lemmas
+4. Use `simp?` to discover simplification lemmas
+5. Try `omega` for arithmetic goals, `decide` for decidable goals, `norm_num` for numeric goals
+
+### 4. Correction Budget
+
+Each property gets a correction budget to prevent infinite loops:
+
+- **Inner corrections** (fix-and-retry on the same approach): 5 attempts
+- **Outer iterations** (fundamentally different approach): 3 attempts
+- **Total**: 5 inner × 3 outer = 15 attempts max per property
+
+After exhausting inner corrections, step back and try a fundamentally different proof strategy — different tactic, different lemma, different decomposition.
+
+### 5. Proof Cleanup
+
+After getting a proof to work, clean it up immediately:
+- Combine redundant steps (`rw [a]; rw [b]` → `rw [a, b]`)
+- Test if `simp` can handle more (remove earlier steps one by one)
+- Find the truly minimal proof
+
+### 6. Handle Unprovable Properties
+
+If a property exhausts its correction budget:
 
 **Diagnose the failure mode:**
 
@@ -119,7 +210,7 @@ Please re-query the Prolog facts file at {facts_file_path} to:
 3. Formulate a revised, weaker hypothesis if needed
 ```
 
-### 5. Produce Results
+### 7. Produce Results
 
 Write results to `thoughts/proof_results.md` (create `thoughts/` if it doesn't exist):
 
@@ -150,6 +241,10 @@ Write results to `thoughts/proof_results.md` (create `thoughts/` if it doesn't e
 ## Lean Files
 {list of all .lean files written}
 ```
+
+## Verification
+
+Never declare a proof complete while `sorry` placeholders or error diagnostics remain.
 
 ## Output
 

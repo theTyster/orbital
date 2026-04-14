@@ -71,6 +71,10 @@ Report:
 - Count of facts per major predicate
 - Any constraint rules included
 
+## References
+
+SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
+
 ## Guidance
 
 - **Fit the domain**: Choose predicates that naturally express the domain's concepts.

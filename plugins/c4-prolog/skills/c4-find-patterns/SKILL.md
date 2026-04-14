@@ -31,6 +31,10 @@ cat ${CLAUDE_SKILL_DIR}/prolog/ontology.pl
 cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
 ```
 
+## References
+
+SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
+
 ## How to invoke queries
 
 All Prolog commands go through the query runner, which logs every invocation
