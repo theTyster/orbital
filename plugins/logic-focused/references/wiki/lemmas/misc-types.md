@@ -41,3 +41,10 @@ Casting along a reflexivity proof: `cast rfl a = a`
 ```lean
 example (a : α) : cast rfl a = a := cast_eq rfl a
 ```
+
+---
+
+## See also
+
+- [Nat Arithmetic](nat-arithmetic.md) — arithmetic on `Nat`, used with `Fin` indices
+- [Functions](functions.md) — injectivity, surjectivity, and composition used with `Equiv`

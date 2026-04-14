@@ -47,3 +47,11 @@ Subtracting a value from itself: `a - a = 0`
 ```lean
 example [AddGroup α] (a : α) : a - a = 0 := sub_self a
 ```
+
+---
+
+## See also
+
+- [Multiplicative Structures](multiplicative-structures.md) — the multiplicative analogues of these additive lemmas
+- [Nat Arithmetic](nat-arithmetic.md) — concrete addition lemmas for natural numbers
+- [Ring & Field Operations](ring-field-operations.md) — distributivity connecting additive and multiplicative structure

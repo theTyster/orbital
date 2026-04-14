@@ -41,11 +41,15 @@ A supplementary reference for skills that generate, analyze, or reason about SWI
 | Apply a predicate across a list | [Meta-predicates](meta-predicates.md) |
 | Build a custom constraint solver | [Attributed Variables](attributed-variables.md) |
 | Run tasks in parallel | [Threading](threading.md) |
+| Add or remove facts at runtime | [Dynamic Predicates](dynamic-predicates.md) |
 | Persist facts across sessions | [Persistency](persistency.md) |
 | Handle JSON data | [HTTP/JSON](http-json.md) |
 | Match text patterns | [PCRE](pcre.md) |
 | Manage complex options | [Option Lists](option-lists.md) |
 | Structure data with named fields | [Dicts](dicts.md) or [Record](record.md) |
+| Organize code into namespaces | [Modules](modules.md) |
+| Trace and profile execution | [Debugging](debugging.md) |
+| Install third-party libraries | [Pack System](pack-system.md) |
 
 ## Common Import Block
 

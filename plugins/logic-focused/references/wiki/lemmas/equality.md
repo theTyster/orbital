@@ -35,3 +35,10 @@ Propositional extensionality: if `P ↔ Q` then `P = Q`.
 ```lean
 example (h : P ↔ Q) : P = Q := propext h
 ```
+
+---
+
+## See also
+
+- [Connectives](connectives.md) — logical And, Or, Iff introduction and elimination
+- [Quantifiers & Classical Logic](quantifiers-classical.md) — existential witnesses, excluded middle, and contradiction

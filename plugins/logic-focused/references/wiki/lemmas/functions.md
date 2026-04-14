@@ -29,3 +29,9 @@ Composing with the identity on the left: `id ∘ f = f`
 ```lean
 example (f : α → β) : id ∘ f = f := Function.id_comp f
 ```
+
+---
+
+## See also
+
+- [Cardinality](../theorems/cardinality.md) — injection/surjection bounds on cardinality, Cantor-Bernstein-Schroeder

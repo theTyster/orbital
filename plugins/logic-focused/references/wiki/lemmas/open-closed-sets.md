@@ -37,3 +37,10 @@ A set is closed iff its complement is open.
 ```lean
 example [TopologicalSpace α] (A : Set α) : IsClosed A ↔ IsOpen Aᶜ := isClosed_compl_iff
 ```
+
+---
+
+## See also
+
+- [Continuity](continuity.md) — continuous functions defined via preimages of open sets
+- [Compactness](../theorems/compactness.md) — compact sets are closed in Hausdorff spaces; Heine-Borel characterization

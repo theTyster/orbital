@@ -21,3 +21,10 @@ example [CategoryTheory.Category C] [CategoryTheory.Category D]
     (F : CategoryTheory.Functor C D) {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
     F.map (f ≫ g) = F.map f ≫ F.map g := F.map_comp f g
 ```
+
+---
+
+## See also
+
+- [Categories](categories.md) — identity and associativity axioms for morphism composition
+- [Famous Results](../theorems/famous-results.md) — Yoneda lemma (fully faithful embedding) and adjunctions

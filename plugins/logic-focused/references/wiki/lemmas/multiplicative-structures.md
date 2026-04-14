@@ -53,3 +53,17 @@ Right cancellation in a group: if `b * a = c * a` then `b = c`.
 ```lean
 example [Group α] (a b c : α) (h : b * a = c * a) : b = c := mul_right_cancel h
 ```
+
+### `inv_inv`
+Double inversion in a group: `(a⁻¹)⁻¹ = a`.
+```lean
+example [Group α] (a : α) : a⁻¹⁻¹ = a := inv_inv a
+```
+
+---
+
+## See also
+
+- [Additive Structures](additive-structures.md) — the additive analogues of these multiplicative lemmas
+- [Ring & Field Operations](ring-field-operations.md) — distributivity connecting multiplicative and additive structure
+- [Powers & Exponents](powers-exponents.md) — exponentiation built on multiplicative structure

@@ -27,3 +27,10 @@ example [CategoryTheory.Category C] {W X Y Z : C}
     (f : W ⟶ X) (g : X ⟶ Y) (h : Y ⟶ Z) :
     (f ≫ g) ≫ h = f ≫ (g ≫ h) := CategoryTheory.Category.assoc f g h
 ```
+
+---
+
+## See also
+
+- [Functors](functors.md) — functor preservation of identity and composition
+- [Famous Results](../theorems/famous-results.md) — Yoneda lemma and adjunction

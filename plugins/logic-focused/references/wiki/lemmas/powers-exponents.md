@@ -35,3 +35,10 @@ Power of a power: `a ^ (m * n) = (a ^ m) ^ n`
 ```lean
 example [Monoid α] (a : α) (m n : Nat) : a ^ (m * n) = (a ^ m) ^ n := pow_mul a m n
 ```
+
+---
+
+## See also
+
+- [Multiplicative Structures](multiplicative-structures.md) — the monoid/group operations that exponentiation is built on
+- [Ring & Field Operations](ring-field-operations.md) — `sq_nonneg` and interaction of powers with ring structure

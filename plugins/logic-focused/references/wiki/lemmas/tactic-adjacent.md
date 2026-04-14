@@ -52,3 +52,10 @@ Simplify dependent if-then-else.
 ```lean
 example (h : True) : (dite True (fun _ => 1) (fun _ => 0)) = 1 := dif_pos h
 ```
+
+---
+
+## See also
+
+- [Order Relations](order-relations.md) — `le_refl`, `le_trans`, `le_antisymm` used alongside `omega` and `linarith`
+- [Ring & Field Operations](ring-field-operations.md) — `sq_nonneg`, distributivity used with `ring` and `nlinarith`

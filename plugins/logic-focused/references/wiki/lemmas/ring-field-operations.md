@@ -41,3 +41,11 @@ Multiplying and dividing by the same value cancels.
 ```lean
 example [Field α] (a : α) {b : α} (h : b ≠ 0) : a * b / b = a := mul_div_cancel₀ a h
 ```
+
+---
+
+## See also
+
+- [Additive Structures](additive-structures.md) — generic additive lemmas used alongside ring operations
+- [Multiplicative Structures](multiplicative-structures.md) — generic multiplicative lemmas used alongside ring operations
+- [Powers & Exponents](powers-exponents.md) — exponentiation in rings and monoids

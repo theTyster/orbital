@@ -36,3 +36,11 @@ Log and exp are inverses: `log(exp(a)) = a`
 ```lean
 example (a : Real) : Real.log (Real.exp a) = a := Real.log_exp a
 ```
+
+---
+
+## See also
+
+- [Absolute Value & Norms](absolute-value-norms.md) — absolute value identities and triangle inequality on reals
+- [Standard Derivatives](../theorems/standard-derivatives.md) — derivatives of exp, log, sin, cos
+- [Series & Convergence](../theorems/series-convergence.md) — convergence of series involving real functions

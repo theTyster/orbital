@@ -44,3 +44,10 @@ Extract the forward/backward direction of an iff.
 example (h : P ↔ Q) (hp : P) : Q := h.mp hp
 example (h : P ↔ Q) (hq : Q) : P := h.mpr hq
 ```
+
+---
+
+## See also
+
+- [Quantifiers & Classical Logic](quantifiers-classical.md) — existential/universal quantifiers, excluded middle, and contradiction
+- [Equality](equality.md) — symmetry, transitivity, and extensionality of equality

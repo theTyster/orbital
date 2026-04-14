@@ -53,3 +53,11 @@ Absolute value is non-negative.
 ```lean
 example (a : Int) : 0 ≤ |a| := abs_nonneg a
 ```
+
+---
+
+## See also
+
+- [Nat Arithmetic](nat-arithmetic.md) — natural number analogues of these arithmetic lemmas
+- [Additive Structures](additive-structures.md) — generic additive group lemmas (`add_comm`, `neg_add_cancel`) that specialize to `Int`
+- [Absolute Value & Norms](absolute-value-norms.md) — triangle inequality and norm properties

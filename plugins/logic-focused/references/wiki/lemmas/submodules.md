@@ -26,3 +26,10 @@ A submodule is closed under scalar multiplication.
 example [Ring R] [AddCommGroup M] [Module R M] (S : Submodule R M)
     (r : R) {x : M} (hx : x ∈ S) : r • x ∈ S := S.smul_mem r hx
 ```
+
+---
+
+## See also
+
+- [Linear Maps](linear-maps.md) — linear maps that preserve submodule structure
+- [Linear Algebra Fundamentals](../theorems/linear-algebra-fundamentals.md) — rank-nullity, bases, and the spectral theorem

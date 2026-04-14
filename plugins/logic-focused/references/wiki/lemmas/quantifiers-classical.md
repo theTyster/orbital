@@ -53,3 +53,11 @@ Constructive double negation elimination for decidable propositions.
 ```lean
 example [Decidable P] (h : ¬¬P) : P := Decidable.not_not.mp h
 ```
+
+---
+
+## See also
+
+- [Connectives](connectives.md) — And, Or, Iff introduction and elimination rules
+- [Equality](equality.md) — symmetry, transitivity, congruence, and extensionality
+- [Foundations](../theorems/foundations.md) — Zorn's lemma, axiom of choice, and well-ordering

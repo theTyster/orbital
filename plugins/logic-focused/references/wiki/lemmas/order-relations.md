@@ -48,6 +48,18 @@ Strict inequality implies non-strict.
 example [Preorder α] (a b : α) (h : a < b) : a ≤ b := le_of_lt h
 ```
 
+### `le_of_eq`
+Equality implies `≤`.
+```lean
+example [Preorder α] (a b : α) (h : a = b) : a ≤ b := le_of_eq h
+```
+
+### `lt_of_lt_of_eq`
+If `a < b` and `b = c` then `a < c`.
+```lean
+example [Preorder α] (a b c : α) (h1 : a < b) (h2 : b = c) : a < c := lt_of_lt_of_eq h1 h2
+```
+
 ### `min_le_left`
 The minimum is at most the left argument.
 ```lean

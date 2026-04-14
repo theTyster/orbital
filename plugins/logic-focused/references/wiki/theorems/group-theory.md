@@ -41,3 +41,17 @@ example [Group G] [Group H] (f : G →* H) :
     G ⧸ MonoidHom.ker f ≃* MonoidHom.range f :=
   QuotientGroup.quotientKerEquivRange f
 ```
+
+### `QuotientGroup.quotientInfEquivProdNormalQuotient`
+**Second Isomorphism Theorem** (for groups): for a subgroup `H` and a normal subgroup `N`, `H / (H ∩ N) ≅ HN / N`.
+```lean
+-- Formalized in Mathlib.GroupTheory.QuotientGroup.Basic
+-- QuotientGroup.quotientInfEquivProdNormalQuotient or similar
+```
+
+### `QuotientGroup.quotientQuotientEquivQuotient`
+**Third Isomorphism Theorem** (for groups): if `N ≤ M` are both normal in `G`, then `(G/N) / (M/N) ≅ G/M`.
+```lean
+-- Formalized in Mathlib.GroupTheory.QuotientGroup.Basic
+-- QuotientGroup.quotientQuotientEquivQuotient
+```

@@ -19,3 +19,10 @@ If `a ≤ b` and `a ≤ c` then `a ≤ b ⊓ c`.
 example [SemilatticeInf α] (a b c : α) (h1 : a ≤ b) (h2 : a ≤ c) : a ≤ b ⊓ c :=
   le_inf h1 h2
 ```
+
+---
+
+## See also
+
+- [Order Relations](order-relations.md) — generic `le`, `lt`, `min`, `max` lemmas underlying lattice structure
+- [Sets](sets.md) — set union and intersection form a lattice

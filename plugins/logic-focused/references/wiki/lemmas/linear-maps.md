@@ -26,3 +26,11 @@ Linear maps preserve zero.
 example [Ring R] [AddCommGroup M] [AddCommGroup N] [Module R M] [Module R N]
     (f : M →ₗ[R] N) : f 0 = 0 := f.map_zero
 ```
+
+---
+
+## See also
+
+- [Submodules](submodules.md) — submodule membership and closure properties
+- [Linear Algebra Fundamentals](../theorems/linear-algebra-fundamentals.md) — rank-nullity theorem involving kernel and range of linear maps
+- [Determinants & Trace](../theorems/determinants-trace.md) — matrix-level consequences of linear map structure

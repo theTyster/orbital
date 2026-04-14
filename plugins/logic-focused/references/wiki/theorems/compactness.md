@@ -49,3 +49,10 @@ example [TopologicalSpace α] [T2Space α] {s : Set α} (hs : IsCompact s) : IsC
 example [∀ i, TopologicalSpace (α i)] [∀ i, CompactSpace (α i)] :
     CompactSpace (∀ i, α i) := inferInstance
 ```
+
+### `IsCompact.finite`
+**Compact discrete sets are finite**: a compact set in a discrete topology is finite.
+```lean
+example [TopologicalSpace α] [DiscreteTopology α] {s : Set α} (hs : IsCompact s) :
+    s.Finite := hs.finite
+```
