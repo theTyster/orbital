@@ -29,10 +29,6 @@ Input: A verified `facts.pl` + the user's task description.
 cat ${CLAUDE_SKILL_DIR}/prolog/reasoning.pl
 ```
 
-## References
-
-SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
-
 ## How to invoke queries
 
 ```bash
