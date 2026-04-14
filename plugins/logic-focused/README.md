@@ -13,7 +13,7 @@ d2. translate-to-tests    — Combine logical patterns into TDD tests that verif
 e. explain-proof          — Document all decisions and artifacts and explain them in natural language for review
 ```
 
-Steps d1 and d2 are parallel — either or both can follow step c depending on what the implementation needs.
+Steps d1 and d2 are alternatives (OR) — either, both, or neither can follow step c depending on what the implementation needs.
 
 ## Additional Skills
 
