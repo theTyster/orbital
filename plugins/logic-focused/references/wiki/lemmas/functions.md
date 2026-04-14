@@ -9,7 +9,7 @@ Lemmas for function properties and composition.
 ### `Function.Injective`
 A function is injective if `f a = f b → a = b`.
 ```lean
-example : Function.Injective (fun n : Nat => n + 1) := fun _ _ h => Nat.succ.inj h
+example : Function.Injective (fun n : Nat => n + 1) := Nat.succ_injective
 ```
 
 ### `Function.Surjective`

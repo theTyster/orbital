@@ -109,3 +109,11 @@ Length of take: `(l.take n).length = min n l.length`
 ```lean
 example (n : Nat) (l : List α) : (l.take n).length = min n l.length := List.length_take n l
 ```
+
+---
+
+## See also
+
+- [Finite Sets](finsets.md) — finite set operations with similar membership and cardinality lemmas
+- [Functions](functions.md) — injective, surjective, and composition lemmas applicable to list operations
+- [Sets](sets.md) — `Set` counterparts of union, intersection, and membership

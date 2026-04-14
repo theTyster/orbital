@@ -9,7 +9,7 @@ A supplementary reference for skills that generate, analyze, or reason about SWI
 | Tabling | Infinite loops & redundant recomputation in recursion | `:- table pred/arity.` | [tabling.md](tabling.md) |
 | CLP(FD) | Constraint satisfaction over integers | `:- use_module(library(clpfd)).` | [clp.md](clp.md) |
 | CLP(B) | Boolean satisfiability & counting | `:- use_module(library(clpb)).` | [clp.md](clp.md) |
-| CLP(Q/R) | Constraints over rationals/reals | `:- use_module(library(clpqr)).` | [clp.md](clp.md) |
+| CLP(Q/R) | Constraints over rationals/reals | `:- use_module(library(clpq)).` or `library(clpr)` | [clp.md](clp.md) |
 | Modules | Namespace collisions in large programs | `:- module(Name, [Exports]).` | [modules.md](modules.md) |
 | DCG | Verbose parsing/grammar code | `-->` notation (built-in) | [dcg.md](dcg.md) |
 | Coroutining | Goals evaluated before bindings are ready | `freeze/2`, `when/2`, `dif/2` (built-in) | [coroutining.md](coroutining.md) |
