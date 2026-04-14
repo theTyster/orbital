@@ -1,0 +1,27 @@
+# Service B Configuration (production)
+service:
+  name: user-service
+  port: 8080
+  workers: 8
+
+database:
+  host: db.prod.internal
+  port: 5432
+  pool_size: 20
+  ssl: true
+
+cache:
+  backend: memcached
+  ttl_seconds: 300
+  max_entries: 50000
+
+logging:
+  level: warn
+  format: json
+  destination: stdout
+
+features:
+  enable_signup: true
+  enable_oauth: true
+  enable_2fa: true
+  rate_limit_per_minute: 60

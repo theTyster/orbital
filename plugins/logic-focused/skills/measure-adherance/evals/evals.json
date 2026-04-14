@@ -1,0 +1,59 @@
+{
+  "skill_name": "measure-adherance",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Measure adherence between the payment API spec and the implementation doc. The spec is the source of truth (prime). Files: evals/files/eval1-spec.md and evals/files/eval1-impl.md",
+      "expected_output": "An adherence report scoring the implementation against the spec, identifying shared facts, gaps (e.g. missing /payments/history endpoint, wrong response format), contradictions (XML vs JSON, retention period mismatch, rate limit difference), and extensions (DELETE endpoint). Score should reflect these gaps.",
+      "files": [
+        "evals/files/eval1-spec.md",
+        "evals/files/eval1-impl.md"
+      ],
+      "expectations": [
+        "A Prolog facts file is created with asserts/2 predicates for both resources",
+        "The report identifies the response format contradiction (spec says JSON, impl says XML)",
+        "The report identifies the data retention contradiction (spec 7 years, impl 3 years)",
+        "The report identifies the refund rate limit discrepancy (spec 10/min, impl 5/min)",
+        "The /payments/history endpoint gap is noted (in spec, missing from impl)",
+        "The adherence score is computed as a percentage",
+        "The report is written to thoughts/adherence_report.md"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Compare these two production config files and measure how well they align: evals/files/eval2-config-a.yaml and evals/files/eval2-config-b.yaml",
+      "expected_output": "The skill should ask the user whether one config is the source of truth (prime) before proceeding. If the user says no prime, it should produce a symmetric mutual adherence report identifying shared settings (service name, port, database host/port, ssl, json logging format, rate limit) and differences (workers count, pool size, cache backend, cache max_entries, log level, 2fa feature flag).",
+      "files": [
+        "evals/files/eval2-config-a.yaml",
+        "evals/files/eval2-config-b.yaml"
+      ],
+      "expectations": [
+        "The skill asks the user whether a prime resource should be designated",
+        "A Prolog facts file is created capturing config key-value pairs from both files",
+        "Shared settings are identified (service name, port, database host, ssl, json format, rate limit)",
+        "Differences are identified (workers, pool_size, cache backend, log level, enable_2fa, max_entries)",
+        "An adherence or similarity score is computed",
+        "The report is written to thoughts/adherence_report.md"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I have three documents for our notification system: the original requirements at evals/files/eval3-requirements.md (this is the prime), the design doc at evals/files/eval3-design.md, and the test plan at evals/files/eval3-tests.md. Grade both the design and the test plan against the requirements.",
+      "expected_output": "A three-way adherence report grading both design and test plan against the requirements as prime. Should identify: design gap (SMS deferred), design gap (throughput 5k vs required 10k/sec), design covers retry/templates/audit/latency well. Test plan covers retries/templates/in-app/email but missing SMS tests, load test, and PII retention test.",
+      "files": [
+        "evals/files/eval3-requirements.md",
+        "evals/files/eval3-design.md",
+        "evals/files/eval3-tests.md"
+      ],
+      "expectations": [
+        "A Prolog facts file is created with asserts/2 predicates for all three resources",
+        "The design doc is identified as not covering SMS delivery",
+        "The design throughput gap (5k vs 10k/sec) is identified",
+        "The test plan's missing SMS tests are noted as a gap",
+        "Both resources receive separate adherence scores against requirements",
+        "The report distinguishes gaps from extensions",
+        "The report is written to thoughts/adherence_report.md"
+      ]
+    }
+  ]
+}

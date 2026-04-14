@@ -1,6 +1,6 @@
 # logic-focused-claude
 
-Logic-focused skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): a formal reasoning pipeline from logic translation through proof verification to implementation planning, plus architectural analysis, parallel orchestration, and developer utilities.
+Logic-focused skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): a formal reasoning pipeline from logic translation through proof verification to test generation and implementation review, plus architectural analysis, parallel orchestration, and developer utilities.
 
 ## Plugins
 
@@ -8,21 +8,23 @@ This repository contains 4 plugins, decomposed by concern domain:
 
 ### logic-focused
 
-Formal logic reasoning pipeline — from Prolog translation through Lean 4 proof verification to implementation planning.
+Formal logic reasoning pipeline — from Prolog translation through Lean 4 proof verification to synthesized pseudocode, TDD tests, and implementation review.
 
 ```
-1. translate-to-prolog    — Translate logic into Prolog facts
-2. hypothesize            — Explore a proposition and form falsifiable hypotheses
-3. formalize-in-lean      — Formalize hypothesis in Lean4 (loops back to 2 if unprovable)
-4a. translate-proof-llm   — Translate proven Lean4 into logical description for LLM consumption
-4b. translate-proof-human — Translate proven Lean4 into human-readable summary
-5. plan-from-proof        — Create implementation plan from the logical description
+a. translate-to-prolog    — Translate a codebase into a Prolog knowledge base
+b. hypothesize            — Ingest a proposition and create a hypothesis based on the Prolog KB
+c. prove-hypothesis       — Formally verify the hypothesis (loops back to b if unprovable)
+d1. synthesize-pseudocode — Combine logical patterns from multiple sources (code, Lean, Prolog) into unified pseudocode
+d2. translate-to-tests    — Combine logical patterns into TDD tests that verify those patterns
+e. explain-proof          — Document all decisions and artifacts and explain them in natural language for review
 ```
+
+Steps d1 and d2 are parallel — either or both can follow step c depending on what the implementation needs.
 
 Also includes:
 - **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
-- **prove-with-lean** — Direct code verification using Lean 4 with PostToolUse hooks
-- **scaffold-pseudocode** — Logical pattern documents capturing invariants, types, and edge predicates
+- **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
+- **measure-adherance** — Score how well two or more resources adhere to each other using Prolog-based relational analysis (shared facts, gaps, contradictions, extensions)
 
 ### c4-prolog
 
@@ -32,7 +34,6 @@ C4 architectural modeling and Prolog-based codebase analysis.
 - **c4-define-patterns** — Verify a C4 facts file with structural queries
 - **c4-condense-patterns** — Transform Prolog analysis into an implementation plan
 - **c4-analyze** — Orchestrate the full pipeline (find > define > condense)
-- **reason-with-prolog** — Legacy wrapper, redirects to c4-analyze
 
 ### multi-plan
 
@@ -49,8 +50,8 @@ Standalone developer utilities.
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for formalize-in-lean, prove-with-lean, and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
-- **SWI-Prolog** (`swipl`): Required for translate-to-prolog, hypothesize, reason-with-prolog, and multi-plan.
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-hypothesis and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
+- **SWI-Prolog** (`swipl`): Required for translate-to-prolog, hypothesize, and multi-plan.
 
 ## Installation
 
