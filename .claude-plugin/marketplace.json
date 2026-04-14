@@ -27,7 +27,7 @@
     {
       "name": "c4-prolog",
       "description": "C4 architectural modeling and Prolog-based codebase analysis with atomized phase skills.",
-      "version": "2.4.0",
+      "version": "2.4.1",
       "source": "./plugins/c4-prolog",
       "author": {
         "name": "ty",
@@ -60,7 +60,7 @@
     {
       "name": "utilities",
       "description": "Standalone developer utilities: logical commit generation and presentation creation.",
-      "version": "2.0.2",
+      "version": "2.0.3",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",
