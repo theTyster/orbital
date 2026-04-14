@@ -14,10 +14,6 @@ C4 architectural modeling and Prolog-based codebase analysis.
 
 - **c4-analyze** — Run the full pipeline: find > define > condense
 
-### Legacy
-
-- **reason-with-prolog** — Redirects to c4-analyze (backward compatibility)
-
 ## Prolog Infrastructure
 
 Each skill contains a self-contained copy of the Prolog modules and scripts:

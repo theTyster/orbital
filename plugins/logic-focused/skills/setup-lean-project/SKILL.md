@@ -2,7 +2,7 @@
 name: setup-lean-project
 description: >
   Create a thin Lean 4 project in the current working directory that references the shared
-  system-wide Mathlib clone. Use this before running formalize-in-lean or prove-with-lean
+  system-wide Mathlib clone. Use this before running prove-hypothesis
   when no Lean project exists in the working directory yet. Triggers: "set up lean project",
   "create lean project", "initialize lean for this repo", or when another skill detects that
   thoughts/lean/ does not exist.
@@ -62,8 +62,6 @@ require mathlib from "<MATHLIB_ROOT — expand to absolute path>"
 
 **`Proofs/.gitkeep`** — keep the directory tracked if empty.
 
-## Step 3: Copy Toolchain
-
 ```bash
 cp "$MATHLIB_ROOT/lean-toolchain" "$LEAN_PROJECT/lean-toolchain"
 ```
@@ -100,4 +98,4 @@ A built Lean project at `${LEAN_PROJECT}/` with:
 - `Proofs/` — directory for proof files
 - `.lake/build/` — compiled oleans (from shared clone via symlink/cache)
 
-Proof files written by `formalize-in-lean` and `prove-with-lean` go in `Proofs/`.
+Proof files written by `prove-hypothesis` go in `Proofs/`.

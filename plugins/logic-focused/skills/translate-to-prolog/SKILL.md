@@ -62,6 +62,7 @@ Fix any load errors (syntax, undefined predicates) and re-validate until it pass
 ## Output
 
 Write to the `thoughts/` directory (create it if it doesn't exist).
+After, ask the user: "Are you ready to hypothesize on this file?"
 
 Filename: `thoughts/facts.pl` or `thoughts/<domain>_facts.pl` for specificity.
 

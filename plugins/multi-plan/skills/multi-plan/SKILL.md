@@ -18,8 +18,8 @@ Manage a pipeline of parallel enhancement agents across isolated worktrees.
 
 ```
 PROLOG_QUERY=${CLAUDE_SKILL_DIR}/scripts/run-query.sh
-LEAN_PROJECT=${CLAUDE_SKILL_DIR}/../prove-with-lean/lean
-LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
+LEAN_PROJECT=thoughts/lean
+LEAN_PROOFS=${LEAN_PROJECT}/Proofs
 ```
 
 ### Prolog facts template
@@ -28,10 +28,10 @@ LEAN_PROOFS=${LEAN_PROJECT}/ProveWithLean/Proofs
 cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
 ```
 
-### Scaffold pseudocode process
+### Synthesize pseudocode process
 
 ```!
-cat ${CLAUDE_SKILL_DIR}/../scaffold-pseudocode/SKILL.md
+cat ${CLAUDE_SKILL_DIR}/../synthesize-pseudocode/SKILL.md
 ```
 
 Prolog: `${PROLOG_QUERY} <facts_file> <command>` (logs all queries automatically)
@@ -72,7 +72,7 @@ Branch: `enhancement/<kebab-slug>` derived from enhancement description.
 
 | Artifact | Path | Content |
 |----------|------|---------|
-| Pseudo-code | `plan/pseudocode.md` | Logical pattern scaffold (see "Scaffold pseudocode process" above) |
+| Pseudo-code | `plan/pseudocode.md` | Logical pattern scaffold (see "Synthesize pseudocode process" above) |
 | Prolog analysis | `plan/reasoning.pl` | C4 facts following orbital flow (3 loops: Find → Define → Condense) |
 | Lean4 proofs | `${LEAN_PROOFS}/<Enhancement>.lean` | Invariant theorems + tactic proofs; `sorry` only with justification |
 | Proof summary | `plan/proof_summary.md` | Proved vs sorry-stubbed invariants, strategies, file path |
@@ -97,7 +97,7 @@ Type: {TYPE} | Branch: {BRANCH}
 
 Produce artifacts in `plan/` (Lean proofs go in ${LEAN_PROOFS}).
 
-Pseudocode: Follow the "Scaffold pseudocode process" (injected above) to produce plan/pseudocode.md
+Pseudocode: Follow the "Synthesize pseudocode process" (injected above) to produce plan/pseudocode.md
 
 Prolog: ${PROLOG_QUERY} <facts_file> <command>
   Use the facts template format injected above.
@@ -106,7 +106,7 @@ Prolog: ${PROLOG_QUERY} <facts_file> <command>
 Lean: write to ${LEAN_PROOFS}/<name>.lean → cd ${LEAN_PROJECT} && lake build
   Self-correct up to 5x. Use exact?/apply?/simp? to discover lemmas.
 
-FOR CODE: pseudocode.md (via scaffold-pseudocode) → reasoning.pl (3 loops) → .lean proofs → proof_summary.md
+FOR CODE: pseudocode.md (via synthesize-pseudocode) → reasoning.pl (3 loops) → .lean proofs → proof_summary.md
 FOR ARCHITECTURE: solutions.md (≥3) → reasoning.pl (validate+summary) → recommendations.md
 
 Do NOT implement code. Do NOT modify files outside plan/ (except Lean proofs).

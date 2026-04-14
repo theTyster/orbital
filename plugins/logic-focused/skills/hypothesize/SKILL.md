@@ -188,7 +188,7 @@ Properties to prove in Lean4:
 
 ## Output
 
-Write `thoughts/hypothesis.md` structured for the formalize-in-lean skill.
+Write `thoughts/hypothesis.md` structured for the prove-hypothesis skill.
 
 Report to the user:
 - The original proposition (one line)
@@ -198,9 +198,9 @@ Report to the user:
 - Notable counterevidence or open questions
 - File path
 
-Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run `/formalize-in-lean thoughts/hypothesis.md` to prove or revise it."**
+Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run `/prove-hypothesis thoughts/hypothesis.md` to prove or revise it."**
 
-Do not automatically invoke formalize-in-lean. The user should review first.
+Do not automatically invoke prove-hypothesis. The user should review first.
 
 ---
 
