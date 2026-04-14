@@ -21,3 +21,11 @@ example [Field α] (r : α) (hr : r ≠ 1) (n : Nat) :
     ∑ i in Finset.range n, r ^ i = (r ^ n - 1) / (r - 1) :=
   sorry -- geom_sum_eq hr n or similar
 ```
+
+---
+
+## See also
+
+- [Series & Convergence](series-convergence.md) -- infinite geometric series, convergence criteria
+- [Finsets](../lemmas/finsets.md) -- finite set operations underlying summation
+- [Binomial Coefficients](binomial-coefficients.md) -- binomial theorem and combinatorial sums

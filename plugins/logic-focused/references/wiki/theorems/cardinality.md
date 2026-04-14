@@ -38,3 +38,10 @@ Injections give cardinal inequalities (infinite case).
 ```lean
 -- Cardinal.mk_le_of_injective
 ```
+
+---
+
+## See also
+
+- [Foundations](foundations.md) -- Zorn's lemma, axiom of choice, well-ordering
+- [Functions](../lemmas/functions.md) -- injectivity, surjectivity, and composition lemmas

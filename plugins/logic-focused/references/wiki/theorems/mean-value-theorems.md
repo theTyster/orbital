@@ -42,3 +42,11 @@ If `f' > 0` on an interval, then `f` is strictly monotone.
 ```lean
 -- Formalized in Mathlib.Analysis.Calculus.Taylor
 ```
+
+---
+
+## See also
+
+- [Differentiation Rules](differentiation-rules.md) -- sum, product, chain, and quotient rules
+- [Standard Derivatives](standard-derivatives.md) -- derivatives of exp, log, sin, cos
+- [Integration](integration.md) -- Fundamental Theorem of Calculus connecting derivatives and integrals

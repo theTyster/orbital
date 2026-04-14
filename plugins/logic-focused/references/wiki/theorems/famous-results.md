@@ -76,3 +76,11 @@ example [CategoryTheory.Category C] [CategoryTheory.Category D]
     (adj : F ⊣ G) (a : C) (b : D) : (F.obj a ⟶ b) ≃ (a ⟶ G.obj b) :=
   adj.homEquiv a b
 ```
+
+---
+
+## See also
+
+- [Categories](../lemmas/categories.md) -- composition, identity, and associativity in categories
+- [Functors](../lemmas/functors.md) -- functor preservation of composition and identity
+- [Primes & Divisibility](primes-divisibility.md) -- unique factorization, Euclid's lemma

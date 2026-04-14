@@ -117,4 +117,4 @@ Common tracer commands: `c` (creep/step), `s` (skip), `l` (leap to next spy poin
 
 ---
 
-**See also**: [Modules](modules.md) (debug topics can be scoped per module), [Meta-Predicates](meta-predicates.md) (profile/1 and time/1 are meta-predicates that take a goal argument).
+**See also**: [Modules](modules.md) (debug topics can be scoped per module), [Meta-Predicates](meta-predicates.md) (profile/1 and time/1 are meta-predicates that take a goal argument), [Dynamic Predicates](dynamic-predicates.md) (listing/1 shows dynamically asserted clauses).

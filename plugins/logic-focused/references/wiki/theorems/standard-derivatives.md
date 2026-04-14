@@ -29,3 +29,11 @@ example (x : ℝ) : HasDerivAt Real.sin (Real.cos x) x := Real.hasDerivAt_sin x
 ```lean
 example (x : ℝ) : HasDerivAt Real.cos (-Real.sin x) x := Real.hasDerivAt_cos x
 ```
+
+---
+
+## See also
+
+- [Differentiation Rules](differentiation-rules.md) -- sum, product, chain, and quotient rules
+- [Mean Value Theorems](mean-value-theorems.md) -- MVT, Rolle's theorem, Taylor's theorem
+- [Real Functions](../lemmas/real-functions.md) -- basic real function lemmas

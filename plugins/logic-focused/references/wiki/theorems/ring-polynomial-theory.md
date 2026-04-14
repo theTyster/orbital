@@ -53,3 +53,27 @@ example [CommRing R] [CommRing S] (f : R →+* S) :
     R ⧸ RingHom.ker f ≃+* RingHom.range f :=
   RingHom.quotientKerEquivRange f
 ```
+
+### `Polynomial.eval_add`
+**Evaluation is additive**: `eval x (p + q) = eval x p + eval x q`.
+```lean
+example [CommSemiring R] (x : R) (p q : Polynomial R) :
+    Polynomial.eval x (p + q) = Polynomial.eval x p + Polynomial.eval x q :=
+  Polynomial.eval_add x p q
+```
+
+### `Polynomial.eval_mul`
+**Evaluation is multiplicative**: `eval x (p * q) = eval x p * eval x q`.
+```lean
+example [CommSemiring R] (x : R) (p q : Polynomial R) :
+    Polynomial.eval x (p * q) = Polynomial.eval x p * Polynomial.eval x q :=
+  Polynomial.eval_mul x p q
+```
+
+---
+
+## See also
+
+- [Commutative Algebra](commutative-algebra.md) -- maximal ideals, Nakayama's lemma, localization
+- [Field & Galois Theory](field-galois-theory.md) -- splitting fields, algebraic closure, tower law
+- [Primes & Divisibility](primes-divisibility.md) -- unique factorization, Euclidean domains

@@ -28,3 +28,11 @@ example [InnerProductSpace ℝ E] (x y : E) :
     ‖x + y‖ ^ 2 + ‖x - y‖ ^ 2 = 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) :=
   parallelogram_law_with_norm ℝ x y -- or similar
 ```
+
+---
+
+## See also
+
+- [Hilbert & Banach Spaces](hilbert-banach-spaces.md) -- Riesz representation, operator norms in functional analysis
+- [Inequalities](inequalities.md) -- Cauchy-Schwarz, triangle inequality, AM-GM
+- [Absolute Value & Norms](../lemmas/absolute-value-norms.md) -- basic norm and absolute value lemmas

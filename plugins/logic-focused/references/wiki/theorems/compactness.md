@@ -56,3 +56,11 @@ example [∀ i, TopologicalSpace (α i)] [∀ i, CompactSpace (α i)] :
 example [TopologicalSpace α] [DiscreteTopology α] {s : Set α} (hs : IsCompact s) :
     s.Finite := hs.finite
 ```
+
+---
+
+## See also
+
+- [Connectedness & Separation](connectedness-separation.md) -- IVT, Urysohn's lemma, Tietze extension
+- [Completeness & Fixed Points](completeness-fixed-points.md) -- completeness, Banach fixed point, Baire category
+- [Continuity](../lemmas/continuity.md) -- basic continuity lemmas for topological maps

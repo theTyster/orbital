@@ -55,3 +55,10 @@ example (n : Nat) : Fintype.card (Fin n) = n := Fintype.card_fin n
 ```lean
 -- Finset.sum_bij for changing index sets
 ```
+
+---
+
+## See also
+
+- [Binomial Coefficients](binomial-coefficients.md) -- binomial theorem, Pascal's rule, Vandermonde's identity
+- [Finsets](../lemmas/finsets.md) -- finite set operations, cardinality, and membership

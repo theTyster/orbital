@@ -23,3 +23,10 @@ example : CompleteSpace ℝ := inferInstance
 ```lean
 example : BaireSpace ℝ := inferInstance
 ```
+
+---
+
+## See also
+
+- [Compactness](compactness.md) -- Heine-Borel, extreme value theorem, Heine-Cantor
+- [Hilbert & Banach Spaces](hilbert-banach-spaces.md) -- operator norms, open mapping theorem in complete spaces

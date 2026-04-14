@@ -23,3 +23,10 @@ Strong Law of Large Numbers, Central Limit Theorem, and variance bounds.
 ```lean
 -- Formalized in Mathlib.Probability.Variance
 ```
+
+---
+
+## See also
+
+- [Measure Foundations](measure-foundations.md) -- countable additivity, subadditivity underlying probability
+- [Inequalities](inequalities.md) -- Holder's, Minkowski's, and Cauchy-Schwarz inequalities

@@ -52,4 +52,4 @@ run :-
 
 ---
 
-**See also**: [Meta-Predicates](meta-predicates.md) (meta_predicate/1 declarations ensure correct goal qualification across modules), [DCG](dcg.md) (DCG rules can be modularized and imported).
+**See also**: [Meta-Predicates](meta-predicates.md) (meta_predicate/1 declarations ensure correct goal qualification across modules), [DCG](dcg.md) (DCG rules can be modularized and imported), [Pack System](pack-system.md) (third-party packs are loaded as modules via use_module/1).

@@ -36,3 +36,10 @@ If two `L¹` functions have equal integrals over every measurable set, they're e
 ```lean
 -- Fundamental lemma of the calculus of variations (measure theory version)
 ```
+
+---
+
+## See also
+
+- [Integration](integration.md) -- linearity of integration, FTC, dominated convergence
+- [Probability](probability.md) -- strong law, CLT built on measure theory

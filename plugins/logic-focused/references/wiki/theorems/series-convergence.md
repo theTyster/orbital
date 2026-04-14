@@ -31,3 +31,11 @@ Powers of numbers > 1 tend to infinity.
 ```lean
 -- Formalized in Mathlib; exact name may be hasSum_zeta_two or similar
 ```
+
+---
+
+## See also
+
+- [Summation Formulas](summation-formulas.md) -- finite geometric sums and Gauss's formula
+- [Integration](integration.md) -- convergence theorems for integrals (dominated convergence, monotone convergence)
+- [Real Functions](../lemmas/real-functions.md) -- basic lemmas about real-valued functions

@@ -41,3 +41,10 @@ A polynomial over a domain is a unit iff it's a nonzero constant.
 ```lean
 -- Polynomial.isUnit_iff for integral domains
 ```
+
+---
+
+## See also
+
+- [Ring & Polynomial Theory](ring-polynomial-theory.md) -- Hilbert's basis theorem, Cayley-Hamilton, polynomial division
+- [Field & Galois Theory](field-galois-theory.md) -- splitting fields, Galois theory, algebraic closure

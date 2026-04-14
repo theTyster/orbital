@@ -74,3 +74,11 @@ example [MeasurableSpace α] {μ : MeasureTheory.Measure α} {f g : α → ENNRe
     (h : ∀ x, f x ≤ g x) : ∫⁻ x, f x ∂μ ≤ ∫⁻ x, g x ∂μ :=
   MeasureTheory.lintegral_mono h
 ```
+
+---
+
+## See also
+
+- [Series & Convergence](series-convergence.md) -- convergence of series and geometric sums
+- [Inequalities](inequalities.md) -- Holder's and Minkowski's inequalities for integrals
+- [Measure Foundations](measure-foundations.md) -- countable additivity, subadditivity, measure extensionality

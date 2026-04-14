@@ -55,3 +55,10 @@ example [Group G] [Group H] (f : G →* H) :
 -- Formalized in Mathlib.GroupTheory.QuotientGroup.Basic
 -- QuotientGroup.quotientQuotientEquivQuotient
 ```
+
+---
+
+## See also
+
+- [Modular Arithmetic](modular-arithmetic.md) -- Fermat's little theorem, Euler's theorem (group-theoretic consequences)
+- [Multiplicative Structures](../lemmas/multiplicative-structures.md) -- basic group operation lemmas

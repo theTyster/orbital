@@ -45,3 +45,10 @@ example (n : Nat) [NeZero n] (a : (ZMod n)ˣ) : a ^ Nat.totient n = 1 :=
 ```lean
 -- Nat.Prime.factorial_mulInv_atFin_prime or similar formulation
 ```
+
+---
+
+## See also
+
+- [Primes & Divisibility](primes-divisibility.md) -- Euclid's lemma, unique factorization, division algorithm
+- [Group Theory](group-theory.md) -- Lagrange's theorem and Sylow theorems (units of ZMod form a group)

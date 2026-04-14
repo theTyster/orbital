@@ -35,3 +35,10 @@ A polynomial splits completely over its splitting field.
 ```lean
 example [Field K] : IsAlgClosed (AlgebraicClosure K) := inferInstance
 ```
+
+---
+
+## See also
+
+- [Ring & Polynomial Theory](ring-polynomial-theory.md) -- Fundamental Theorem of Algebra, Hilbert's basis theorem
+- [Commutative Algebra](commutative-algebra.md) -- maximal ideals, localization, Nakayama's lemma

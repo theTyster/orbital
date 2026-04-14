@@ -31,3 +31,11 @@ A connected component is the intersection of all clopen sets containing a point.
 ```lean
 -- Formalized in Mathlib.Topology.Connected
 ```
+
+---
+
+## See also
+
+- [Compactness](compactness.md) -- Heine-Borel, extreme value theorem, Tychonoff
+- [Completeness & Fixed Points](completeness-fixed-points.md) -- completeness of metric spaces, Baire category
+- [Continuity](../lemmas/continuity.md) -- basic continuity lemmas for topological maps

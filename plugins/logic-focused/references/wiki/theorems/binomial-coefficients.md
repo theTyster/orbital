@@ -40,3 +40,10 @@ example [DecidableEq α] (s : Finset α) (k : Nat) :
 ```lean
 -- Formalized in Mathlib.Combinatorics.Choose
 ```
+
+---
+
+## See also
+
+- [Counting Principles](counting-principles.md) -- pigeonhole, inclusion-exclusion, Fubini for sums
+- [Summation Formulas](summation-formulas.md) -- Gauss's formula and geometric series

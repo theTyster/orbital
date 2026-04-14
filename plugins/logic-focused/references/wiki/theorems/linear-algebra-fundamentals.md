@@ -36,3 +36,11 @@ example [DivisionRing K] [AddCommGroup V] [Module K V] [FiniteDimensional K V] :
 ```lean
 -- Formalized for IsHermitian matrices in Mathlib
 ```
+
+---
+
+## See also
+
+- [Determinants & Trace](determinants-trace.md) -- det multiplicativity, trace cyclicity
+- [Linear Maps](../lemmas/linear-maps.md) -- preservation of addition, scalar multiplication, kernel and range
+- [Submodules](../lemmas/submodules.md) -- submodule membership and closure properties

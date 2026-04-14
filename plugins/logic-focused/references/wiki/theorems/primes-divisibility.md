@@ -64,3 +64,11 @@ example [EuclideanDomain R] : IsPrincipalIdealRing R := inferInstance
 example [EuclideanDomain R] (a b : R) : b * (a / b) + a % b = a :=
   EuclideanDomain.div_add_mod a b
 ```
+
+---
+
+## See also
+
+- [Modular Arithmetic](modular-arithmetic.md) -- CRT, Fermat's little theorem, Euler's theorem
+- [Ring & Polynomial Theory](ring-polynomial-theory.md) -- polynomial division, Cayley-Hamilton, Hilbert's basis theorem
+- [Nat Divisibility](../lemmas/nat-divisibility.md) -- basic divisibility lemmas for natural numbers

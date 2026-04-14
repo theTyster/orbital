@@ -39,3 +39,24 @@ example [CommRing R] [Fintype n] [DecidableEq n] (A : Matrix n n R) (h : A.det â
 example [CommRing R] [Fintype n] [DecidableEq n] (A B : Matrix n n R) :
     (A * B).trace = (B * A).trace := Matrix.trace_mul_comm A B
 ```
+
+### `Matrix.det_zero`
+**Determinant of the zero matrix**: `det(0) = 0` (when the index type is nonempty).
+```lean
+example [CommRing R] [Fintype n] [DecidableEq n] [Nonempty n] :
+    (0 : Matrix n n R).det = 0 := Matrix.det_zero n R
+```
+
+### `Matrix.det_neg`
+**Determinant of negation**: `det(-A) = (-1)^n * det(A)`.
+```lean
+example [CommRing R] [Fintype n] [DecidableEq n] (A : Matrix n n R) :
+    (-A).det = (-1) ^ Fintype.card n * A.det := Matrix.det_neg A
+```
+
+---
+
+## See also
+
+- [Linear Algebra Fundamentals](linear-algebra-fundamentals.md) -- rank-nullity, bases, spectral theorem
+- [Linear Maps](../lemmas/linear-maps.md) -- kernel, range, and preservation properties of linear maps

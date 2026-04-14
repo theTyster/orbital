@@ -31,3 +31,10 @@ If there's a surjection from a finite set onto `B`, then `B` is finite.
 ```lean
 -- Set.Finite.of_surjOn
 ```
+
+---
+
+## See also
+
+- [Cardinality](cardinality.md) -- Cantor's theorem, Cantor-Bernstein-Schroeder
+- [Quantifiers & Classical Logic](../lemmas/quantifiers-classical.md) -- classical reasoning, decidability, De Morgan's laws

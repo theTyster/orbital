@@ -27,6 +27,20 @@ example [Ring R] [AddCommGroup M] [AddCommGroup N] [Module R M] [Module R N]
     (f : M →ₗ[R] N) : f 0 = 0 := f.map_zero
 ```
 
+### `LinearMap.ker`
+**Kernel of a linear map** is a submodule: `ker f = {x | f x = 0}`.
+```lean
+example [Ring R] [AddCommGroup M] [AddCommGroup N] [Module R M] [Module R N]
+    (f : M →ₗ[R] N) : Submodule R M := LinearMap.ker f
+```
+
+### `LinearMap.range`
+**Range of a linear map** is a submodule: `range f = {y | ∃ x, f x = y}`.
+```lean
+example [Ring R] [AddCommGroup M] [AddCommGroup N] [Module R M] [Module R N]
+    (f : M →ₗ[R] N) : Submodule R N := LinearMap.range f
+```
+
 ---
 
 ## See also
