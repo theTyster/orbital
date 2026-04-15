@@ -60,6 +60,10 @@ Standalone developer utilities.
 claude /install-plugin https://github.com/theTyster/logic-focused-claude
 ```
 
+## Versioning
+
+Plugin versions are tracked in `.claude-plugin/marketplace.json` — one `version` field per plugin entry. This is what the plugin manager reads. When asked to "bump the version", update the relevant plugin's version in `.claude-plugin/marketplace.json`.
+
 ## License
 
 Apache 2.0
