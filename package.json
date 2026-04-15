@@ -1,6 +1,6 @@
 {
   "name": "logic-focused-plugins",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "description": "Logic-focused skills for Claude Code: formal reasoning pipeline, proof verification, architectural analysis, parallel orchestration, and logical commits.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
