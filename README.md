@@ -13,7 +13,7 @@ Formal logic reasoning pipeline — from Prolog translation through Lean 4 proof
 ```
 a. translate-to-prolog    — Translate a codebase into a Prolog knowledge base
 b. hypothesize            — Ingest a proposition and create a hypothesis based on the Prolog KB
-c. prove-hypothesis       — Formally verify the hypothesis (loops back to b if unprovable)
+c. prove-hypothesis-lean  — Formally verify the hypothesis (loops back to b if unprovable)
 d1. synthesize-pseudocode — Combine logical patterns from multiple sources (code, Lean, Prolog) into unified pseudocode
 d2. translate-to-tests    — Combine logical patterns into TDD tests that verify those patterns
 e. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
@@ -50,7 +50,7 @@ Standalone developer utilities.
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-hypothesis and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-hypothesis-lean and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
 - **SWI-Prolog** (`swipl`): Required for translate-to-prolog, hypothesize, and multi-plan.
 
 ## Installation

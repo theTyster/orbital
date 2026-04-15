@@ -13,7 +13,7 @@ Generate a TDD test suite from proven formal properties. The tests ARE the imple
 
 ## Input
 
-- **Required**: `thoughts/proof_results.md` from the prove-hypothesis skill
+- **Required**: `thoughts/proof_results.md` from the prove-hypothesis-lean skill
 - **Optional**: `thoughts/hypothesis.md` — provides edge predicates, open assumptions, and the original proposition's scope
 - **Optional**: Any `.pl` files in `thoughts/` — Prolog KB facts expose dependency ordering, relationship constraints, and domain predicates that map to setup/teardown and edge case tests
 - **Optional**: A target codebase directory — used to detect the target language and discover existing test conventions

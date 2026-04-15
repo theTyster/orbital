@@ -17,14 +17,14 @@ It operates in three modes, which can overlap:
 
 2. **Convergence**: When logic is spread across formal artifacts (Lean proofs, Prolog KB, hypotheses, code), synthesize them into a single document that captures the combined logical picture. Contradictions and partial overlaps are first-class outputs.
 
-3. **Condensation**: When the original artifacts are too large to fit in a downstream context window, the synthesized pseudocode replaces them. Downstream skills (translate-to-tests, prove-hypothesis, formalize-in-lean) consume `pseudocode.md` directly. File paths to originals are preserved as provenance references but re-reading them is discouraged.
+3. **Condensation**: When the original artifacts are too large to fit in a downstream context window, the synthesized pseudocode replaces them. Downstream skills (translate-to-tests, prove-hypothesis-lean, formalize-in-lean) consume `pseudocode.md` directly. File paths to originals are preserved as provenance references but re-reading them is discouraged.
 
 Use whichever modes are relevant. Most real invocations involve at least two.
 
 ## When used from multi-plan
 
 When invoked as part of the multi-plan pipeline, write output to `plan/pseudocode.md` in the current worktree. The synthesized file feeds downstream skills:
-`pseudocode.md → translate-to-tests | prove-hypothesis | formalize-in-lean`
+`pseudocode.md → translate-to-tests | prove-hypothesis-lean | formalize-in-lean`
 
 ---
 
@@ -225,7 +225,7 @@ Report to the user:
 - File path written
 
 Then state which downstream skill is the natural next step based on what was synthesized:
-- If formal properties are present → **"This pseudocode is ready for `formalize-in-lean` or `prove-hypothesis`."**
+- If formal properties are present → **"This pseudocode is ready for `formalize-in-lean` or `prove-hypothesis-lean`."**
 - If structural relations dominate → **"This pseudocode is ready for `translate-to-prolog`."**
 - If the logic is implementation-complete → **"This pseudocode is ready for `translate-to-tests` or direct implementation."**
 

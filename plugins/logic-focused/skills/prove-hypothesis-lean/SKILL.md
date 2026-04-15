@@ -1,5 +1,5 @@
 ---
-name: prove-hypothesis
+name: prove-hypothesis-lean
 description: >
   Formalize a hypothesis as Lean4 theorems with machine-checked proofs.
   Reads a hypothesis file, translates properties into Lean4, and attempts

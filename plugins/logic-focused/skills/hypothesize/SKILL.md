@@ -192,11 +192,11 @@ Properties to prove in Lean4:
 Documentation for SWI-Prolog extension modules is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult the README there when you need guidance on advanced Prolog features (tabling, DCGs, constraint logic programming, etc.).
 
 ### Mathlib Lemmas & Theorems
-When writing Lean sketches in the "Formal Properties" section, consult the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` for accurate theorem names and type signatures. The wiki index at `references/wiki/index.md` is organized by mathematical domain. Using real Mathlib names in sketches gives `prove-hypothesis` a head start.
+When writing Lean sketches in the "Formal Properties" section, consult the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` for accurate theorem names and type signatures. The wiki index at `references/wiki/index.md` is organized by mathematical domain. Using real Mathlib names in sketches gives `prove-hypothesis-lean` a head start.
 
 ## Output
 
-Write `thoughts/hypothesis.md` structured for the prove-hypothesis skill.
+Write `thoughts/hypothesis.md` structured for the prove-hypothesis-lean skill.
 
 Report to the user:
 - The original proposition (one line)
@@ -206,9 +206,9 @@ Report to the user:
 - Notable counterevidence or open questions
 - File path
 
-Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run `/prove-hypothesis thoughts/hypothesis.md` to prove or revise it."**
+Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run `/prove-hypothesis-lean thoughts/hypothesis.md` to prove or revise it."**
 
-Do not automatically invoke prove-hypothesis. The user should review first.
+Do not automatically invoke prove-hypothesis-lean. The user should review first.
 
 ---
 

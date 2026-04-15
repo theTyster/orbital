@@ -2,7 +2,7 @@
 name: setup-lean-project
 description: >
   Create a thin Lean 4 project in the current working directory that references the shared
-  system-wide Mathlib clone. Use this before running prove-hypothesis
+  system-wide Mathlib clone. Use this before running prove-hypothesis-lean
   when no Lean project exists in the working directory yet. Triggers: "set up lean project",
   "create lean project", "initialize lean for this repo", or when another skill detects that
   thoughts/lean/ does not exist.
@@ -98,4 +98,4 @@ A built Lean project at `${LEAN_PROJECT}/` with:
 - `Proofs/` — directory for proof files
 - `.lake/build/` — compiled oleans (from shared clone via symlink/cache)
 
-Proof files written by `prove-hypothesis` go in `Proofs/`.
+Proof files written by `prove-hypothesis-lean` go in `Proofs/`.
