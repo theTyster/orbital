@@ -71,7 +71,7 @@ Now query the knowledge base. Each query should target a specific sub-hypothesis
 Start with the schema and contents:
 
 ```bash
-PROLOG="${CLAUDE_SKILL_DIR}/prolog"
+PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
 swipl -g "use_module('${PROLOG}/introspect'), kb_summary" -t halt facts.pl
 swipl -g "use_module('${PROLOG}/introspect'), kb_describe" -t halt facts.pl
 ```
@@ -100,7 +100,7 @@ See the Prolog Reference section at the end of this document for:
 After gathering evidence, check how much of the knowledge base your queries actually exercised:
 
 ```bash
-PROLOG="${CLAUDE_SKILL_DIR}/prolog"
+PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
 swipl -g "
   use_module('${PROLOG}/prolog_coverage_ai'),
   use_module('${PROLOG}/introspect'),
@@ -206,9 +206,11 @@ Report to the user:
 - Notable counterevidence or open questions
 - File path
 
-Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run `/prove-hypothesis-lean thoughts/hypothesis.md` to prove or revise it."**
+Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run one of:"**
+- **`/prove-hypothesis-prolog thoughts/hypothesis.md`** — verify in Prolog (model-based, no extra setup, best for relational/structural properties)
+- **`/prove-hypothesis-lean thoughts/hypothesis.md`** — verify in Lean 4 (machine-checked, best for mathematical/abstract properties)
 
-Do not automatically invoke prove-hypothesis-lean. The user should review first.
+Do not automatically invoke either proof skill. The user should review first.
 
 ---
 
@@ -227,7 +229,7 @@ swipl -g "<goal>" -t halt <files_to_load...>
 ### Loading facts and modules
 
 ```bash
-PROLOG="${CLAUDE_SKILL_DIR}/prolog"
+PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
 
 # Load a facts file and run a goal
 swipl -g "<goal>" -t halt facts.pl
@@ -238,7 +240,7 @@ swipl -g "use_module('${PROLOG}/introspect'), <goal>" -t halt facts.pl
 
 ### Introspect module
 
-Bundled at `${CLAUDE_SKILL_DIR}/prolog/introspect.pl`. Explores any facts file without knowing its schema in advance.
+Bundled at `${CLAUDE_SKILL_DIR}/../../prolog/introspect.pl`. Explores any facts file without knowing its schema in advance.
 
 | Predicate | What it does |
 |-----------|-------------|
@@ -276,10 +278,10 @@ forall(path(cli_tool, X), format('cli_tool transitively reaches ~w~n', [X]))
 
 ### Coverage module
 
-Bundled at `${CLAUDE_SKILL_DIR}/prolog/prolog_coverage_ai.pl`. Tracks which clauses are exercised during query execution.
+Bundled at `${CLAUDE_SKILL_DIR}/../../prolog/prolog_coverage_ai.pl`. Tracks which clauses are exercised during query execution.
 
 ```bash
-PROLOG="${CLAUDE_SKILL_DIR}/prolog"
+PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
 swipl -g "
   use_module('${PROLOG}/prolog_coverage_ai'),
   use_module('${PROLOG}/introspect'),

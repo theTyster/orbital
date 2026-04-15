@@ -190,7 +190,7 @@ If a property exhausts its correction budget:
 
 **Loop back to hypothesize:**
 
-When a property appears genuinely unprovable (logical contradiction or persistent type mismatches after modeling revisions), invoke the hypothesize skill:
+When a property appears genuinely unprovable (logical contradiction or persistent type mismatches after modeling revisions), stop and tell the user to re-run hypothesize, providing this context:
 
 ```
 The following property from hypothesis "{title}" could not be proven:
