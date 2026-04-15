@@ -3,7 +3,8 @@ name: translate-to-prolog
 description: >
   Translate any logical system — domain rules, code behavior, requirements, data models —
   into a Prolog facts file. Choose predicates that naturally fit the domain.
-  Captures facts, relationships, and constraints. Validates with SWI-Prolog.
+  Captures facts, relationships, constraints, and patterns. Validates with SWI-Prolog.
+  Builds the knowledge base incrementally, giving faster feedback and early error detection.
   Use when: "translate this to prolog", "model this logic", "document this system as prolog facts".
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
@@ -14,7 +15,10 @@ argument-hint: "[source code, requirements, domain rules, or any logical system 
 
 Document any logical system as a validated Prolog facts file. The output is a
 knowledge base that can be loaded, queried, and inspected — a precise, executable
-record of what is true, how things relate, and what constraints must hold.
+record of what is true, how things relate, what constraints must hold, and what patterns emerge.
+The knowledge base is built incrementally: each source file is read, analyzed, and its Prolog
+representation is written or appended to the facts file before the next file is processed.
+This approach provides faster feedback and catches errors early.
 
 ## Prerequisites
 
@@ -29,8 +33,8 @@ Accept any of:
 - **Data models** — schemas, relationships, cardinality constraints
 - **Existing documentation** — any structured knowledge worth querying later
 
-Ensure that you have a complete understanding of a logical system before documenting it. Use `Glob`, `Grep`, and `Read` to explore files.
-Use `Agent(Explore)` for broad codebase understanding.
+Use `Glob`, `Grep`, and `Read` to explore files, if that is relevant to what you are translating.
+Use `Agent(Explore)` for broad codebase understanding, if that is relevant to what you are translating.
 
 ## Process
 
@@ -40,12 +44,30 @@ Understand what you're modeling before choosing predicates. Ask:
 - What are the key *entities* or *things* in this domain?
 - How do they *relate* to each other?
 - What *rules* or *invariants* must always hold?
+- What identifiable structural patterns exist in this domain?
 
-### 2. Create the Knowledge Base
-- Choose a model for your predicates.
-- Capture Facts
-- Capture Relationships
-- Capture Constraints
+### 2. Create the Knowledge Base (Incremental)
+
+#### When reading files:
+On the first iteration read the first 2-3 most relevant files. Starting out with 2-3 files in context before writing prolog makes it easier to identify relationships and patterns. Subsequent iterations should read one file before adding or appending to the Prolog KB.
+
+For each source file in sequence:
+
+1. **Read and analyze any relevant files** — Use `Read`, `Glob`, or `Grep` to understand logical content.
+2. **Extract and document patterns** — Identify recurring structures, idioms, or conventions. Document these as comments in the facts file or as a separate patterns section. Examples: common error handling patterns, naming conventions, state transition idioms, compositional structures.
+3. **Capture facts** — Write ground facts (true statements about entities, values, states).
+4. **Capture relationships** — Write rules that express how entities relate or compose.
+5. **Capture constraints** — Write validation rules that express invariants or domain rules.
+6. **Write/append to facts file** — Immediately write or append all facts, relationships, and constraints from this file to `thoughts/facts.pl`. Do not batch all file reading first.
+7. **Move to the next file** — Repeat steps 1–6 for each source file.
+
+This incremental approach gives faster feedback, makes errors easier to localize, and allows the facts file to grow in parallel with your understanding.
+
+#### When documenting more abstract logical systems:
+- Perform any referential lookups on helpful `swi-prolog` extensions.
+- Web search any domain knowledge which may help illustrate the domain logic.
+- Question the user on facts, constraints, relationships and patterns as needed.
+Be creative in how you explore topics. As long as the information you document in Prolog is true, there is no need to spend significant energy on reasoning about the actual logic yourself. That is what Prolog is for.
 
 ### 3. Validate
 
@@ -90,6 +112,7 @@ Report:
 - File path
 - Count of facts per major predicate
 - Any constraint rules included
+- Patterns captured — recurring structures, idioms, conventions, or compositional rules discovered during translation
 
 ## References
 

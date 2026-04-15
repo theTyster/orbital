@@ -22,6 +22,8 @@ Read all available inputs before writing a single test. The richest test suites 
 
 ## Process
 
+**When a target codebase directory is provided, Step 2 (Discover Test Patterns) happens immediately after Step 1, before any test mapping begins. This discovery ensures all subsequent steps generate tests that naturally conform to the project's existing testing conventions.**
+
 ### 1. Read All Inputs
 
 Read `thoughts/proof_results.md`. Extract for each proven property:
@@ -43,18 +45,52 @@ If `.pl` files exist in `thoughts/`, scan them for:
 - Exclusion predicates (e.g., `mutually_exclusive/2`, `not_allowed/2`) → negative tests
 - Domain facts that make good test fixtures (concrete entities the tests can use as inputs)
 
-### 2. Detect Target Language
+### 2. Discover Test Patterns (Early step — do this first when target provided)
 
-If a target codebase directory was provided:
+**If a target codebase directory was provided**, use the Explore sub-agent to discover the testing landscape before mapping properties to tests. This ensures generated tests naturally conform to existing patterns without additional manual matching.
 
-1. Glob for test files: `**/*test*`, `**/*spec*`, `**/*_test.*`, `**/*Test.*`
-2. Read 2–3 existing test files to learn the framework in use (jest, pytest, RSpec, JUnit, Go test, etc.)
-3. Note the naming conventions: file naming, function/method naming, assertion style, fixture setup patterns
-4. Identify the import style and test runner invocation
+#### 2a. Invoke Explore Sub-Agent
 
-If no target directory was given, or no test files are found, write **pseudotest cases** using a given/when/then structure (see Output Format below).
+Send the following request to the Explore sub-agent (via `Agent(Explore)`):
 
-When a language is detected, match its idioms exactly — use `describe`/`it` for Jest/RSpec, `def test_` for pytest, `func Test` for Go, `@Test` for JUnit, etc. The goal is tests the implementor can run immediately with no adaptation.
+> Explore this codebase to understand its test infrastructure:
+> 1. Identify the test framework(s) in use (jest, pytest, RSpec, JUnit, Go `testing` package, etc.)
+> 2. Discover naming conventions: how are test files named? (e.g., `*.test.js`, `*_test.py`, `test*.rs`)
+> 3. Find examples of assertion styles and patterns (e.g., `expect()`, `assert_that()`, `assertEqual`, custom matchers)
+> 4. Identify fixture and setup patterns (beforeEach/beforeAll, setUp methods, fixture factories, test utilities)
+> 5. Map test organization: describe/it nesting, flat function-based tests, parameterized/table-driven tests
+> 6. Locate custom test helpers and utilities that should be reused in generated tests
+> 7. Note any non-standard testing patterns specific to this project
+> 
+> Provide a summary of findings for each category. Focus on patterns the generated tests should match.
+
+The Explore agent returns a summary report of the test landscape.
+
+#### 2b. Extract Testing Conventions from Explore Output
+
+From the Explore report, extract:
+- **Framework**: Jest, pytest, RSpec, JUnit, Go test, Mocha, etc.
+- **File naming**: e.g., `foo.test.ts`, `test_foo.py`, `foo_spec.rb`
+- **Test function naming**: e.g., `test "should do X"`, `def test_do_x`, `func TestDoX`
+- **Assertion style**: library and idiom (expect, assert, assert!, @Test decorator, etc.)
+- **Fixture patterns**: function, class method, factory, inline setup
+- **Nesting conventions**: describe/it blocks, flat functions, parameterized arrays
+- **Custom utilities**: helpers or test base classes to inherit from or import
+- **Non-standard patterns**: project-specific idioms to match
+
+**If no target directory was given, or Explore finds no test files**, skip to step 2c and use pseudotest format instead.
+
+#### 2c. Match Detected Idioms Exactly
+
+When a target framework is identified, match its idioms exactly in generated tests:
+- Use `describe`/`it` for Jest/RSpec/Mocha
+- Use `def test_` naming for pytest
+- Use `func Test` for Go
+- Use `@Test` annotations for JUnit/TestNG
+- Use `#[test]` for Rust
+- Replicate the project's nesting depth, assertion library, and fixture strategy
+
+The goal is tests the implementor can run immediately without adaptation. A test that looks foreign will be rewritten.
 
 ### 3. Map Proven Properties to Tests
 
@@ -257,6 +293,6 @@ Report:
 
 - **Flag gaps loudly**: If a proven property resists translation (existential witness, infinite structure, timing property), put it in the COVERAGE GAPS block at the bottom of the file. Do not silently drop formal guarantees. The gap section tells the implementor where additional test investment is needed.
 
-- **Match the existing test style exactly**: If the project uses `describe`/`it` nesting, use it. If it uses flat `test()` functions, use those. If it uses fixtures over setup methods, follow that. Tests that look foreign are tests that get rewritten before they're run.
+- **Match the existing test style exactly**: The Explore sub-agent (Step 2) discovers the project's testing conventions early. Use those discoveries to ensure every generated test matches the framework, naming, assertion style, nesting, and fixture patterns already in use. Tests that look foreign are tests that get rewritten before they're run. Matching the style means generated tests integrate seamlessly and are run without adaptation.
 
 - **Don't over-specify implementation**: A test that asserts the exact internal algorithm (e.g., checks a specific intermediate data structure) is fragile and defeats the purpose. Assert the proven property — the output contract — not the strategy for achieving it.
