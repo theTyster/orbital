@@ -87,7 +87,7 @@ For each property shape, prefer a specific encoding strategy:
 |---------------|----------|
 | "All X satisfy P" | `forall(X, P(X))` or `\+ (X, \+ P(X))` |
 | "No X satisfies P" | `\+ P(X)` or `findall(X, P(X), [])` |
-| "There exists X" | find first with `P(X), !`, confirm with `findall` |
+| "There exists X" | `P(X), cut` (find first), confirm with `findall` |
 | "A reaches B transitively" | Recursive `reaches/2` rule + query |
 | "A cannot reach B" | `\+ reaches(A, B)` |
 | "X is unique" | `findall(X, P(X), Xs), length(Xs, 1)` |
