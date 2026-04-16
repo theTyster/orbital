@@ -235,10 +235,12 @@ swipl -g "
 Coverage signals confidence:
 - **>60%**: The property is well-grounded — most facts contributed evidence.
 - **30–60%**: Acceptable for focused properties. Note which predicates went untouched.
-- **<30%**: Flag as low-confidence. The KB may lack the relevant facts to decide this property.
+- **<30%**: Flag as a needed adaptation. The KB lacks the relevant facts because they don't
+  exist yet — this is a gap to be filled, not a reason to skip the property.
 
 If important predicates show 0% coverage and they seem relevant to the property, investigate
-before marking as VERIFIED.
+before marking as VERIFIED. If the facts simply aren't present, mark as NEEDED ADAPTATION —
+these translate directly into failing tests that drive implementation.
 
 ### 5. Correction Budget
 
@@ -271,7 +273,7 @@ swipl -g "
 | Counterexample is a real violation | Property is false in the model | **Loop back to hypothesize** |
 | Counterexample is a KB error | Facts file has a mistake | Fix the facts file and re-verify |
 | Property encoding is wrong | Rules don't capture the intent | Fix the encoding and retry |
-| KB is incomplete | Missing facts → can't decide | Mark as ASSUMED with note |
+| KB is incomplete | Missing facts → gap to fill | Mark as NEEDED ADAPTATION with note |
 
 **Loop back to hypothesize** when a genuine counterexample shows the property can't
 hold in this model. Stop and tell the user to re-run hypothesize, providing this context:
@@ -303,7 +305,7 @@ Write results to `thoughts/proof_results.md`:
 - Properties attempted: N
 - Verified: M
 - Falsified (looped back): K
-- Assumed (low evidence): J
+- Needed adaptations (KB gap): J
 - Status: {complete | partial | failed}
 
 ## Verified Properties
@@ -321,12 +323,12 @@ Write results to `thoughts/proof_results.md`:
 - **Counterexample**: {the specific evidence}
 - **Action**: {looped back to hypothesize / KB error fixed / property weakened}
 
-## Assumed Properties
+## Needed Adaptations
 
 ### {property_name}
 - **Description**: {natural language}
-- **Reason**: {why the KB lacks sufficient evidence}
-- **What would resolve it**: {what additional facts would decide this}
+- **Gap**: {what facts are missing and why they don't exist yet}
+- **Failing test**: {what a test asserting this property would check — designed to fail until implemented}
 
 ## Proof File
 `thoughts/prolog_proofs.pl` — contains all property encodings and verification goals.
@@ -336,16 +338,18 @@ Run with: `swipl -g halt -l {facts_file} thoughts/prolog_proofs.pl`
 ## Verification
 
 Never declare a property verified if the verification directive hasn't run cleanly (no
-Prolog errors, no FALSIFIED output). Low coverage (<30%) should be flagged, not silently
-accepted.
+Prolog errors, no FALSIFIED output). Low coverage (<30%) means the KB lacks the facts to
+decide the property — mark as NEEDED ADAPTATION, not silently accepted or skipped. Needed
+adaptations are intentionally failing claims: they drive the next implementation cycle.
 
 ## Output
 
 All artifacts are written to `thoughts/` (create it if it doesn't exist):
 
 - `thoughts/prolog_proofs.pl` — formal property encodings with verification directives
-- `thoughts/proof_results.md` — structured results summary
+- `thoughts/proof_results.md` — structured results summary (VERIFIED / FALSIFIED / NEEDED ADAPTATION)
 - If any properties looped back: a request to re-run hypothesize
+- Needed adaptations feed directly into translate-to-tests as pre-failing test cases
 
 The proofs file is designed to be re-run at any time against the original facts file.
 If the KB is ever updated, re-running it shows immediately which properties still hold.
