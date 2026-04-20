@@ -33,6 +33,21 @@ Read a structured hypothesis file and translate each formal property into a Lean
 
 3. **Hypothesis file**: A `thoughts/hypothesis.md` from the hypothesize skill.
 
+## Delegate to `lean-expert`
+
+The primary way to execute this skill is to spawn the `logic-focused:lean-expert` sub-agent with the `Agent` tool. That agent is the Lean 4 proof engineer: it treats `lake build` as its reasoning tool rather than chain-of-thought, and applies adversarial verification patterns (interpretation checking, extracted-lemma counterexample search, calibrated abstention). Running Lean proofs through a sub-agent also isolates the noisy compiler output from your main context.
+
+Brief the sub-agent with:
+- The hypothesis file path
+- The Lean project root (`thoughts/lean`) and proofs directory (`thoughts/lean/Proofs`)
+- The shared Mathlib location (`~/.lean/mathlib4`)
+- The per-property correction budget (5 inner / 3 outer, see §4)
+- An instruction to produce `thoughts/proof_results.md` in the format in §7
+- An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
+- Pointer to the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` and to `references/lean-proof-method.md`
+
+Do the work inline only for very small proofs or when the user has explicitly asked you to prove it yourself. The rest of this file is both your guide for that case and the briefing material for the sub-agent.
+
 ## Proof Methodology
 
 Read `references/lean-proof-method.md` before writing any proofs. The key principles are summarized here but the reference has full detail with examples.

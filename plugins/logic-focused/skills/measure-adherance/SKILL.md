@@ -14,7 +14,7 @@ description: >
   this doc", "alignment report", "how well do these match", "grade against",
   "how consistent are these", "does this conform to", "coverage of spec".
 user-invocable: true
-allowed-tools: Bash, Read, Glob, Grep, Write
+allowed-tools: Bash, Read, Glob, Grep, Write, Agent
 argument-hint: "[resource1] [resource2] [...] [--prime resource1]"
 ---
 
@@ -103,7 +103,16 @@ swipl -g "halt" -t halt thoughts/adherence_facts.pl
 
 Fix any syntax errors before proceeding.
 
+#### Delegate claim extraction to `agent-of-truth`
+
+For resources that are large or unfamiliar, spawn the `logic-focused:agent-of-truth` sub-agent with the `Agent` tool to do the extraction. It will choose consistent, domain-appropriate predicates and validate the resulting facts file with `swipl`. Brief it with all resource paths at once so it picks predicate names that line up across resources — inconsistent predicate naming is the single biggest cause of false "gap" and "contradiction" results in this skill.
+
 ### 4. Run Adherence Queries
+
+#### Delegate the queries to `agent-of-questions`
+
+Prefer spawning the `logic-focused:agent-of-questions` sub-agent with the `Agent` tool to run the adherence queries. It will introspect `thoughts/adherence_facts.pl`, invoke `adherence_report/1`, `symmetric_report/0`, `find_contradictions/1`, and `universal_claim/1`, and return structured findings. Hand it the facts file path, the list of resource IDs, and the prime designation (or "none") and ask it to produce the inputs needed for §5 scoring.
+
 
 Load the bundled adherence module and run the standard queries:
 

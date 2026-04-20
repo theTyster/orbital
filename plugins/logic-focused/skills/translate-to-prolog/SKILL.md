@@ -48,6 +48,20 @@ Understand what you're modeling before choosing predicates. Ask:
 
 ### 2. Create the Knowledge Base (Incremental)
 
+#### Delegate the heavy lifting to `agent-of-truth`
+
+For any non-trivial domain (more than a handful of files, or any unfamiliar subject matter), spawn the `logic-focused:agent-of-truth` sub-agent with the `Agent` tool to do the modeling. That agent is the Prolog KB construction specialist — it picks predicates that fit the domain, uses DCGs where helpful, writes constraint rules, and validates the result with `swipl`. Doing this inside a sub-agent keeps predicate-design deliberation out of the main context window and gives you a cleaner, more idiomatic KB.
+
+Brief the agent with:
+- The source material (file paths, or the domain description)
+- The target output path (`thoughts/facts.pl` by default)
+- Any predicates or constraints the user has already asked for
+- The validation tiers below — the agent must run each one before reporting done
+
+Only skip delegation when the input is tiny (a single short file, a hand-written rule list) and the predicate design is obvious. In that case do steps 2a–2c inline.
+
+#### Inline procedure (when not delegating)
+
 #### When reading files:
 On the first iteration read the first 2-3 most relevant files. Starting out with 2-3 files in context before writing prolog makes it easier to identify relationships and patterns. Subsequent iterations should read one file before adding or appending to the Prolog KB.
 

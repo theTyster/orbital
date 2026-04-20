@@ -11,7 +11,7 @@ description: >
   verification", "prove these properties without lean", "verify with prolog instead of lean".
 user-invocable: true
 model: opus
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[hypothesis file path] [prolog facts file path]"
 ---
 
@@ -67,6 +67,22 @@ no_cycle :- \+ reaches(X, X).
 ```
 
 This structure is self-documenting, executable, and produces evidence either way.
+
+## Delegate to `prolog-prover`
+
+The primary way to execute this skill is to spawn the `logic-focused:prolog-prover` sub-agent with the `Agent` tool. That agent is the Prolog formal-proof specialist: it combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries (CLP(FD), CLP(B), CLP(Q/R)) with tabling, and treats every proof as a counterexample search. It owns the correction budget and the encoding-strategy choices described below.
+
+Brief the sub-agent with:
+- The hypothesis file path (e.g. `thoughts/hypothesis.md`)
+- The facts file path
+- The target proof file path (`thoughts/prolog_proofs.pl`)
+- The per-property correction budget (5 inner / 3 outer, see §5)
+- An instruction to produce `thoughts/proof_results.md` in the format in §7
+- An instruction that when a property is genuinely falsified it must stop and surface the counterexample rather than patch the property to pass
+
+For standalone intermediate queries (spot-checking a helper predicate, inspecting the KB schema mid-proof) spawn `logic-focused:agent-of-questions` instead — it's lighter weight and built for introspection queries.
+
+Execute the methodology below inline only when the proof is small (1–2 simple properties) or when the user has asked you to do it yourself. The rest of this file is both your guide for that case and the briefing material for the sub-agent.
 
 ## Proof Methodology
 

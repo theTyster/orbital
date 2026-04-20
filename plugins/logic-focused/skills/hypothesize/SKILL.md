@@ -3,7 +3,7 @@ name: hypothesize
 description: >
   Explore a proposition by decomposing it into falsifiable hypotheses and gathering evidence from a Prolog knowledge base. Teaches logical heuristics for breaking a claim apart, querying for supporting and contradicting evidence, and producing a structured hypothesis ready for formal verification in Lean4. Works with any Prolog facts file. Use when: "explore this hypothesis", "what would break if we changed X", "is this claim true in the model", "analyze the knowledge base", "what can we derive from these facts", "what relationships exist", "query the prolog facts", "hypothesize about", "what if we changed", "is it safe to modify".
 user-invocable: true
-allowed-tools: Bash, Write
+allowed-tools: Bash, Write, Agent
 argument-hint: "[prolog facts file] [proposition or question to explore]"
 ---
 
@@ -65,6 +65,20 @@ Write each sub-hypothesis as a concrete, falsifiable statement:
 ### 3. Gather Evidence
 
 Now query the knowledge base. Each query should target a specific sub-hypothesis.
+
+#### Delegate querying to `agent-of-questions`
+
+Prefer spawning the `logic-focused:agent-of-questions` sub-agent with the `Agent` tool to run the evidence-gathering pass. That agent is the Prolog query specialist — it never reads `.pl` files directly, it discovers the schema through `swipl` introspection (`kb_summary`, `kb_describe`, `kb_find`, `kb_related`, `kb_graph`, `kb_stats`) and writes targeted queries against whatever predicates actually exist. This avoids a common failure mode where the main agent guesses at predicate names from memory and writes queries that silently return empty.
+
+Brief the sub-agent with:
+- The facts file path
+- Each sub-hypothesis from step 2, phrased as a question it should answer
+- An instruction to return, for each sub-hypothesis: the queries it ran, the raw results, and whether the evidence supports, contradicts, or is neutral
+- An instruction to actively search for counterexamples, not just confirmations
+
+If the KB is clearly missing facts the hypothesis depends on, spawn `logic-focused:agent-of-truth` to extend the KB before continuing — don't try to patch facts by hand.
+
+Drop to inline querying only when the KB is tiny and the schema is already in your head from this same session.
 
 #### Understand the KB
 
