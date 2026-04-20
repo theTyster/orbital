@@ -82,7 +82,7 @@ Brief the sub-agent with:
 
 For standalone intermediate queries (spot-checking a helper predicate, inspecting the KB schema mid-proof) spawn `logic-focused:agent-of-questions` instead — it's lighter weight and built for introspection queries.
 
-Execute the methodology below inline only when the proof is small (1–2 simple properties) or when the user has asked you to do it yourself. The rest of this file is both your guide for that case and the briefing material for the sub-agent.
+Execute the methodology below inline only when the user has explicitly asked you to prove it yourself in this turn. Property count is not a reason — even a single transitive-closure proof benefits from the specialist's counterexample-search discipline and correction budget, and inline execution floods the main context with swipl output. When in doubt, delegate. The rest of this file is both your guide for the inline case and the briefing material for the sub-agent.
 
 ## Proof Methodology
 

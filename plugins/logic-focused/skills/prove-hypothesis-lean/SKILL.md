@@ -46,7 +46,7 @@ Brief the sub-agent with:
 - An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
 - Pointer to the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` and to `references/lean-proof-method.md`
 
-Do the work inline only for very small proofs or when the user has explicitly asked you to prove it yourself. The rest of this file is both your guide for that case and the briefing material for the sub-agent.
+Do the work inline only when the user has explicitly asked you to prove it yourself in this turn. Proof size is not a reason — even a one-liner benefits from the specialist's `lake build` discipline and Mathlib familiarity, and inline execution floods the main context with compiler output. When in doubt, delegate. The rest of this file is both your guide for the inline case and the briefing material for the sub-agent.
 
 ## Proof Methodology
 

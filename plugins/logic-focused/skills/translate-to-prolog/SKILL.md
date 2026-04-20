@@ -58,7 +58,7 @@ Brief the agent with:
 - Any predicates or constraints the user has already asked for
 - The validation tiers below — the agent must run each one before reporting done
 
-Only skip delegation when the input is tiny (a single short file, a hand-written rule list) and the predicate design is obvious. In that case do steps 2a–2c inline.
+Skip delegation only when the user has explicitly asked you to translate it yourself in this turn. "The input looks small" is not a reason — small inputs still benefit from a specialist picking consistent predicate names, and inline execution clutters the main context with validation output. When in doubt, delegate.
 
 #### Inline procedure (when not delegating)
 

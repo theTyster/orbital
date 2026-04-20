@@ -78,7 +78,7 @@ Brief the sub-agent with:
 
 If the KB is clearly missing facts the hypothesis depends on, spawn `logic-focused:agent-of-truth` to extend the KB before continuing — don't try to patch facts by hand.
 
-Drop to inline querying only when the KB is tiny and the schema is already in your head from this same session.
+Drop to inline querying only when the user has explicitly asked you to query it yourself in this turn. KB size is not a reason — a specialist running `swipl` introspection finds relationships you'd miss by eye, and delegation keeps the raw query noise out of the main context. When in doubt, delegate.
 
 #### Understand the KB
 

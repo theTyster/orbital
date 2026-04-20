@@ -105,7 +105,7 @@ Fix any syntax errors before proceeding.
 
 #### Delegate claim extraction to `agent-of-truth`
 
-For resources that are large or unfamiliar, spawn the `logic-focused:agent-of-truth` sub-agent with the `Agent` tool to do the extraction. It will choose consistent, domain-appropriate predicates and validate the resulting facts file with `swipl`. Brief it with all resource paths at once so it picks predicate names that line up across resources — inconsistent predicate naming is the single biggest cause of false "gap" and "contradiction" results in this skill.
+Spawn the `logic-focused:agent-of-truth` sub-agent with the `Agent` tool to do the extraction. Skip delegation only when the user has explicitly asked you to extract inline this turn — resource size is not a reason. It will choose consistent, domain-appropriate predicates and validate the resulting facts file with `swipl`. Brief it with all resource paths at once so it picks predicate names that line up across resources — inconsistent predicate naming is the single biggest cause of false "gap" and "contradiction" results in this skill.
 
 ### 4. Run Adherence Queries
 
