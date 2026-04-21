@@ -60,7 +60,7 @@
     {
       "name": "utilities",
       "description": "Standalone developer utilities: logical commit generation and presentation creation.",
-      "version": "2.0.3",
+      "version": "2.1.0",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",
