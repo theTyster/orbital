@@ -59,8 +59,8 @@
     },
     {
       "name": "utilities",
-      "description": "Standalone developer utilities: logical commit generation and presentation creation.",
-      "version": "2.1.0",
+      "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
+      "version": "2.2.0",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",
