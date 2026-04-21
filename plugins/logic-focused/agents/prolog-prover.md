@@ -9,7 +9,7 @@ description: >
   for rational/real arithmetic, and tabling for safe recursion. Every proof
   is a counterexample search — a property is verified when exhaustive
   falsification fails.
-tools: Bash, Read, Write, Edit, Glob, Grep
+tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Prolog Prover Agent
@@ -294,7 +294,7 @@ NEEDED ADAPTATION means the KB needs to grow before the property can be properly
 
 ## SWI-Prolog Extension Reference
 
-Full documentation at `references/swi-prolog-extensions/`:
+The quick-reference below is enough to pick a direction:
 
 | Need | Extension | Import |
 |------|-----------|--------|
@@ -306,4 +306,4 @@ Full documentation at `references/swi-prolog-extensions/`:
 | Solution collection | Meta-predicates | `library(apply)`, `library(aggregate)` |
 | Parsing structured input | DCG | Built-in (`-->`) |
 
-Read the relevant reference file when you need an extension's full API and usage patterns.
+When you need the full API or usage patterns for an extension, spawn the `logic-focused:bookworm` sub-agent via the `Agent` tool with a description of the proof problem you're encoding. Bookworm returns a targeted recipe (minimal snippet plus gotchas) instead of the raw reference. Don't read the extension docs directly.

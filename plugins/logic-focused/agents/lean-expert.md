@@ -7,7 +7,7 @@ description: >
   adversarial verification patterns from competition mathematics: interpretation
   checking, counterexample search on extracted lemmas, and calibrated abstention
   when a proof won't close.
-tools: Bash, Read, Write, Edit, Glob, Grep
+tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 ---
 
 # Lean Expert Agent
@@ -136,12 +136,9 @@ If a property exhausts its correction budget (5 inner × 3 outer = 15 attempts):
 
 ## Mathlib Reference
 
-The wiki at `references/wiki/` covers:
-- `references/wiki/index.md` — full index by mathematical domain
-- `references/wiki/lemmas/` — individual lemma pages with descriptions and usage
-- `references/wiki/theorems/` — famous theorems with Lean 4 examples
+You do not read the Mathlib wiki directly — it is owned by the `logic-focused:bookworm` sub-agent. Spawn bookworm via the `Agent` tool with the current Lean goal state and a one-line description of what you're trying to prove. Bookworm returns the relevant lemma names with statements and any gotchas (implicit-argument quirks, namespace issues, simp-normal-form mismatches) that the raw wiki page would bury. Consult bookworm before resorting to search tactics (`exact?`, `apply?`, `simp?`) — a named lemma is faster and much less context-hungry. Bookworm covers natural numbers, ordering, divisibility, algebra, sets, lists, topology, linear algebra, and more, and can extend to web research of the Mathlib docs when the wiki is thin.
 
-Consult the relevant wiki page before resorting to search tactics. The wiki covers natural numbers, ordering, divisibility, algebra, sets, lists, topology, linear algebra, and more.
+The skill-local `references/lean-proof-method.md` methodology doc is yours to read directly — it stays with the lean proving skill and is not routed through bookworm.
 
 ## Verification
 

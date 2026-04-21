@@ -224,7 +224,7 @@ When the domain calls for it, use the right SWI-Prolog extension:
 | Namespace isolation | Modules | `:- module(Name, [Exports]).` |
 | Runtime fact modification | Dynamic predicates | `:- dynamic pred/arity.` |
 
-Full documentation: `references/swi-prolog-extensions/README.md`
+For a full recipe (setup, minimal snippet, gotchas) on any of these extensions, spawn the `logic-focused:bookworm` sub-agent via the `Agent` tool with a description of the KB problem you are modelling. Bookworm owns the extension reference — don't read it directly. Bookworm can also pull in web research or project-specific wiki notes when the built-in reference is thin.
 
 ## Output
 
