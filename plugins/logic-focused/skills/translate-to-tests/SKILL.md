@@ -161,7 +161,15 @@ After mapping all proven properties, scan for anything that could not be transla
 
 Report every gap at the end of the test file in a dedicated comment block.
 
-### 8. Write the Test File
+### 8. Mark Every Generated Test as Skipped
+
+Before writing, apply a skip/pending annotation to every test in the file using the target framework's idiom. This ensures the newly-added suite does not turn CI red on merge — the tests are a specification, not a regression check on existing behavior.
+
+The implementor's workflow is: pick the next skipped test top-to-bottom, remove the skip annotation, run the suite, watch it fail, implement until it passes, commit, repeat. The skip state is the TDD progress ledger.
+
+Open-assumption stubs (from Step 4) stay skipped with their own reason — `skip(reason="assumption not proven — verify manually")` — so the implementor can distinguish "not yet implemented" from "needs manual verification."
+
+### 9. Write the Test File
 
 Write to `thoughts/tests/{filename}` where filename follows the target language convention:
 - Python: `test_proof_properties.py`
@@ -190,7 +198,9 @@ When a target language is detected, the file should open with a header comment b
 //
 // These tests encode machine-verified invariants. They are written to FAIL
 // until the implementation is correct. Work top-to-bottom: each phase builds
-// on the last. Do not mark a test as skipped — a failing test is information.
+// on the last. Every generated test is marked skipped/pending so the suite
+// stays green in CI — the implementor unskips each test as they drive it to
+// passing.
 
 // --- Phase 1: {phase name} ---
 // Implements properties: {list}
@@ -281,7 +291,7 @@ Report:
 
 - **Tests ARE the plan**: Do not write a separate implementation plan document. The test file, read top-to-bottom, is the implementor's roadmap. Phase headers, property comments, and gap annotations carry all the planning information.
 
-- **Failing is correct**: Every test in the file should fail on a blank implementation. If a test would pass without any implementation, it is not testing anything. Check your assertions — trivially-true assertions (e.g., `expect(undefined).toBeFalsy()`) are silent specification rot.
+- **Failing is correct, but skip by default**: Every test in the file should fail on a blank implementation. If a test would pass without any implementation, it is not testing anything. Check your assertions — trivially-true assertions (e.g., `expect(undefined).toBeFalsy()`) are silent specification rot. Because these tests are generated ahead of implementation, mark every generated test as skipped/pending in the target framework's idiom so the newly-added suite does not break CI on merge. The implementor unskips each test one at a time as they drive it green — the skip annotation doubles as a progress marker.
 
 - **Name tests after properties, not after code**: `test_auth_token_invalid_after_expiry` (what must hold) is better than `test_tokenService_checkExpiry` (which function is called). The property name survives refactoring; the function name may not.
 
