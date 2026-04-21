@@ -20,6 +20,15 @@ Step c has two alternative proof backends — use Lean for mathematical/abstract
 - **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
 - **measure-adherance** — Score how well two or more resources adhere to each other using Prolog-based relational analysis
 
+## Reference Librarian
+
+All central reference material is owned by the **bookworm** sub-agent. Two wikis live under `references/`:
+
+- `prolog-wiki/` — general SWI-Prolog knowledge (extensions, libraries, idioms)
+- `lean4-wiki/` — general Lean 4 and Mathlib knowledge (lemmas, theorems, tactics)
+
+Both follow the same shape: a root `index.md` plus one subdirectory per category, with one markdown file per entry. Skills and agents in this plugin consult bookworm for library, lemma, extension, and strategy questions instead of reading the wikis directly. Bookworm also does web research and maintains project-specific extensions at `thoughts/prolog-wiki/` and `thoughts/lean4-wiki/` in the working directory, mirroring the marketplace layout. The only exception is the lean proof methodology doc at `skills/prove-hypothesis-lean/references/lean-proof-method.md`, which stays with the lean proving skill.
+
 ## Prerequisites
 
 - **Lean 4** (via [elan](https://github.com/leanprover/elan)) — use `setup-lean-mathlib` for initial setup

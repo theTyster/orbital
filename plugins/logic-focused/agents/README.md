@@ -31,6 +31,12 @@ Prolog query specialist. Discovers KB structure through `swipl` introspection al
 
 **Used by**: hypothesize, prove-hypothesis-prolog, measure-adherance
 
+### bookworm
+
+Librarian for the plugin's central reference material. Owns exclusive access to `references/prolog-wiki/` and `references/lean4-wiki/`, augments them with web research, and maintains project-specific wiki extensions under `thoughts/prolog-wiki/` and `thoughts/lean4-wiki/` in the caller's working directory. Both wikis follow the same shape: a root `index.md` plus one subdirectory per category (e.g. `extensions/`, `lemmas/`, `theorems/`), one markdown file per entry. Returns task-shaped briefings (recommended library/lemma, minimal snippet, gotchas) rather than raw reference dumps. The only skill-local reference it does *not* own is `skills/prove-hypothesis-lean/references/lean-proof-method.md`, which stays with the lean proving skill.
+
+**Used by**: translate-to-prolog, hypothesize, prove-hypothesis-lean, measure-adherance, lean-expert, prolog-prover, agent-of-truth
+
 ### prolog-prover
 
 Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search.
