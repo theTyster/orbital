@@ -28,12 +28,6 @@ LEAN_PROOFS=${LEAN_PROJECT}/Proofs
 cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
 ```
 
-### Synthesize pseudocode process
-
-```!
-cat ${CLAUDE_SKILL_DIR}/../synthesize-pseudocode/SKILL.md
-```
-
 Prolog: `${PROLOG_QUERY} <facts_file> <command>` (logs all queries automatically)
 Commands: `validate`, `summary`, `describe`, `impact <comp>`, `order`, `scope <c1,c2>`, `coupling`, `crosscut`, `full [<comps>]`
 Lean: `cd ${LEAN_PROJECT} && lake build`
@@ -72,7 +66,6 @@ Branch: `enhancement/<kebab-slug>` derived from enhancement description.
 
 | Artifact | Path | Content |
 |----------|------|---------|
-| Pseudo-code | `plan/pseudocode.md` | Logical pattern scaffold (see "Synthesize pseudocode process" above) |
 | Prolog analysis | `plan/reasoning.pl` | C4 facts following orbital flow (3 loops: Find → Define → Condense) |
 | Lean4 proofs | `${LEAN_PROOFS}/<Enhancement>.lean` | Invariant theorems + tactic proofs; `sorry` only with justification |
 | Proof summary | `plan/proof_summary.md` | Proved vs sorry-stubbed invariants, strategies, file path |
@@ -97,8 +90,6 @@ Type: {TYPE} | Branch: {BRANCH}
 
 Produce artifacts in `plan/` (Lean proofs go in ${LEAN_PROOFS}).
 
-Pseudocode: Follow the "Synthesize pseudocode process" (injected above) to produce plan/pseudocode.md
-
 Prolog: ${PROLOG_QUERY} <facts_file> <command>
   Use the facts template format injected above.
   Orbital flow: write facts → validate → summary/describe/coupling/crosscut → full <targets>
@@ -106,7 +97,7 @@ Prolog: ${PROLOG_QUERY} <facts_file> <command>
 Lean: write to ${LEAN_PROOFS}/<name>.lean → cd ${LEAN_PROJECT} && lake build
   Self-correct up to 5x. Use exact?/apply?/simp? to discover lemmas.
 
-FOR CODE: pseudocode.md (via synthesize-pseudocode) → reasoning.pl (3 loops) → .lean proofs → proof_summary.md
+FOR CODE: reasoning.pl (3 loops) → .lean proofs → proof_summary.md
 FOR ARCHITECTURE: solutions.md (≥3) → reasoning.pl (validate+summary) → recommendations.md
 
 Do NOT implement code. Do NOT modify files outside plan/ (except Lean proofs).

@@ -20,19 +20,19 @@ Input: A verified `facts.pl` + the user's task description.
 
 ## Key Paths
 
-- **Query runner**: `${CLAUDE_SKILL_DIR}/scripts/run-query.sh`
+- **Query runner**: `${CLAUDE_SKILL_DIR}/../scripts/run-query.sh`
 - **Query log**: Written automatically next to facts file as `<name>_queries.md`
 
 ### Reasoning procedures
 
 ```!
-cat ${CLAUDE_SKILL_DIR}/prolog/reasoning.pl
+cat ${CLAUDE_SKILL_DIR}/../prolog/reasoning.pl
 ```
 
 ## How to invoke queries
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> <command> [args]
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> <command> [args]
 ```
 
 ---
@@ -47,7 +47,7 @@ file if needed to find the right component atoms.
 ### 2. Run targeted analysis
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> full <comp1>,<comp2>
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> full <comp1>,<comp2>
 ```
 
 This runs: validate, summary, change_scope, impact per target, implementation_order,

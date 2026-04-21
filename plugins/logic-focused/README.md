@@ -1,24 +1,24 @@
 # logic-focused
 
-Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lean 4 proof verification, pseudocode synthesis, test generation, and implementation review.
+Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lean 4 or Prolog proof verification, test generation, and implementation review.
 
 ## Pipeline
 
 ```
 a. translate-to-prolog    — Translate a codebase into a Prolog knowledge base
 b. hypothesize            — Ingest a proposition and create a hypothesis based on the Prolog KB
-c. prove-hypothesis-lean  — Formally verify the hypothesis (loops back to b if unprovable)
-d1. synthesize-pseudocode — Combine logical patterns from multiple sources (code, Lean, Prolog) into unified pseudocode
-d2. translate-to-tests    — Combine logical patterns into TDD tests that verify those patterns
+c. prove-hypothesis-{lean,prolog}  — Formally verify the hypothesis (loops back to b if unprovable)
+d. translate-to-tests    — Combine logical patterns into TDD tests that verify those patterns
 e. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
 ```
 
-Steps d1 and d2 are alternatives (OR) — either, both, or neither can follow step c depending on what the implementation needs.
+Step c has two alternative proof backends — use Lean for mathematical/abstract proofs, Prolog for model-based verification of relational/structural properties.
 
 ## Additional Skills
 
 - **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
 - **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
+- **measure-adherance** — Score how well two or more resources adhere to each other using Prolog-based relational analysis
 
 ## Prerequisites
 

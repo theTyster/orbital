@@ -17,18 +17,18 @@ is a validated `facts.pl` file that downstream skills can query for structural a
 
 ## Key Paths
 
-- **Query runner**: `${CLAUDE_SKILL_DIR}/scripts/run-query.sh`
+- **Query runner**: `${CLAUDE_SKILL_DIR}/../scripts/run-query.sh`
 
 ### Ontology schema
 
 ```!
-cat ${CLAUDE_SKILL_DIR}/prolog/ontology.pl
+cat ${CLAUDE_SKILL_DIR}/../prolog/ontology.pl
 ```
 
 ### Facts template
 
 ```!
-cat ${CLAUDE_SKILL_DIR}/prolog/test_facts.pl
+cat ${CLAUDE_SKILL_DIR}/../prolog/test_facts.pl
 ```
 
 ## How to invoke queries
@@ -37,7 +37,7 @@ All Prolog commands go through the query runner, which logs every invocation
 and its output to `<facts_basename>_queries.md` next to the facts file:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> <command> [args]
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> <command> [args]
 ```
 
 Commands: `validate`, `summary`, `describe`, `describe <system>`, `impact <component>`,
@@ -88,7 +88,7 @@ The file MUST include the discontiguous directive and use ONLY these predicates:
 ### 4. Validate
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> validate
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> validate
 ```
 
 - **PASS**: Done. Report the validated facts file path.

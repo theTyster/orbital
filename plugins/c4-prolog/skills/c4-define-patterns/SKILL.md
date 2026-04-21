@@ -20,19 +20,19 @@ Input: A validated `facts.pl` (output from `/c4-find-patterns` or manual creatio
 
 ## Key Paths
 
-- **Query runner**: `${CLAUDE_SKILL_DIR}/scripts/run-query.sh`
+- **Query runner**: `${CLAUDE_SKILL_DIR}/../scripts/run-query.sh`
 - **Query log**: Written automatically next to facts file as `<name>_queries.md`
 
 ### Reasoning procedures
 
 ```!
-cat ${CLAUDE_SKILL_DIR}/prolog/reasoning.pl
+cat ${CLAUDE_SKILL_DIR}/../prolog/reasoning.pl
 ```
 
 ## How to invoke queries
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> <command> [args]
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> <command> [args]
 ```
 
 ---
@@ -44,7 +44,7 @@ ${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> <command> [args]
 Confirm the ontology matches your understanding of the codebase:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> summary
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> summary
 ```
 
 Check: Do the context/container/component counts match what you explored?
@@ -55,7 +55,7 @@ If not, the facts file needs revision — go back to `/c4-find-patterns`.
 See the full C4 tree and verify the hierarchy:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> describe
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> describe
 ```
 
 Check: Are components in the right containers? Are containers in the right contexts?
@@ -65,8 +65,8 @@ Check: Are components in the right containers? Are containers in the right conte
 Understand system boundaries and shared infrastructure:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> coupling
-${CLAUDE_SKILL_DIR}/scripts/run-query.sh <facts_file> crosscut
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> coupling
+${CLAUDE_SKILL_DIR}/../scripts/run-query.sh <facts_file> crosscut
 ```
 
 Coupling reveals which containers depend on each other. Crosscut identifies

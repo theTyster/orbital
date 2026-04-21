@@ -42,7 +42,6 @@ These are the artifacts the pipeline produces. Not all will exist at any given p
 | `thoughts/hypothesis.md` | hypothesize | A falsifiable claim about how something should work, with evidence for and against |
 | `thoughts/lean/Proofs/*.lean` | prove-hypothesis-lean | Machine-checked proofs that certain properties are mathematically guaranteed |
 | `thoughts/proof_results.md` | prove-hypothesis-lean | A summary of what the proofs established, in more readable form |
-| `thoughts/pseudocode.md` | synthesize-pseudocode | A unified logical blueprint combining multiple sources |
 | `thoughts/tests/*` | translate-to-tests | Tests that check whether the implementation satisfies proven properties |
 | Implementation files (`.ts`, `.py`, `.go`, etc.) | manual or planned | The actual code that was written or changed |
 | `thoughts/implementation_review.md` | previous explain run | An existing narrative (check if it needs updating rather than rewriting) |

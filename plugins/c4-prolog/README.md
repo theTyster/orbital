@@ -16,12 +16,14 @@ C4 architectural modeling and Prolog-based codebase analysis.
 
 ## Prolog Infrastructure
 
-Each skill contains a self-contained copy of the Prolog modules and scripts:
+The three phase skills share a common Prolog runtime, bundled once at `skills/`:
 
-- `prolog/ontology.pl` — C4 schema and validation
-- `prolog/reasoning.pl` — Analysis procedures (impact, scope, order, coupling, crosscut)
-- `prolog/run.pl` — CLI command dispatcher
-- `scripts/run-query.sh` — swipl wrapper with query logging
+- `skills/prolog/ontology.pl` — C4 schema and validation
+- `skills/prolog/reasoning.pl` — Analysis procedures (impact, scope, order, coupling, crosscut)
+- `skills/prolog/run.pl` — CLI command dispatcher
+- `skills/scripts/run-query.sh` — swipl wrapper with query logging
+
+Each SKILL.md references it via `${CLAUDE_SKILL_DIR}/../prolog/…` and `${CLAUDE_SKILL_DIR}/../scripts/…`.
 
 ## Prerequisites
 
