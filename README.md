@@ -15,7 +15,8 @@ a. translate-to-prolog    — Translate a codebase into a Prolog knowledge base
 b. hypothesize            — Ingest a proposition and create a hypothesis based on the Prolog KB
 c. prove-hypothesis-{lean,prolog} — Formally verify the hypothesis (loops back to b if unprovable)
 d. translate-to-tests     — Combine proven logical patterns into TDD tests that verify those patterns
-e. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
+e. translate-to-implementation — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
+f. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
 ```
 
 Step c has two alternative proof backends — use Lean for mathematical/abstract proofs, Prolog for model-based verification of relational/structural properties.
