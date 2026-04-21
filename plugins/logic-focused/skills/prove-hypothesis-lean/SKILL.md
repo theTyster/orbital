@@ -38,7 +38,7 @@ Brief the sub-agent with:
 - The hypothesis file path
 - The Lean project root (`thoughts/lean`) and proofs directory (`thoughts/lean/Proofs`)
 - The shared Mathlib location (`~/.lean/mathlib4`)
-- The per-property correction budget (5 inner / 3 outer, see §4)
+- The per-property correction budget (5 inner / 5 outer, see §4)
 - An instruction to produce `thoughts/proof_results.md` in the format in §7
 - An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
 - An instruction to consult the `logic-focused:bookworm` sub-agent for Mathlib lemma/theorem lookups (bookworm owns the Mathlib wiki; lean-expert must not read it directly)
@@ -172,8 +172,8 @@ After each build:
 Each property gets a correction budget to prevent infinite loops:
 
 - **Inner corrections** (fix-and-retry on the same approach): 5 attempts
-- **Outer iterations** (fundamentally different approach): 3 attempts
-- **Total**: 5 inner × 3 outer = 15 attempts max per property
+- **Outer iterations** (fundamentally different approach): 5 attempts
+- **Total**: 5 inner × 5 outer = 25 attempts max per property
 
 After exhausting inner corrections, step back and try a fundamentally different proof strategy — different tactic, different lemma, different decomposition.
 

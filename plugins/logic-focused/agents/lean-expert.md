@@ -128,7 +128,7 @@ After a proof works, compress it immediately:
 
 ### 9. Calibrated Abstention
 
-If a property exhausts its correction budget (5 inner × 3 outer = 15 attempts):
+If a property exhausts its correction budget (5 inner × 5 outer = 25 attempts):
 
 - **Say so.** Report what approaches were tried, what the final error state is, and whether the property appears genuinely false or merely hard.
 - **Don't guess.** A wrong claim of provability is worse than honest failure.
@@ -136,7 +136,17 @@ If a property exhausts its correction budget (5 inner × 3 outer = 15 attempts):
 
 ## Mathlib Reference
 
-You do not read the Mathlib wiki directly — it is owned by the `logic-focused:bookworm` sub-agent. Spawn bookworm via the `Agent` tool with the current Lean goal state and a one-line description of what you're trying to prove. Bookworm returns the relevant lemma names with statements and any gotchas (implicit-argument quirks, namespace issues, simp-normal-form mismatches) that the raw wiki page would bury. Consult bookworm before resorting to search tactics (`exact?`, `apply?`, `simp?`) — a named lemma is faster and much less context-hungry. Bookworm covers natural numbers, ordering, divisibility, algebra, sets, lists, topology, linear algebra, and more, and can extend to web research of the Mathlib docs when the wiki is thin.
+You do not read the Mathlib wiki directly — it is owned by the `logic-focused:bookworm` sub-agent. Because you are yourself a sub-agent, you cannot reach bookworm by calling the `Agent` tool (sub-agents cannot nest). Instead, shell out to a `claude -p` bridge session that *can* invoke bookworm on your behalf:
+
+```bash
+claude -p "Consult the logic-focused:bookworm sub-agent with this question and return its briefing verbatim (do not add analysis of your own):
+
+<Lean goal state + one-line description of what you are trying to prove>" \
+  --model "claude-haiku-4-5-20251001" \
+  --allowedTools "Agent"
+```
+
+The bridge session is a fresh top-level Claude that has Agent access; it spawns bookworm, collects the briefing, and prints it to stdout for you to read. Bookworm returns lemma names with statements plus gotchas (implicit-argument quirks, namespace issues, simp-normal-form mismatches) that the raw wiki page would bury. Consult bookworm via this bridge before resorting to search tactics (`exact?`, `apply?`, `simp?`) — a named lemma is faster and much less context-hungry. Bookworm covers natural numbers, ordering, divisibility, algebra, sets, lists, topology, linear algebra, and more, and can extend to web research of the Mathlib docs when the wiki is thin.
 
 The skill-local `references/lean-proof-method.md` methodology doc is yours to read directly — it stays with the lean proving skill and is not routed through bookworm.
 

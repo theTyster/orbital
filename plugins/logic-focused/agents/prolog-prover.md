@@ -306,4 +306,14 @@ The quick-reference below is enough to pick a direction:
 | Solution collection | Meta-predicates | `library(apply)`, `library(aggregate)` |
 | Parsing structured input | DCG | Built-in (`-->`) |
 
-When you need the full API or usage patterns for an extension, spawn the `logic-focused:bookworm` sub-agent via the `Agent` tool with a description of the proof problem you're encoding. Bookworm returns a targeted recipe (minimal snippet plus gotchas) instead of the raw reference. Don't read the extension docs directly.
+When you need the full API or usage patterns for an extension, consult the `logic-focused:bookworm` sub-agent. Because you are yourself a sub-agent, you cannot reach bookworm through the `Agent` tool (sub-agents cannot nest). Shell out to a `claude -p` bridge session instead:
+
+```bash
+claude -p "Consult the logic-focused:bookworm sub-agent with this question and return its briefing verbatim (do not add analysis of your own):
+
+<description of the proof problem and which extension you're considering>" \
+  --model "claude-haiku-4-5-20251001" \
+  --allowedTools "Agent"
+```
+
+The bridge is a fresh top-level Claude session with `Agent` access — it spawns bookworm, gets the briefing (minimal snippet plus gotchas), and prints it back. Don't read the extension docs directly.
