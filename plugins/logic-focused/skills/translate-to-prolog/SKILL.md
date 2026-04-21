@@ -1,11 +1,7 @@
 ---
 name: translate-to-prolog
 description: >
-  Translate any logical system — domain rules, code behavior, requirements, data models —
-  into a Prolog facts file. Choose predicates that naturally fit the domain.
-  Captures facts, relationships, constraints, and patterns. Validates with SWI-Prolog.
-  Builds the knowledge base incrementally, giving faster feedback and early error detection.
-  Use when: "translate this to prolog", "model this logic", "document this system as prolog facts".
+  Use this skill whenever the user wants to translate a codebase, document, or logical system into a Prolog facts file — "translate to prolog", "model this as prolog facts", "create a knowledge base from", "make this queryable with swipl". Builds the KB incrementally from source files and validates with SWI-Prolog.
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: "[source code, requirements, domain rules, or any logical system to document]"

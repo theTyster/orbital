@@ -1,13 +1,7 @@
 ---
 name: setup-lean-mathlib
 description: >
-  Set up and manage Lean 4 projects that use Mathlib via a shared system-wide installation.
-  Use this skill whenever the user wants to create a new Lean 4 project, add Mathlib as a
-  dependency, work with Lean theorem proving, or update their Mathlib installation. Also use
-  when you detect a Lean project with Mathlib issues (toolchain mismatch, missing manifest,
-  slow dependency resolution). Triggers: "new lean project", "add mathlib", "lean4 setup",
-  "update mathlib", "prove in lean", "formalize in lean", working in any directory with
-  lean-toolchain or lakefile.lean/lakefile.toml files that reference mathlib.
+  Use this skill whenever the user needs to set up or fix a Lean 4 + Mathlib project — "new lean project", "add mathlib", "lean4 setup", "update mathlib", toolchain mismatches, or lakefile issues. Installs a shared Mathlib clone so new projects never recompile Mathlib from scratch.
 ---
 
 # Lean 4 + Mathlib Project Management

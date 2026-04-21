@@ -1,7 +1,7 @@
 ---
 name: translate-to-implementation
 description: >
-  Drive a TDD test suite to green by orchestrating sub-agents that implement code against proven properties. Reads the skipped test file from translate-to-tests, plus proof_results.md, hypothesis.md, and the Prolog KB. Unskips one test at a time, delegates each implementation and refactor to Explore and general-purpose agents, and runs the project's full test suite as the authority on correctness. Tests and proofs are treated as specifications — refactoring to satisfy them is encouraged. Use when: "implement the tests", "translate tests to implementation", "drive the TDD suite to green", "write the code for the proven properties", "implement from proof".
+  Use this skill whenever the user wants to implement code from proven formal properties — "drive the TDD suite to green", "implement the skipped tests", "implement from proof", or "make these tests pass". Unskips one test at a time and orchestrates sub-agents to implement each proven invariant.
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, Agent
 argument-hint: "[test file path] [target codebase directory]"

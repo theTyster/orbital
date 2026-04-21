@@ -1,7 +1,7 @@
 ---
 name: translate-to-tests
 description: >
-  Translate proven formal properties into TDD test cases that serve as the implementation plan. Reads proof_results.md and optionally hypothesis.md and Prolog KB to generate tests where each test verifies a proven invariant. An implementor uses these failing tests to drive implementation. Use when: "translate proof to tests", "generate tests from proof", "create TDD plan", "tests from verified logic".
+  Use this skill whenever the user wants TDD tests from proven formal properties — "translate proof to tests", "generate tests from proof", "create TDD plan", "tests from verified logic". Reads proof_results.md and hypothesis.md; produces a skipped test suite where each test encodes a machine-verified invariant to drive implementation.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Agent
 argument-hint: "[proof_results.md path] [optional: target codebase directory]"

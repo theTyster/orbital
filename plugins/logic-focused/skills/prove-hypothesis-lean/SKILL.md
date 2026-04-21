@@ -1,10 +1,7 @@
 ---
 name: prove-hypothesis-lean
 description: >
-  Formalize a hypothesis as Lean4 theorems with machine-checked proofs.
-  Reads a hypothesis file, translates properties into Lean4, and attempts
-  to prove them. Loops back to hypothesize if unprovable.
-  Use when: "formalize this hypothesis", "prove this in lean", "verify this formally".
+  Use this skill whenever the user wants to prove a hypothesis in Lean4 — "formalize this", "prove this in lean", "verify formally", "machine-check these properties". Reads hypothesis.md, translates each property to a Lean4 theorem, and proves it; loops back to hypothesize if unprovable.
 user-invocable: true
 model: opus
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent

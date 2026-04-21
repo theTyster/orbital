@@ -1,7 +1,7 @@
 ---
 name: hypothesize
 description: >
-  Explore a proposition by decomposing it into falsifiable hypotheses and gathering evidence from a Prolog knowledge base. Teaches logical heuristics for breaking a claim apart, querying for supporting and contradicting evidence, and producing a structured hypothesis ready for formal verification in Lean4. Works with any Prolog facts file. Use when: "explore this hypothesis", "what would break if we changed X", "is this claim true in the model", "analyze the knowledge base", "what can we derive from these facts", "what relationships exist", "query the prolog facts", "hypothesize about", "what if we changed", "is it safe to modify".
+  Use this skill whenever the user wants to explore whether a proposition holds in a Prolog KB — "what breaks if X changes", "is this claim true", "analyze the knowledge base", or "check this hypothesis against the facts". Takes a .pl facts file and a proposition; decomposes it into falsifiable sub-hypotheses and produces a structured hypothesis file.
 user-invocable: true
 allowed-tools: Bash, Write, Agent
 argument-hint: "[prolog facts file] [proposition or question to explore]"

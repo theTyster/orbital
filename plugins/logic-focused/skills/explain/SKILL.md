@@ -1,7 +1,7 @@
 ---
 name: explain
 description: >
-  Explain whatever work was done — at any point in the logic-focused pipeline or outside it — in plain language a non-technical reviewer can follow. Discovers artifacts dynamically (Prolog KB, hypotheses, Lean proofs, pseudocode, tests, code changes) and produces a narrative scaled to whatever exists. No formal logic knowledge required to read the output. Use this skill whenever the user says "explain what we did", "explain the proof", "explain the hypothesis", "summarize what happened", "document this for review", "what did we build", or asks for a human-readable summary of reasoning or implementation work. Also use when a reviewer needs to understand the work without touching the formal artifacts themselves.
+  Use this skill whenever the user wants a plain-language explanation of logic-focused pipeline work — "explain what we did", "explain the proof", "summarize for my PM", or when a reviewer needs to understand formal artifacts. Discovers pipeline artifacts (Prolog KB, hypotheses, Lean proofs, tests) and produces a non-technical narrative.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write
 argument-hint: "[optional: thoughts/ directory, specific file, or codebase directory]"

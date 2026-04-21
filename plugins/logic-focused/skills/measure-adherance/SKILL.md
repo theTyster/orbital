@@ -1,18 +1,7 @@
 ---
 name: measure-adherance
 description: >
-  Measure how well two or more resources adhere to each other using Prolog-based
-  relational analysis. Extracts structured claims from each resource, models them
-  as Prolog facts, then queries for shared facts, gaps, contradictions, and
-  extensions to produce a scored adherence report. If one resource is the source
-  of truth, designate it as `prime` and all others are graded against it.
-  If no prime is given, the skill asks whether one should be designated before
-  proceeding to symmetric mutual adherence measurement. Use when: "measure
-  adherence", "check alignment between", "does this implementation match the
-  spec", "compare these documents", "how well do these resources agree", "verify
-  this design follows the requirements", "adherence check", "does this code match
-  this doc", "alignment report", "how well do these match", "grade against",
-  "how consistent are these", "does this conform to", "coverage of spec".
+  Use this skill whenever the user wants to check whether two or more documents, specs, or codebases agree — "does this implementation match the spec", "check alignment between", "grade against requirements", "adherence check", or "compare these documents". Extracts claims as Prolog facts and scores overlap, gaps, and contradictions. Designate one resource as "prime" to grade others against it.
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Write, Agent
 argument-hint: "[resource1] [resource2] [...] [--prime resource1]"

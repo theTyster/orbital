@@ -1,14 +1,7 @@
 ---
 name: prove-hypothesis-prolog
 description: >
-  Formally verify hypothesis properties against a Prolog knowledge base by encoding each
-  property as Prolog rules and running exhaustive query-based verification. Produces a
-  verified proof file (prolog_proofs.pl) with formally encoded properties and a
-  proof_results.md summary. No Lean or Mathlib required — works entirely within the
-  existing Prolog pipeline. Loops back to hypothesize when a property is falsified by a
-  counterexample. Use when: "prove this in prolog", "verify this hypothesis with prolog",
-  "formally verify the hypothesis", "check if the hypothesis holds in the KB", "run prolog
-  verification", "prove these properties without lean", "verify with prolog instead of lean".
+  Use this skill whenever the user wants to verify a hypothesis using Prolog — "verify with prolog", "check if this holds in the KB", "prove without lean", "formally check these properties". Encodes each hypothesis property as Prolog rules and runs exhaustive query-based verification; produces prolog_proofs.pl and proof_results.md.
 user-invocable: true
 model: opus
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent

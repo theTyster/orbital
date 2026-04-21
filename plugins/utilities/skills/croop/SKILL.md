@@ -1,6 +1,7 @@
 ---
 name: croop
-description: Cron-closed loop — run a refinement prompt on a recurring interval for a bounded duration, with an explicit objective and success signal, then automatically stop. Use when the user wants to iteratively improve something (a draft, a deploy, a score, a proof) every N minutes for a total of M minutes/hours and can articulate both what "better" means and how each tick will measure it (e.g. "every 5m for 1h, tighten the intro — stop when word count drops below 120 without losing the hook"). Triggered by the /croop slash command or phrasings like "closed loop", "refinement loop", "iterate on X until". Prefer croop over the plain loop skill whenever the user specifies an end condition AND a notion of progress — croop both guarantees it stops and enforces that each iteration is measurable.
+description: >
+  Use this skill (or /croop) whenever the user wants a bounded refinement loop with an explicit stop condition — "every N minutes for M hours until Y", "closed loop", "refinement loop until done", or "iterate until score reaches Z". Schedules a prompt on a recurring inner interval bounded by an outer duration that auto-cancels. Requires a measurable stop condition; unlike /loop.
 user-invocable: true
 allowed-tools: CronCreate, CronList, CronDelete
 argument-hint: <outer_duration> [inner_interval] <prompt>
