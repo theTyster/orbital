@@ -1,6 +1,18 @@
-# Mathlib Reference Wiki
+# Lean 4 Wiki
 
-A comprehensive reference for Mathlib lemmas and theorems, organized by mathematical domain. Each page includes descriptions and Lean 4 usage examples.
+A general knowledge source for Lean 4 and Mathlib: lemmas, theorems, tactics, idioms, and anything else worth cataloguing. Every entry lives inside a category subdirectory so the index stays navigable as the wiki grows. Today there are two categories (`lemmas/` and `theorems/`); new categories (e.g. `tactics/`, `idioms/`, `libraries/`) can be added alongside them following the same pattern.
+
+## Structure
+
+```
+lean4-wiki/
+├── index.md         — this file (wiki entry point + topic map)
+├── lemmas/          — Mathlib lemmas organized by mathematical domain
+├── theorems/        — famous Mathlib theorems with worked Lean 4 examples
+└── <future-category>/ — additional topic areas as needed
+```
+
+Every category directory should contain one markdown file per entry, named after the topic in kebab-case.
 
 ## Lemmas
 
