@@ -202,11 +202,14 @@ Properties to prove in Lean4:
 
 ## References
 
-### SWI-Prolog Extensions
-Documentation for SWI-Prolog extension modules is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult the README there when you need guidance on advanced Prolog features (tabling, DCGs, constraint logic programming, etc.).
+### Ask the Bookworm
 
-### Mathlib Lemmas & Theorems
-When writing Lean sketches in the "Formal Properties" section, consult the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` for accurate theorem names and type signatures. The wiki index at `references/wiki/index.md` is organized by mathematical domain. Using real Mathlib names in sketches gives `prove-hypothesis-lean` a head start.
+Both the SWI-Prolog extension docs and the Mathlib lemma/theorem wiki are owned by the `logic-focused:bookworm` sub-agent. Spawn it via the `Agent` tool when you need:
+
+- Guidance on a Prolog extension for a query you're drafting (tabling, DCGs, CLP, etc.) — describe the query and bookworm returns the right mechanism with a minimal snippet.
+- **Accurate Mathlib theorem names and type signatures** for Lean sketches in the "Formal Properties" section. Using real Mathlib names (not plausible guesses) in sketches gives `prove-hypothesis-lean` a head start, so ask bookworm before writing a sketch whose lemmas you aren't sure exist.
+
+Don't read the central references directly — bookworm curates a task-shaped answer rather than returning raw doc pages, which keeps your context free for the hypothesis itself.
 
 ## Output
 

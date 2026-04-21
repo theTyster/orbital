@@ -130,7 +130,7 @@ Report:
 
 ## References
 
-SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it before you write when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
+Don't read the central SWI-Prolog extension docs directly. When you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, persistency, etc.), spawn the `logic-focused:bookworm` sub-agent with the `Agent` tool and describe the problem you're solving. Bookworm will return a targeted recommendation with the minimal snippet and any gotchas. This keeps reference material out of your main context and lets bookworm supplement with web research or project-specific wiki entries when the built-in docs aren't enough.
 
 ## Guidance
 

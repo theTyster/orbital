@@ -44,7 +44,8 @@ Brief the sub-agent with:
 - The per-property correction budget (5 inner / 3 outer, see §4)
 - An instruction to produce `thoughts/proof_results.md` in the format in §7
 - An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
-- Pointer to the Mathlib wiki at `${CLAUDE_SKILL_DIR}/../../references/wiki/` and to `references/lean-proof-method.md`
+- An instruction to consult the `logic-focused:bookworm` sub-agent for Mathlib lemma/theorem lookups (bookworm owns the Mathlib wiki; lean-expert must not read it directly)
+- A pointer to `references/lean-proof-method.md` — this is skill-local methodology and stays with the lean prover, not routed through bookworm
 
 Do the work inline only when the user has explicitly asked you to prove it yourself in this turn. Proof size is not a reason — even a one-liner benefits from the specialist's `lake build` discipline and Mathlib familiarity, and inline execution floods the main context with compiler output. When in doubt, delegate. The rest of this file is both your guide for the inline case and the briefing material for the sub-agent.
 
@@ -100,13 +101,9 @@ intro s
 
 ## Mathlib Reference
 
-A wiki of Mathlib lemmas and theorems is available at `${CLAUDE_SKILL_DIR}/../../references/wiki/`. Consult it when searching for applicable lemmas:
+The Mathlib lemma/theorem wiki is owned by the `logic-focused:bookworm` sub-agent. When searching for applicable lemmas, spawn bookworm via the `Agent` tool with a description of the goal you are trying to discharge (the Lean goal state is a great prompt) and it will return the relevant lemma names with statements and any gotchas, plus pointers to worked examples for famous theorems. Bookworm covers natural number arithmetic, ordering, divisibility, algebra (groups, rings, fields), sets, lists, topology, linear algebra, and more — and falls back to web research of the Mathlib docs when the wiki is thin on a topic.
 
-- `references/wiki/index.md` — full index organized by mathematical domain
-- `references/wiki/lemmas/` — individual lemma pages with descriptions and usage examples
-- `references/wiki/theorems/` — famous theorems with Lean4 examples
-
-Read the relevant wiki page before falling back to search tactics (`exact?`, `apply?`, `simp?`). The wiki covers common patterns for: natural number arithmetic, ordering, divisibility, algebra (groups, rings, fields), sets, lists, topology, linear algebra, and more.
+Ask bookworm before falling back to search tactics (`exact?`, `apply?`, `simp?`) — a curated lemma name is faster and far less context-hungry than search-tactic output.
 
 ## Process
 
@@ -167,7 +164,7 @@ After each build:
 4. Linter warnings are lowest priority
 
 **Tactic discovery** (in order of preference):
-1. Check the Mathlib wiki (`references/wiki/`) for known lemmas that match your goal
+1. Ask the `logic-focused:bookworm` sub-agent for known Mathlib lemmas that match your goal
 2. Use `exact?` to find an exact lemma match
 3. Use `apply?` to find applicable lemmas
 4. Use `simp?` to discover simplification lemmas

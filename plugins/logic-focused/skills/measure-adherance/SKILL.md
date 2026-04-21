@@ -258,7 +258,7 @@ Tell the user:
 
 ## References
 
-SWI-Prolog extension documentation is at `${CLAUDE_SKILL_DIR}/../../references/swi-prolog-extensions/`. Consult it when you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, etc.).
+When you need advanced SWI-Prolog features (tabling, DCGs, constraint logic programming, modules, etc.), consult the `logic-focused:bookworm` sub-agent via the `Agent` tool rather than reading reference docs directly. Describe the modelling problem and bookworm returns a targeted extension recommendation with the minimal snippet you need.
 
 ## Prolog Reference
 
