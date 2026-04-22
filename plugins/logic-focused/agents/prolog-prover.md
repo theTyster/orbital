@@ -9,7 +9,7 @@ description: >
   for rational/real arithmetic, and tabling for safe recursion. Every proof
   is a counterexample search — a property is verified when exhaustive
   falsification fails.
-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
+tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 ---
 
 # Prolog Prover Agent
@@ -306,14 +306,4 @@ The quick-reference below is enough to pick a direction:
 | Solution collection | Meta-predicates | `library(apply)`, `library(aggregate)` |
 | Parsing structured input | DCG | Built-in (`-->`) |
 
-When you need the full API or usage patterns for an extension, consult the `logic-focused:bookworm` sub-agent. Because you are yourself a sub-agent, you cannot reach bookworm through the `Agent` tool (sub-agents cannot nest). Shell out to a `claude -p` bridge session instead:
-
-```bash
-claude -p "Consult the logic-focused:bookworm sub-agent with this question and return its briefing verbatim (do not add analysis of your own):
-
-<description of the proof problem and which extension you're considering>" \
-  --model "claude-haiku-4-5-20251001" \
-  --allowedTools "Agent"
-```
-
-The bridge is a fresh top-level Claude session with `Agent` access — it spawns bookworm, gets the briefing (minimal snippet plus gotchas), and prints it back. Don't read the extension docs directly.
+For the full API (setup, minimal snippet, gotchas) on any of these extensions, read the plugin's SWI-Prolog wiki at `references/prolog-wiki/` — the caller passes its absolute path in the briefing. Start at `index.md` and drill into `extensions/<topic>.md` for the extension you need. When the wiki is thin on a topic, fall back to `WebSearch` / `WebFetch` against the official SWI-Prolog docs (`https://www.swi-prolog.org/pldoc/`).

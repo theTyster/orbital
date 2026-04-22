@@ -21,24 +21,22 @@ Lean 4 formal proof specialist. Uses `lake build` as deductive reasoning steps r
 
 ### agent-of-truth
 
-Prolog KB construction specialist. Identifies facts, relationships, and constraints in any domain. Expert in domain-fitting predicate design, graph/ontology modeling, DCGs for structured parsing, and constraint validation rules.
+Prolog KB construction specialist. Identifies facts, relationships, and constraints in any domain. Expert in domain-fitting predicate design, graph/ontology modeling, DCGs for structured parsing, and constraint validation rules. Reads `references/prolog-wiki/` directly when an extension recipe is needed.
 
-**Used by**: translate-to-prolog, hypothesize
+**Used by**: translate-to-prolog, hypothesize, measure-adherance
 
 ### agent-of-questions
 
-Prolog query specialist. Discovers KB structure through `swipl` introspection alone — never reads `.pl` files directly. Uses the introspect module to understand any KB, then writes precise queries.
+Prolog query specialist. Discovers KB structure through `swipl` introspection alone — never reads `.pl` files directly. Uses the introspect module to understand any KB, then writes precise queries. Reads `references/prolog-wiki/` directly when a query needs an advanced extension.
 
 **Used by**: hypothesize, prove-hypothesis-prolog, measure-adherance
 
-### bookworm
-
-Librarian for the plugin's central reference material. Owns exclusive access to `references/prolog-wiki/` and `references/lean4-wiki/`, augments them with web research, and maintains project-specific wiki extensions under `thoughts/prolog-wiki/` and `thoughts/lean4-wiki/` in the caller's working directory. Both wikis follow the same shape: a root `index.md` plus one subdirectory per category (e.g. `extensions/`, `lemmas/`, `theorems/`), one markdown file per entry. Returns task-shaped briefings (recommended library/lemma, minimal snippet, gotchas) rather than raw reference dumps. The only skill-local reference it does *not* own is `skills/prove-hypothesis-lean/references/lean-proof-method.md`, which stays with the lean proving skill.
-
-**Used by**: translate-to-prolog, hypothesize, prove-hypothesis-lean, measure-adherance, lean-expert, prolog-prover, agent-of-truth
-
 ### prolog-prover
 
-Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search.
+Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search. Reads `references/prolog-wiki/` directly for CLP and tabling recipes.
 
 **Used by**: prove-hypothesis-prolog
+
+## Plugin References
+
+The two wikis under `plugins/logic-focused/references/` (`prolog-wiki/` and `lean4-wiki/`) are accessed **only by the agents above** — skills brief the agent with the absolute wiki path but never read the wiki content themselves. This keeps heavy reference material inside sub-agent contexts. When a wiki is thin on a topic, the domain agents fall back to `WebSearch` / `WebFetch` against the official Mathlib 4 or SWI-Prolog docs.

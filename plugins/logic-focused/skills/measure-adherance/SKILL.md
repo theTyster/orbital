@@ -247,7 +247,7 @@ Tell the user:
 
 ## References
 
-When you need advanced SWI-Prolog features (tabling, DCGs, constraint logic programming, modules, etc.), consult the `logic-focused:bookworm` sub-agent via the `Agent` tool rather than reading reference docs directly. Describe the modelling problem and bookworm returns a targeted extension recommendation with the minimal snippet you need.
+The plugin ships a SWI-Prolog wiki at `${CLAUDE_SKILL_DIR}/../../references/prolog-wiki/` covering tabling, DCGs, CLP, modules, and more. **Don't read it yourself** — wiki content flows through `agent-of-truth` and `agent-of-questions`, which both have direct access. Include the absolute wiki path in each agent's briefing and let them consult the wiki when the claim extraction or queries need an advanced extension.
 
 ## Prolog Reference
 

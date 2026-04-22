@@ -202,14 +202,12 @@ Properties to prove in Lean4:
 
 ## References
 
-### Ask the Bookworm
+The plugin ships two wikis under `${CLAUDE_SKILL_DIR}/../../references/` — `prolog-wiki/` and `lean4-wiki/`. **Don't read either yourself.** Wiki content flows through the domain agents this skill already delegates to:
 
-Both the SWI-Prolog extension docs and the Mathlib lemma/theorem wiki are owned by the `logic-focused:bookworm` sub-agent. Spawn it via the `Agent` tool when you need:
+- **Prolog extensions** (tabling, DCGs, CLP, etc.) for queries you're drafting: `agent-of-questions` has direct wiki access. When you spawn it (§3), include the absolute path `${CLAUDE_SKILL_DIR}/../../references/prolog-wiki/` in the briefing if the query needs an advanced extension.
+- **Accurate Mathlib theorem names and type signatures** for Lean sketches in the "Formal Properties" section: spawn `logic-focused:lean-expert` with a one-line description of the property and it will return real Mathlib names. Using real names (not plausible guesses) in sketches gives `prove-hypothesis-lean` a head start. Include the absolute path `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/` in the briefing.
 
-- Guidance on a Prolog extension for a query you're drafting (tabling, DCGs, CLP, etc.) — describe the query and bookworm returns the right mechanism with a minimal snippet.
-- **Accurate Mathlib theorem names and type signatures** for Lean sketches in the "Formal Properties" section. Using real Mathlib names (not plausible guesses) in sketches gives `prove-hypothesis-lean` a head start, so ask bookworm before writing a sketch whose lemmas you aren't sure exist.
-
-Don't read the central references directly — bookworm curates a task-shaped answer rather than returning raw doc pages, which keeps your context free for the hypothesis itself.
+Keeping the wiki content inside sub-agent contexts preserves your context window for the hypothesis itself.
 
 ## Output
 

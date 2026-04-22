@@ -38,11 +38,11 @@ Brief the sub-agent with:
 - The hypothesis file path
 - The Lean project root (`thoughts/lean`) and proofs directory (`thoughts/lean/Proofs`)
 - The shared Mathlib location (`~/.lean/mathlib4`)
-- The per-property correction budget (5 inner / 5 outer, see §4)
+- The per-property correction budget (5 inner / 3 outer, see §4)
 - An instruction to produce `thoughts/proof_results.md` in the format in §7
 - An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
-- An instruction to consult the `logic-focused:bookworm` sub-agent for Mathlib lemma/theorem lookups (bookworm owns the Mathlib wiki; lean-expert must not read it directly)
-- A pointer to `references/lean-proof-method.md` — this is skill-local methodology and stays with the lean prover, not routed through bookworm
+- The absolute path to the plugin's Mathlib wiki: `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/` — lean-expert reads this directly for lemma/theorem lookups
+- A pointer to the skill-local `${CLAUDE_SKILL_DIR}/references/lean-proof-method.md` methodology doc
 
 Do the work inline only when the user has explicitly asked you to prove it yourself in this turn. Proof size is not a reason — even a one-liner benefits from the specialist's `lake build` discipline and Mathlib familiarity, and inline execution floods the main context with compiler output. When in doubt, delegate. The rest of this file is both your guide for the inline case and the briefing material for the sub-agent.
 
@@ -98,9 +98,9 @@ intro s
 
 ## Mathlib Reference
 
-The Mathlib lemma/theorem wiki is owned by the `logic-focused:bookworm` sub-agent. When searching for applicable lemmas, spawn bookworm via the `Agent` tool with a description of the goal you are trying to discharge (the Lean goal state is a great prompt) and it will return the relevant lemma names with statements and any gotchas, plus pointers to worked examples for famous theorems. Bookworm covers natural number arithmetic, ordering, divisibility, algebra (groups, rings, fields), sets, lists, topology, linear algebra, and more — and falls back to web research of the Mathlib docs when the wiki is thin on a topic.
+A curated Mathlib wiki ships with this plugin at `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/`. **Don't read it yourself** — wiki content flows through `lean-expert`, which has direct access and returns task-shaped lemma recommendations. Include the absolute wiki path in the briefing when delegating (see above); for inline proofs, spawn `lean-expert` anyway rather than opening the wiki from this context.
 
-Ask bookworm before falling back to search tactics (`exact?`, `apply?`, `simp?`) — a curated lemma name is faster and far less context-hungry than search-tactic output.
+This keeps heavy lemma content out of the main context window and preserves the separation between skill orchestration (what this file is) and Mathlib expertise (what the agent provides).
 
 ## Process
 
@@ -161,7 +161,7 @@ After each build:
 4. Linter warnings are lowest priority
 
 **Tactic discovery** (in order of preference):
-1. Ask the `logic-focused:bookworm` sub-agent for known Mathlib lemmas that match your goal
+1. Consult the bundled Mathlib wiki (`references/lean4-wiki/`) for a lemma matching your goal shape
 2. Use `exact?` to find an exact lemma match
 3. Use `apply?` to find applicable lemmas
 4. Use `simp?` to discover simplification lemmas
@@ -172,8 +172,8 @@ After each build:
 Each property gets a correction budget to prevent infinite loops:
 
 - **Inner corrections** (fix-and-retry on the same approach): 5 attempts
-- **Outer iterations** (fundamentally different approach): 5 attempts
-- **Total**: 5 inner × 5 outer = 25 attempts max per property
+- **Outer iterations** (fundamentally different approach): 3 attempts
+- **Total**: 5 inner × 3 outer = 15 attempts max per property
 
 After exhausting inner corrections, step back and try a fundamentally different proof strategy — different tactic, different lemma, different decomposition.
 

@@ -7,7 +7,7 @@ description: >
   naturally, modeling graphs and ontologies, using DCGs for structured
   parsing, and writing constraint rules that enforce invariants. The KB
   it produces is the foundation that other agents query and prove against.
-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
+tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 ---
 
 # Agent of Truth
@@ -224,17 +224,7 @@ When the domain calls for it, use the right SWI-Prolog extension:
 | Namespace isolation | Modules | `:- module(Name, [Exports]).` |
 | Runtime fact modification | Dynamic predicates | `:- dynamic pred/arity.` |
 
-For a full recipe (setup, minimal snippet, gotchas) on any of these extensions, consult the `logic-focused:bookworm` sub-agent. Because you are yourself a sub-agent, you cannot reach bookworm through the `Agent` tool (sub-agents cannot nest). Shell out to a `claude -p` bridge session instead:
-
-```bash
-claude -p "Consult the logic-focused:bookworm sub-agent with this question and return its briefing verbatim (do not add analysis of your own):
-
-<description of the KB problem you are modelling and which extension you're considering>" \
-  --model "claude-haiku-4-5-20251001" \
-  --allowedTools "Agent"
-```
-
-The bridge is a fresh top-level Claude session with `Agent` access — it spawns bookworm, collects the briefing, and prints it back. Bookworm owns the extension reference — don't read it directly. Bookworm can also pull in web research or project-specific wiki notes when the built-in reference is thin.
+For a full recipe (setup, minimal snippet, gotchas) on any of these extensions, read the plugin's SWI-Prolog wiki at `references/prolog-wiki/` — the caller passes its absolute path in the briefing. Start at `index.md` for the quick-reference table, then open `extensions/<topic>.md` for the extension you're modelling against. When the wiki is thin, fall back to `WebSearch` / `WebFetch` against the official SWI-Prolog docs (`https://www.swi-prolog.org/pldoc/`).
 
 ## Output
 

@@ -20,14 +20,16 @@ Step c has two alternative proof backends — use Lean for mathematical/abstract
 - **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
 - **measure-adherance** — Score how well two or more resources adhere to each other using Prolog-based relational analysis
 
-## Reference Librarian
+## Plugin References
 
-All central reference material is owned by the **bookworm** sub-agent. Two wikis live under `references/`:
+Two curated wikis live under `references/`:
 
 - `prolog-wiki/` — general SWI-Prolog knowledge (extensions, libraries, idioms)
 - `lean4-wiki/` — general Lean 4 and Mathlib knowledge (lemmas, theorems, tactics)
 
-Both follow the same shape: a root `index.md` plus one subdirectory per category, with one markdown file per entry. Skills and agents in this plugin consult bookworm for library, lemma, extension, and strategy questions instead of reading the wikis directly. Bookworm also does web research and maintains project-specific extensions at `thoughts/prolog-wiki/` and `thoughts/lean4-wiki/` in the working directory, mirroring the marketplace layout. The only exception is the lean proof methodology doc at `skills/prove-hypothesis-lean/references/lean-proof-method.md`, which stays with the lean proving skill.
+Both follow the same shape: a root `index.md` plus one subdirectory per category, with one markdown file per entry.
+
+**Access boundary**: the wikis are read by the plugin's domain agents (`lean-expert`, `prolog-prover`, `agent-of-truth`, `agent-of-questions`) — not by skills. A skill's only job is to pass the absolute wiki path in the agent briefing; the agent then consults the wiki inside its own context, returning a task-shaped answer rather than raw reference content. When a wiki is thin on a topic, the agents fall back to `WebSearch` / `WebFetch` against the official Mathlib 4 or SWI-Prolog docs. The skill-local `skills/prove-hypothesis-lean/references/lean-proof-method.md` methodology doc stays with the lean proving skill and is passed to `lean-expert` alongside the wiki path.
 
 ## Prerequisites
 

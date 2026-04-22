@@ -126,7 +126,7 @@ Report:
 
 ## References
 
-Don't read the central SWI-Prolog extension docs directly. When you need advanced Prolog features (tabling, DCGs, constraint logic programming, modules, persistency, etc.), spawn the `logic-focused:bookworm` sub-agent with the `Agent` tool and describe the problem you're solving. Bookworm will return a targeted recommendation with the minimal snippet and any gotchas. This keeps reference material out of your main context and lets bookworm supplement with web research or project-specific wiki entries when the built-in docs aren't enough.
+The plugin ships a SWI-Prolog wiki at `${CLAUDE_SKILL_DIR}/../../references/prolog-wiki/` covering tabling, DCGs, CLP(FD/B/Q/R), modules, persistency, and more. **Don't read it yourself** — wiki content flows through `agent-of-truth`, which has direct access. When briefing that agent (§2), include the absolute wiki path and let it consult the wiki for extension recipes. This keeps reference material out of the main context and preserves the separation between skill orchestration and Prolog modelling expertise.
 
 ## Guidance
 

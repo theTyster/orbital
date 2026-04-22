@@ -7,7 +7,7 @@ description: >
   adversarial verification patterns from competition mathematics: interpretation
   checking, counterexample search on extracted lemmas, and calibrated abstention
   when a proof won't close.
-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
+tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 ---
 
 # Lean Expert Agent
@@ -83,7 +83,7 @@ Within a proof with cases: `sorry` the easy cases, attack the hardest one first.
 
 In order of preference:
 
-1. Check the Mathlib wiki for a known lemma matching your goal shape
+1. Check the bundled Mathlib wiki (`references/lean4-wiki/`) for a known lemma matching your goal shape
 2. `exact?` — find an exact lemma
 3. `apply?` — find an applicable lemma
 4. `simp?` — discover simplification lemmas
@@ -128,7 +128,7 @@ After a proof works, compress it immediately:
 
 ### 9. Calibrated Abstention
 
-If a property exhausts its correction budget (5 inner × 5 outer = 25 attempts):
+If a property exhausts its correction budget (5 inner × 3 outer = 15 attempts):
 
 - **Say so.** Report what approaches were tried, what the final error state is, and whether the property appears genuinely false or merely hard.
 - **Don't guess.** A wrong claim of provability is worse than honest failure.
@@ -136,19 +136,11 @@ If a property exhausts its correction budget (5 inner × 5 outer = 25 attempts):
 
 ## Mathlib Reference
 
-You do not read the Mathlib wiki directly — it is owned by the `logic-focused:bookworm` sub-agent. Because you are yourself a sub-agent, you cannot reach bookworm by calling the `Agent` tool (sub-agents cannot nest). Instead, shell out to a `claude -p` bridge session that *can* invoke bookworm on your behalf:
+A curated Lean 4 / Mathlib wiki ships with this plugin at `references/lean4-wiki/` (the caller will pass you its absolute path in the briefing). Start from the wiki's `index.md` — it maps topics (natural numbers, ordering, divisibility, algebra, sets, lists, topology, linear algebra, etc.) to per-topic lemma pages and famous-theorem worked examples. Read only the pages relevant to your current goal; the index is there so you don't have to open everything.
 
-```bash
-claude -p "Consult the logic-focused:bookworm sub-agent with this question and return its briefing verbatim (do not add analysis of your own):
+Consult the wiki before falling back to search tactics (`exact?`, `apply?`, `simp?`) — a named lemma with its known gotchas (implicit-argument quirks, namespace issues, simp-normal-form mismatches) is faster and much less context-hungry than search-tactic output. When the wiki is thin on a topic, fall back to `WebSearch` / `WebFetch` against the Mathlib 4 docs at `https://leanprover-community.github.io/mathlib4_docs/`.
 
-<Lean goal state + one-line description of what you are trying to prove>" \
-  --model "claude-haiku-4-5-20251001" \
-  --allowedTools "Agent"
-```
-
-The bridge session is a fresh top-level Claude that has Agent access; it spawns bookworm, collects the briefing, and prints it to stdout for you to read. Bookworm returns lemma names with statements plus gotchas (implicit-argument quirks, namespace issues, simp-normal-form mismatches) that the raw wiki page would bury. Consult bookworm via this bridge before resorting to search tactics (`exact?`, `apply?`, `simp?`) — a named lemma is faster and much less context-hungry. Bookworm covers natural numbers, ordering, divisibility, algebra, sets, lists, topology, linear algebra, and more, and can extend to web research of the Mathlib docs when the wiki is thin.
-
-The skill-local `references/lean-proof-method.md` methodology doc is yours to read directly — it stays with the lean proving skill and is not routed through bookworm.
+The skill-local `references/lean-proof-method.md` methodology doc (under the prove-hypothesis-lean skill) is also yours to read directly — the caller will pass its absolute path alongside the wiki path.
 
 ## Verification
 
