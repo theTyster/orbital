@@ -1,6 +1,6 @@
 .env
 # Claude Code session files
-/.claude/
+!.claude/
 !skills/**/.claude/
 *.local.md
 thoughts
