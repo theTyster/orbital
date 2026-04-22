@@ -1,5 +1,6 @@
 ---
 name: setup-lean-mathlib
+user-invocable: true
 description: >
   Use this skill whenever the user needs to set up or fix a Lean 4 + Mathlib project — "new lean project", "add mathlib", "lean4 setup", "update mathlib", toolchain mismatches, or lakefile issues. Installs a shared Mathlib clone so new projects never recompile Mathlib from scratch.
 ---
