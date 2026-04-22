@@ -1,11 +1,7 @@
 ---
-name: c4-analyze
+name: c4-orchestrate
 description: >
-  Orchestrate the full C4 analysis pipeline: find patterns in a codebase, verify
-  the ontology, and condense into an implementation plan. Runs c4-find-patterns,
-  c4-define-patterns, and c4-condense-patterns in sequence. Use when: "analyze this
-  codebase formally", "full C4 analysis", "plan this change with Prolog reasoning",
-  or any task requiring end-to-end structural analysis and planning.
+  Orchestrate the full C4 analysis pipeline.
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: [target directory] [task description]
@@ -31,9 +27,9 @@ Invoke `/c4-define-patterns <facts_file>`
 Wait for output: verification confirmation.
 If alignment issues found, return to Phase 1 to update facts.
 
-### Phase 3: Condense Patterns
+### Phase 3: Create Plan
 
-Invoke `/c4-condense-patterns <facts_file> <task_description>`
+Invoke `/c4-pattern-to-plan <facts_file> <task_description>`
 
 Wait for output: implementation plan.
 

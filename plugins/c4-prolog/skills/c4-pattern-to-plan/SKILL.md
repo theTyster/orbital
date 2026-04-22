@@ -1,10 +1,7 @@
 ---
-name: c4-condense-patterns
+name: c4-pattern-to-plan
 description: >
-  Transform Prolog analysis into an implementation plan. Maps a user's task to C4
-  components, runs targeted analysis, and produces a plan grounded in formal output.
-  Use when: "create implementation plan", "what's the impact of changing X",
-  "plan this change using the facts", or after c4-define-patterns to create an action plan.
+  Transform Prolog analysis into an implementation plan. Maps a user's task to C4 components, runs targeted analysis, and produces a plan grounded in formal output. Use after c4-define-patterns to create an action plan.
 user-invocable: true
 allowed-tools: Bash, Read, Write
 argument-hint: [facts file path] [task description or component list]
