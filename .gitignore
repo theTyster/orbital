@@ -2,7 +2,7 @@
 # Claude Code session files
 !.claude/
 !skills/**/.claude/
-*.local.md
+*.local.*
 thoughts
 CLAUDE.md
 
