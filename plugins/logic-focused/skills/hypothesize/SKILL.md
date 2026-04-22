@@ -19,7 +19,7 @@ Prolog is the evidence-gathering tool, not the focus.
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
-`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md`
+`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md 2>/dev/null || echo "(not yet created)"`
 
 **Find Prolog facts file**: The `.pl` KB that the hypothesis was derived from.
 

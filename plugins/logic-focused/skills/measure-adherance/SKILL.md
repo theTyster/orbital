@@ -16,7 +16,7 @@ The word "resource" is broad on purpose — specs, implementation docs, code fil
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
-`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md`
+`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md 2>/dev/null || echo "(not yet created)"`
 
 ```
 PROLOG="${CLAUDE_SKILL_DIR}/prolog"
