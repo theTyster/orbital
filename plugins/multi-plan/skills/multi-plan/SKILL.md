@@ -12,7 +12,7 @@ argument-hint: [list of enhancements to plan and implement]
 
 # Multi-Plan Orchestrator
 
-Manage a pipeline of parallel enhancement agents across isolated worktrees.
+Manage a pipeline of parallel enhancement agents across isolated worktrees. Note, this skill cannot be effectively utilized by a sub-agent.
 
 ## Shared Paths
 
