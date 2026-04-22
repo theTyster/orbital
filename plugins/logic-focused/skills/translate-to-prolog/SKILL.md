@@ -16,9 +16,10 @@ The knowledge base is built incrementally: each source file is read, analyzed, a
 representation is written or appended to the facts file before the next file is processed.
 This approach provides faster feedback and catches errors early.
 
-## Prerequisites
+## Current Environment
 
-- **SWI-Prolog** (`swipl`): `swipl --version` must succeed.
+`which swipl` returns: !`which swipl`
+`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md`
 
 ## Input
 

@@ -165,6 +165,7 @@ Prefer delegation aggressively. The orchestrator's own edits are limited to: tog
 - Baseline regressions encountered and their resolution
 - Loopback status: none, or blocked at test {name} with classification {...}
 - Path to `thoughts/implementation_log.md`
+- Next steps
 
 ## Guidance
 

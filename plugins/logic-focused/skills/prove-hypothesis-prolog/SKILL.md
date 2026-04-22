@@ -24,11 +24,12 @@ model* (the KB), not in an abstract mathematical sense. This is the right choice
 For properties requiring mathematical proof independent of any concrete KB (e.g. "this
 algorithm is correct for all possible inputs"), use `prove-hypothesis-lean` instead.
 
-## Prerequisites
+## Current Environment
 
-1. **SWI-Prolog**: `swipl --version` must succeed.
-2. **Hypothesis file**: `thoughts/hypothesis.md` from the hypothesize skill.
-3. **Prolog facts file**: The `.pl` KB that the hypothesis was derived from.
+`which swipl` returns: !`which swipl`
+`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md`
+
+**Find Prolog facts file**: The `.pl` KB that the hypothesis was derived from.
 
 ## What a Prolog Proof Looks Like
 

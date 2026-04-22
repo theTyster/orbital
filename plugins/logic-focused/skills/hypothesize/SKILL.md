@@ -1,11 +1,13 @@
 ---
 name: hypothesize
 description: >
-  Use this skill whenever the user wants to explore whether a proposition holds in a Prolog KB — "what breaks if X changes", "is this claim true", "analyze the knowledge base", or "check this hypothesis against the facts". Takes a .pl facts file and a proposition; decomposes it into falsifiable sub-hypotheses and produces a structured hypothesis file.
+  Explore whether a proposition holds in a Prolog KB. Takes a .pl facts file and a proposition; decomposes it into falsifiable sub-hypotheses and produces a structured hypothesis file.
 user-invocable: true
 allowed-tools: Bash, Write, Agent
 argument-hint: "[prolog facts file] [proposition or question to explore]"
 ---
+
+- **Proof that `swipl` exists:** !`which swipl`
 
 # Hypothesize
 
@@ -14,10 +16,12 @@ Take a proposition — a planned change, an architectural claim, a design questi
 The reasoning follows a simple arc: **proposition → decomposition → evidence → hypothesis**.
 Prolog is the evidence-gathering tool, not the focus.
 
-## Prerequisites
+## Current Environment
 
-- **SWI-Prolog** (`swipl`): `swipl --version` must succeed.
-- **A facts file**: a `.pl` file containing ground Prolog facts (output from translate-to-prolog, or hand-authored).
+`which swipl` returns: !`which swipl`
+`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md`
+
+**Find Prolog facts file**: The `.pl` KB that the hypothesis was derived from.
 
 ## Input
 

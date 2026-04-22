@@ -1,11 +1,7 @@
 ---
 name: setup-lean-project
 description: >
-  Create a thin Lean 4 project in the current working directory that references the shared
-  system-wide Mathlib clone. Use this before running prove-hypothesis-lean
-  when no Lean project exists in the working directory yet. Triggers: "set up lean project",
-  "create lean project", "initialize lean for this repo", or when another skill detects that
-  thoughts/lean/ does not exist.
+  Set up a minimal Lean 4 project referencing a shared system-wide Mathlib clone. Run before prove-hypothesis-lean if no project exists. Triggered by: "set up/create lean project", "initialize lean", or when thoughts/lean/ is missing.
 user-invocable: true
 argument-hint: "[optional: target directory, default: thoughts/lean]"
 ---

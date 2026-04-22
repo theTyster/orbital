@@ -1,7 +1,7 @@
 ---
 name: measure-adherance
 description: >
-  Use this skill whenever the user wants to check whether two or more documents, specs, or codebases agree — "does this implementation match the spec", "check alignment between", "grade against requirements", "adherence check", or "compare these documents". Extracts claims as Prolog facts and scores overlap, gaps, and contradictions. Designate one resource as "prime" to grade others against it.
+  Extracts claims as Prolog facts and scores overlap, gaps, and contradictions. Designate one resource as "prime" to grade others against it.
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Write, Agent
 argument-hint: "[resource1] [resource2] [...] [--prime resource1]"
@@ -13,9 +13,10 @@ Compare two or more resources and score how well they agree. The core idea is si
 
 The word "resource" is broad on purpose — specs, implementation docs, code files, configs, READMEs, test plans, data models. Anything with extractable claims.
 
-## Prerequisites
+## Current Environment
 
-- **SWI-Prolog** (`swipl`): `swipl --version` must succeed.
+`which swipl` returns: !`which swipl`
+`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md`
 
 ```
 PROLOG="${CLAUDE_SKILL_DIR}/prolog"

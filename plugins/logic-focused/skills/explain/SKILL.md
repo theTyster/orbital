@@ -1,7 +1,7 @@
 ---
 name: explain
 description: >
-  Use this skill whenever the user wants a plain-language explanation of logic-focused pipeline work — "explain what we did", "explain the proof", "summarize for my PM", or when a reviewer needs to understand formal artifacts. Discovers pipeline artifacts (Prolog KB, hypotheses, Lean proofs, tests) and produces a non-technical narrative.
+  Produce a plain-language explanation of logic-focused work — "explain what we did", "explain the proof", "summarize for my PM".
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write
 argument-hint: "[optional: thoughts/ directory, specific file, or codebase directory]"
@@ -9,7 +9,7 @@ argument-hint: "[optional: thoughts/ directory, specific file, or codebase direc
 
 # Explain
 
-Produce a plain-language narrative of whatever work has been done. The reader is someone who was not involved, does not know Lean4 or Prolog, and needs to understand what happened, what was decided, and what guarantees (if any) exist — without ever reading a formal artifact.
+Produce a plain-language narrative of whatever work has been done in simple terms. The reader is someone who was not involved, does not know Lean4 or Prolog, and needs to understand what happened, what was decided, and what guarantees (if any) exist — without ever reading a formal artifact.
 
 This skill works at **any point in the pipeline**, not just the end. After translating a codebase to Prolog, it explains what was modeled. After forming a hypothesis, it explains what was proposed and why. After proving theorems, it explains what was guaranteed. After a full pipeline run, it narrates the whole journey. After a code change with no formal methods at all, it documents what changed and why.
 
@@ -32,9 +32,9 @@ In discovery mode, scan `thoughts/` and optionally a codebase directory. Read ev
 
 ---
 
-## What to look for
+## Typical Artifacts to Look For
 
-These are the artifacts the pipeline produces. Not all will exist at any given point. Read what's there, skip what isn't, and note the gaps.
+These are the artifacts this pipeline produces. Not all will exist at any given point. Read what's there, skip what isn't, and note the gaps.
 
 | Artifact | Pipeline stage | What it tells you |
 |----------|---------------|-------------------|
