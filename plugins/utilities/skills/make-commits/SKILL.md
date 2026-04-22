@@ -1,6 +1,6 @@
 ---
 name: make-commits
-description: Use when the user wants to create logical commits of unstaged changes.
+description: Create logical commits of unstaged changes.
 user-invocable: true
 allowed-tools: Bash
 ---

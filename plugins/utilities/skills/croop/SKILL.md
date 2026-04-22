@@ -27,10 +27,10 @@ Examples:
 
 | Input | outer | inner | prompt |
 | --- | --- | --- | --- |
-| `30m /babysit-prs` | 30m | 1m | `/babysit-prs` |
-| `1h 5m check deploy status` | 1h | 5m | `check deploy status` |
-| `2h 10m /run-tests` | 2h | 10m | `/run-tests` |
-| `45m summarize PR #123` | 45m | 1m | `summarize PR #123` |
+| 30m `/babysit-prs` | 30m | 1m | /babysit-prs |
+| 1h 5m check deploy status | 1h | 5m | check deploy status |
+| 2h 10m `/run-tests` | 2h | 10m | /run-tests |
+| 45m summarize PR #123 | 45m | 1m | summarize PR #123 |
 
 ## Invariants
 

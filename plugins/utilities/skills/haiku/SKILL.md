@@ -7,13 +7,6 @@ allowed-tools: Bash
 
 Spawn a new Claude Haiku session with the user's prompt, enriched with current project context.
 
-## Project Context
-
-- **Directory**: !`pwd`
-- **Git branch**: !`git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "(not a git repo)"`
-- **Modified files**: !`git diff --name-only 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//' || echo "(none)"`
-- **Project type**: !`ls package.json Cargo.toml pyproject.toml go.mod 2>/dev/null | tr '\n' ' ' | sed 's/ $//' || echo "(unknown)"`
-
 ## Instructions
 
 Run the user's ARGUMENTS as a prompt in a new Claude Haiku session. Prepend the project context above to the prompt so the new session has immediate environmental awareness.
@@ -24,7 +17,7 @@ claude -p "Project context:
 - Branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'not a git repo')
 - Modified: $(git diff --name-only 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//')
 
-ARGUMENTS" --model "claude-haiku-4-5-20251001" --allowedTools "Read"
+ARGUMENTS" --model "haiku" --allowedTools "Read"
 ```
 
 ## Rules
