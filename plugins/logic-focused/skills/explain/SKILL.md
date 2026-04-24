@@ -15,6 +15,8 @@ This skill works at **any point in the pipeline**, not just the end. After trans
 
 The output scales to whatever artifacts are present. One artifact gets a focused explanation. Many get a connected narrative.
 
+**The epistemic-strength obligation.** Every claim in the upstream artifacts carries an epistemic tag (see `../../references/epistemic-types.md`). The reader of this explanation cannot see those tags, so the prose must translate them into calibrated language: "proven for all inputs" (`LEAN_UNIVERSAL`) is stronger than "checked exhaustively in our model" (`PROLOG_MODEL_VERIFIED`), which is stronger than "the fixture passed in our test suite" (`TEST_PROJECTED`), which is stronger than "we asserted behaviourally without formal proof" (`TEST_BEHAVIORAL`), which is stronger than "the knowledge base did not contradict it" (`KB_ABSENT_CWA`). Flattening these into the undifferentiated word "proven" is the failure mode this skill exists to prevent.
+
 ---
 
 ## How to detect the mode
@@ -75,6 +77,34 @@ The entire point of this skill is that the reader should never need to open a `.
 
 **Tests** are acceptance criteria. When explaining tests:
 - Frame as: "We wrote checks that will fail if the implementation doesn't satisfy the properties we proved. An implementor works through these one by one"
+
+### Translating epistemic tags
+
+The upstream artifacts tag every claim with an epistemic origin. These tags never appear in the plain-language output, but the calibrated phrase they translate into does. Use this reference while writing prose — pick the phrase that matches the tag, then weave it into a sentence. Do not paste the tag into the narrative; the reader is an outsider.
+
+**`LEAN_UNIVERSAL`** → "proven mathematically for all possible inputs — the strongest guarantee this pipeline produces."
+
+**`LEAN_CONDITIONAL`** → "proven mathematically, assuming [stated hypothesis]. Strong — but only as strong as that hypothesis."
+
+**`LEAN_CWA_LIFTED`** → "proven mathematically, but one or more premises came from 'the knowledge base did not mention this' — so the guarantee is only as strong as the completeness of what we modeled. Call out the specific CWA-lifted premise if it matters to the reader."
+
+**`PROLOG_MODEL_VERIFIED`** → "verified exhaustively within the model we built — no counterexample exists in our knowledge base."
+
+**`KB_PRESENT` / `KB_CONTRADICTED`** → "the model explicitly says so" / "the model explicitly rules it out."
+
+**`KB_ABSENT_CWA`** → "the model did not derive this; treated as absent under closed-world assumption. Weaker than a contradiction — if the model is incomplete, the absence may be wrong."
+
+**`TEST_PROJECTED`** → "the implementation passed a test case that samples the proven property at specific inputs. The universal guarantee lives in the proof, not the test — the test is a tripwire."
+
+**`TEST_ABSENCE`** → "the implementation's structure was checked and confirmed to not contain a specific forbidden dependency at a specific place."
+
+**`TEST_GUARD`** → "we also confirmed that re-introducing the forbidden dependency breaks the invariant — the removal was load-bearing."
+
+**`TEST_BEHAVIORAL`** → "asserted by a test but not formally proven. Green means the test case passed; this is weaker than any proof-backed claim."
+
+**`ASSUMED_UNPROVEN`** → "taken as given without verification — flag this explicitly to the reader."
+
+If a claim composes tags (e.g., `TEST_PROJECTED+CWA_LIFTED`), combine the phrases — "the implementation passed a test that samples a property whose premise came from closed-world absence, so the guarantee is twice weakened." Do not simplify it into "verified."
 
 ### Structuring the narrative
 
@@ -138,12 +168,14 @@ For a partial pipeline, only include the sections that have artifacts.}
 
 ## What We Know Now
 
-{A summary of the current state:}
+{A summary of the current state, broken down by the strength of the claim.
+Sort every finding into one of these five buckets — do not collapse them:}
 
-- What has been **established** (proven, modeled, tested — be precise
-  about the level of confidence for each)
-- What has been **assumed but not verified** (flag these clearly)
-- What **hasn't been done yet** (remaining pipeline stages, if any)
+- What has been **proven universally** (LEAN_UNIVERSAL / LEAN_CONDITIONAL)
+- What has been **model-verified** (PROLOG_MODEL_VERIFIED — exhaustive within our model)
+- What has been **sampled and passed** (TEST_PROJECTED / TEST_ABSENCE / TEST_GUARD — test cases witness the property; proof is still authority on universality)
+- What has been **asserted behaviourally** (TEST_BEHAVIORAL — no formal backing)
+- What has been **assumed** (KB_ABSENT_CWA / ASSUMED_UNPROVEN — treated as true but not verified; may be wrong if the model is incomplete)
 
 ## What This Means for a Reviewer
 
@@ -151,7 +183,18 @@ For a partial pipeline, only include the sections that have artifacts.}
 what should they scrutinize? If formal proofs exist, explain that "proven"
 means mathematically certain under stated assumptions — stronger than
 "tested" but only as strong as the assumptions. If only a KB exists,
-explain that the model is only as accurate as the facts fed into it.}
+explain that the model is only as accurate as the facts fed into it.
+
+Tell the reviewer which claims fall into each of the five strength buckets
+from "What We Know Now" and why the bucket matters for their scrutiny.
+CWA-lifted claims (whether they ended up in Lean as `LEAN_CWA_LIFTED` or
+as a `TEST_ABSENCE`) deserve extra attention because the guarantee is only
+as strong as the completeness of the knowledge base — if the model missed
+a dependency, the absence-based claim may be wrong. Behavioral tests
+(`TEST_BEHAVIORAL`) also deserve extra scrutiny because nothing upstream
+backs them: a green behavioral test means the fixture passed on this run,
+not that the behaviour is guaranteed. Point the reviewer at these weaker
+buckets explicitly rather than burying them alongside the proven claims.}
 ```
 
 ### Single-file mode
@@ -181,3 +224,5 @@ After writing, tell the user:
 **Explain absence.** If the pipeline stopped at hypothesize and never reached proofs, say so and explain what that means: "The prediction has supporting evidence from the model but has not been formally verified — it should be treated as a well-informed estimate, not a guarantee." Missing stages are information, not failures.
 
 **Don't pad.** If only one artifact exists, the explanation might be a single page. That's fine. Don't inflate the narrative to seem more thorough than the work actually was.
+
+**Never flatten strength into "proven."** Every claim in the artifacts has an epistemic tag. If the explanation uses the same word ("proven", "verified", "confirmed") for a LEAN_UNIVERSAL theorem and a TEST_BEHAVIORAL fixture, it has silently erased the distinction the whole pipeline exists to produce. Calibrate every confidence word.
