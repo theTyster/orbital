@@ -1,7 +1,7 @@
 ---
 name: explain
 description: >
-  Produce a plain-language explanation of logic-focused work — "explain what we did", "explain the proof", "summarize for my PM".
+  Cross-cutting support resource — produces a plain-language explanation of logic-focused work for non-technical review. Triggers: "explain what we did", "explain the proof", "summarize for my PM", "write this up for a stakeholder". NOT a pipeline stage and has no place in the linear flow; invoke it at any time, against whatever artifacts already exist. Cited by `prove-hypothesis-lean` as a downstream readability resource, but never consumed by any other skill.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write
 argument-hint: "[optional: thoughts/ directory, specific file, or codebase directory]"
@@ -11,11 +11,13 @@ argument-hint: "[optional: thoughts/ directory, specific file, or codebase direc
 
 Produce a plain-language narrative of whatever work has been done in simple terms. The reader is someone who was not involved, does not know Lean4 or Prolog, and needs to understand what happened, what was decided, and what guarantees (if any) exist — without ever reading a formal artifact.
 
-This skill works at **any point in the pipeline**, not just the end. After translating a codebase to Prolog, it explains what was modeled. After forming a hypothesis, it explains what was proposed and why. After proving theorems, it explains what was guaranteed. After a full pipeline run, it narrates the whole journey. After a code change with no formal methods at all, it documents what changed and why.
+This skill is a **cross-cutting support resource for non-technical review**, not a pipeline stage. It has no position in the linear pipeline — there is no stage that must come before it and no stage that depends on its output. It does not produce an artifact that any other skill consumes; deleting `thoughts/explanation.md` does not break the pipeline. Use it whenever a stakeholder, project manager, reviewer, or non-technical collaborator needs to understand the work without reading Prolog or Lean. After translating a codebase to Prolog, it explains what was modeled. After forming a hypothesis, it explains what was proposed and why. After proving theorems, it explains what was guaranteed. After a full pipeline run, it narrates the whole journey. After a code change with no formal methods at all, it documents what changed and why.
+
+The output is a plain-language report at `thoughts/explanation.md`, written for a non-technical audience. The canonical machine-readable results live elsewhere (`thoughts/model_results.pl`, `thoughts/lean_proof_results.pl`, `thoughts/adherence_report.md`, etc.) — this skill exists only to translate them into prose suitable for review by readers who do not read formal logic.
 
 The output scales to whatever artifacts are present. One artifact gets a focused explanation. Many get a connected narrative.
 
-**The epistemic-strength obligation.** Every claim in the upstream artifacts carries an epistemic tag (see `../../references/epistemic-types.md`). The reader of this explanation cannot see those tags, so the prose must translate them into calibrated language: "proven for all inputs" (`LEAN_UNIVERSAL`) is stronger than "checked exhaustively in our model" (`PROLOG_MODEL_VERIFIED`), which is stronger than "the fixture passed in our test suite" (`TEST_PROJECTED`), which is stronger than "we asserted behaviourally without formal proof" (`TEST_BEHAVIORAL`), which is stronger than "the knowledge base did not contradict it" (`KB_ABSENT_CWA`). Flattening these into the undifferentiated word "proven" is the failure mode this skill exists to prevent.
+**The epistemic-strength obligation.** Every claim in the upstream artifacts carries an epistemic label (see `../../references/epistemic-types.md`). The reader of this explanation cannot see those labels, so the prose must translate them into calibrated language: "proven for all inputs" (a `prescriptive` Lean theorem) is stronger than "checked exhaustively in our model" (a `descriptive` Prolog model claim), which is stronger than "the fixture passed in our test suite" (`test_category(projection)`), which is stronger than "we asserted behaviourally without formal proof" (`test_category(behavioral_claim)`), which is stronger than "the knowledge base did not contradict it" (`negation_provenance(absent)` under closed-world). Flattening these into the undifferentiated word "proven" is the failure mode this skill exists to prevent.
 
 ---
 
@@ -27,7 +29,7 @@ Decide what to do based on the argument (or absence of one):
 |----------|------|
 | None, or a directory | **Discovery mode** — scan for all artifacts, produce the broadest narrative possible |
 | A specific `.lean` file | **Single proof** — explain what that one proof establishes |
-| A specific `.pl` file | **Single KB** — explain what the knowledge base models |
+| A specific `.pl` file | **Single KB or results file** — explain what the knowledge base models or what the results record |
 | A specific `.md` file | **Single document** — explain that document's role and content |
 
 In discovery mode, scan `thoughts/` and optionally a codebase directory. Read everything that exists. Missing artifacts are fine — just note what stages haven't been reached yet.
@@ -38,15 +40,19 @@ In discovery mode, scan `thoughts/` and optionally a codebase directory. Read ev
 
 These are the artifacts this pipeline produces. Not all will exist at any given point. Read what's there, skip what isn't, and note the gaps.
 
-| Artifact | Pipeline stage | What it tells you |
-|----------|---------------|-------------------|
-| `thoughts/facts.pl` or `thoughts/*_facts.pl` | translate-to-prolog | A structured model of the codebase or domain — entities, relationships, rules |
-| `thoughts/hypothesis.md` | hypothesize | A falsifiable claim about how something should work, with evidence for and against |
+| Artifact | Producing skill | What it tells you |
+|----------|-----------------|-------------------|
+| `thoughts/existing-world.pl` | translate-to-prolog | A structured model of the codebase or domain as it exists today — entities, relationships, rules |
+| `thoughts/hypothesis.pl` | hypothesize | A falsifiable claim decomposed into Prolog sub-hypotheses, with evidence for and against |
+| `thoughts/target-world.pl` | prove-hypothesis-prolog | The hypothesised target world being verified against the existing world |
+| `thoughts/model_results.pl` | prove-hypothesis-prolog | Per-obligation outcomes from model-based verification |
 | `thoughts/lean/Proofs/*.lean` | prove-hypothesis-lean | Machine-checked proofs that certain properties are mathematically guaranteed |
-| `thoughts/proof_results.md` | prove-hypothesis-lean | A summary of what the proofs established, in more readable form |
+| `thoughts/lean_proof_results.pl` | prove-hypothesis-lean | Per-theorem outcomes (proved / failed / sorry) from Lean |
 | `thoughts/tests/*` | translate-to-tests | Tests that check whether the implementation satisfies proven properties |
+| `thoughts/implementation_log.md` | translate-to-implementation | A record of how each test was driven to green |
 | Implementation files (`.ts`, `.py`, `.go`, etc.) | manual or planned | The actual code that was written or changed |
-| `thoughts/implementation_review.md` | previous explain run | An existing narrative (check if it needs updating rather than rewriting) |
+| `thoughts/adherence_report.md` | measure-adherance | How well two or more resources agree on shared facts |
+| `thoughts/explanation.md` | previous explain run | An existing narrative (check if it needs updating rather than rewriting) |
 
 ---
 
@@ -78,33 +84,35 @@ The entire point of this skill is that the reader should never need to open a `.
 **Tests** are acceptance criteria. When explaining tests:
 - Frame as: "We wrote checks that will fail if the implementation doesn't satisfy the properties we proved. An implementor works through these one by one"
 
-### Translating epistemic tags
+### Translating epistemic labels
 
-The upstream artifacts tag every claim with an epistemic origin. These tags never appear in the plain-language output, but the calibrated phrase they translate into does. Use this reference while writing prose — pick the phrase that matches the tag, then weave it into a sentence. Do not paste the tag into the narrative; the reader is an outsider.
+The upstream artifacts label every claim with an epistemic origin via `epistemic_label/1`, `negation_provenance/1`, and `test_category/1`. These labels never appear in the plain-language output, but the calibrated phrase they translate into does. Use this reference while writing prose — pick the phrase that matches the label, then weave it into a sentence. Do not paste the label into the narrative; the reader is an outsider.
 
-**`LEAN_UNIVERSAL`** → "proven mathematically for all possible inputs — the strongest guarantee this pipeline produces."
+**`epistemic_label(prescriptive)` from a Lean theorem with no closed-world premises** → "proven mathematically for all possible inputs — the strongest guarantee this pipeline produces."
 
-**`LEAN_CONDITIONAL`** → "proven mathematically, assuming [stated hypothesis]. Strong — but only as strong as that hypothesis."
+**`epistemic_label(prescriptive)` proven under a stated hypothesis** → "proven mathematically, assuming [stated hypothesis]. Strong — but only as strong as that hypothesis."
 
-**`LEAN_CWA_LIFTED`** → "proven mathematically, but one or more premises came from 'the knowledge base did not mention this' — so the guarantee is only as strong as the completeness of what we modeled. Call out the specific CWA-lifted premise if it matters to the reader."
+**`epistemic_label(prescriptive)` whose proof rests on a closed-world premise (a `negation_provenance(absent)` fact lifted into Lean)** → "proven mathematically, but one or more premises came from 'the knowledge base did not mention this' — so the guarantee is only as strong as the completeness of what we modeled. Call out the specific closed-world premise if it matters to the reader."
 
-**`PROLOG_MODEL_VERIFIED`** → "verified exhaustively within the model we built — no counterexample exists in our knowledge base."
+**`epistemic_label(descriptive)` from a Prolog model verification** → "verified exhaustively within the model we built — no counterexample exists in our knowledge base."
 
-**`KB_PRESENT` / `KB_CONTRADICTED`** → "the model explicitly says so" / "the model explicitly rules it out."
+**`negation_provenance(contradicts)`** → "the model explicitly rules it out — there is a fact that contradicts the claim."
 
-**`KB_ABSENT_CWA`** → "the model did not derive this; treated as absent under closed-world assumption. Weaker than a contradiction — if the model is incomplete, the absence may be wrong."
+**`negation_provenance(absent)`** → "the model did not derive this; treated as absent under closed-world assumption. Weaker than a contradiction — if the model is incomplete, the absence may be wrong."
 
-**`TEST_PROJECTED`** → "the implementation passed a test case that samples the proven property at specific inputs. The universal guarantee lives in the proof, not the test — the test is a tripwire."
+**`epistemic_label(counterfactual)`** → "explored as a hypothetical alternative world — useful for reasoning about possible futures, but not a claim about what is true today."
 
-**`TEST_ABSENCE`** → "the implementation's structure was checked and confirmed to not contain a specific forbidden dependency at a specific place."
+**`test_category(projection)`** → "the implementation passed a test case that samples the proven property at specific inputs. The universal guarantee lives in the proof, not the test — the test is a tripwire."
 
-**`TEST_GUARD`** → "we also confirmed that re-introducing the forbidden dependency breaks the invariant — the removal was load-bearing."
+**`test_category(projection)` for an absence claim** → "the implementation's structure was checked and confirmed to not contain a specific forbidden dependency at a specific place."
 
-**`TEST_BEHAVIORAL`** → "asserted by a test but not formally proven. Green means the test case passed; this is weaker than any proof-backed claim."
+**`test_category(projection)` paired with a guard test** → "we also confirmed that re-introducing the forbidden dependency breaks the invariant — the removal was load-bearing."
 
-**`ASSUMED_UNPROVEN`** → "taken as given without verification — flag this explicitly to the reader."
+**`test_category(behavioral_claim)`** → "asserted by a test but not formally proven. Green means the test case passed; this is weaker than any proof-backed claim."
 
-If a claim composes tags (e.g., `TEST_PROJECTED+CWA_LIFTED`), combine the phrases — "the implementation passed a test that samples a property whose premise came from closed-world absence, so the guarantee is twice weakened." Do not simplify it into "verified."
+**No label, taken as given** → "taken as given without verification — flag this explicitly to the reader."
+
+If a claim composes labels (e.g., a `test_category(projection)` that samples a Lean theorem whose proof rested on `negation_provenance(absent)`), combine the phrases — "the implementation passed a test that samples a property whose premise came from closed-world absence, so the guarantee is twice weakened." Do not simplify it into "verified."
 
 ### Structuring the narrative
 
@@ -171,11 +179,11 @@ For a partial pipeline, only include the sections that have artifacts.}
 {A summary of the current state, broken down by the strength of the claim.
 Sort every finding into one of these five buckets — do not collapse them:}
 
-- What has been **proven universally** (LEAN_UNIVERSAL / LEAN_CONDITIONAL)
-- What has been **model-verified** (PROLOG_MODEL_VERIFIED — exhaustive within our model)
-- What has been **sampled and passed** (TEST_PROJECTED / TEST_ABSENCE / TEST_GUARD — test cases witness the property; proof is still authority on universality)
-- What has been **asserted behaviourally** (TEST_BEHAVIORAL — no formal backing)
-- What has been **assumed** (KB_ABSENT_CWA / ASSUMED_UNPROVEN — treated as true but not verified; may be wrong if the model is incomplete)
+- What has been **proven universally** (`epistemic_label(prescriptive)` Lean theorems with no closed-world premises)
+- What has been **model-verified** (`epistemic_label(descriptive)` from Prolog — exhaustive within our model)
+- What has been **sampled and passed** (`test_category(projection)` — test cases witness the property; proof is still authority on universality)
+- What has been **asserted behaviourally** (`test_category(behavioral_claim)` — no formal backing)
+- What has been **assumed** (`negation_provenance(absent)` or otherwise unverified — treated as true but not verified; may be wrong if the model is incomplete)
 
 ## What This Means for a Reviewer
 
@@ -187,14 +195,16 @@ explain that the model is only as accurate as the facts fed into it.
 
 Tell the reviewer which claims fall into each of the five strength buckets
 from "What We Know Now" and why the bucket matters for their scrutiny.
-CWA-lifted claims (whether they ended up in Lean as `LEAN_CWA_LIFTED` or
-as a `TEST_ABSENCE`) deserve extra attention because the guarantee is only
-as strong as the completeness of the knowledge base — if the model missed
-a dependency, the absence-based claim may be wrong. Behavioral tests
-(`TEST_BEHAVIORAL`) also deserve extra scrutiny because nothing upstream
-backs them: a green behavioral test means the fixture passed on this run,
-not that the behaviour is guaranteed. Point the reviewer at these weaker
-buckets explicitly rather than burying them alongside the proven claims.}
+Closed-world claims (any premise carrying `negation_provenance(absent)`,
+whether it ended up in a Lean proof or as a projection test for absence)
+deserve extra attention because the guarantee is only as strong as the
+completeness of the knowledge base — if the model missed a dependency,
+the absence-based claim may be wrong. Behavioral tests
+(`test_category(behavioral_claim)`) also deserve extra scrutiny because
+nothing upstream backs them: a green behavioral test means the fixture
+passed on this run, not that the behaviour is guaranteed. Point the
+reviewer at these weaker buckets explicitly rather than burying them
+alongside the proven claims.}
 ```
 
 ### Single-file mode
@@ -225,4 +235,4 @@ After writing, tell the user:
 
 **Don't pad.** If only one artifact exists, the explanation might be a single page. That's fine. Don't inflate the narrative to seem more thorough than the work actually was.
 
-**Never flatten strength into "proven."** Every claim in the artifacts has an epistemic tag. If the explanation uses the same word ("proven", "verified", "confirmed") for a LEAN_UNIVERSAL theorem and a TEST_BEHAVIORAL fixture, it has silently erased the distinction the whole pipeline exists to produce. Calibrate every confidence word.
+**Never flatten strength into "proven."** Every claim in the artifacts has an epistemic label. If the explanation uses the same word ("proven", "verified", "confirmed") for a prescriptive Lean theorem and a `test_category(behavioral_claim)` fixture, it has silently erased the distinction the whole pipeline exists to produce. Calibrate every confidence word.

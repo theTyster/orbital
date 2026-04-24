@@ -2,14 +2,17 @@
 name: setup-lean-mathlib
 user-invocable: true
 description: >
-  Use this skill whenever the user needs to set up or fix a Lean 4 + Mathlib project — "new lean project", "add mathlib", "lean4 setup", "update mathlib", toolchain mismatches, or lakefile issues. Installs a shared Mathlib clone so new projects never recompile Mathlib from scratch.
+  Infrastructure setup, NOT a pipeline stage. Sets up a shared Mathlib clone at `~/.lean/mathlib4` to satisfy the `mathlib_clone` environment requirement of `prove-hypothesis-lean`. Use whenever the user needs to set up or fix a Lean 4 + Mathlib environment — "new lean project", "add mathlib", "lean4 setup", "update mathlib", toolchain mismatches, or lakefile issues. The shared clone avoids recompiling Mathlib from scratch for every project.
 ---
 
 # Lean 4 + Mathlib Project Management
 
-This skill manages Lean 4 projects that depend on Mathlib through a shared system-wide clone.
-The shared clone avoids re-downloading and recompiling Mathlib (~700k lines, hours to build)
-for every project.
+This skill is **infrastructure setup**, not a pipeline stage. It is the prerequisite that satisfies
+the `mathlib_clone` environment requirement of `prove-hypothesis-lean`: a shared Mathlib clone at
+`~/.lean/mathlib4` that every Lean project in this pipeline references via path-require. The shared
+clone avoids re-downloading and recompiling Mathlib (~700k lines, hours to build) for every project.
+Invoke it once to provision the environment, then forget about it until you need to refresh the
+Mathlib version. It does not appear in the linear pipeline flow.
 
 ## Critical Rules
 

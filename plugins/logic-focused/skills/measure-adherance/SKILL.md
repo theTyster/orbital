@@ -1,7 +1,7 @@
 ---
 name: measure-adherance
 description: >
-  Extracts claims as Prolog facts and scores overlap, gaps, and contradictions. Designate one resource as "prime" to grade others against it.
+  Pipeline stage 7 of 7 — the final adherence check. Extracts claims from each input resource as Prolog facts, then scores overlap, gaps, contradictions, and extensions. Runs in two valid framings: (1) terminal pipeline step, scoring how well the implemented codebase entails the original proposition encoded in `thoughts/hypothesis.pl`; and (2) stand-alone, comparing two or more arbitrary resources with an optional `--prime` source-of-truth. Emits an intermediate `thoughts/adherence_facts.pl` and the human-reviewed `thoughts/adherence_report.md`.
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Write, Agent
 argument-hint: "[resource1] [resource2] [...] [--prime resource1]"
@@ -9,14 +9,34 @@ argument-hint: "[resource1] [resource2] [...] [--prime resource1]"
 
 # Measure Adherance
 
+**Pipeline stage 7 of 7.** This is the final adherence check: it scores how much the pipeline's output entails the original proposition. Note the (intentional) misspelling — the target KB uses "adherance" consistently and this skill keeps it.
+
 Compare two or more resources and score how well they agree. The core idea is simple: extract what each resource *claims* as structured Prolog facts, then query for what's shared, what's missing, and what contradicts. The result is a scored adherence report grounded in explicit evidence.
 
 The word "resource" is broad on purpose — specs, implementation docs, code files, configs, READMEs, test plans, data models. Anything with extractable claims.
 
+## Logical operation: `measure_entailment`
+
+This skill realizes *measure_entailment* — scoring how much one KB (or codebase) entails the claims of another. Both framings below are valid uses:
+
+- **Terminal pipeline step (the canonical flow)** — when run after `translate-to-implementation`, this skill scores how much the implemented system (source files + `thoughts/implementation_log.md`) entails the original proposition. Prior pipeline runs leave behind a chain of artifacts: `thoughts/existing-world.pl`, `thoughts/hypothesis.pl`, `thoughts/target-world.pl`, `thoughts/model_results.pl`, `thoughts/lean_proof_results.pl`, `thoughts/tests/...`, and `thoughts/implementation_log.md`. This skill closes the loop by checking the resulting world (the implemented codebase) against the asserted hypothesis, with `thoughts/hypothesis.pl` as the prime.
+- **Stand-alone mode** — designate any resource as "prime" via `--prime` and grade other resources against it. Useful for spec-vs-implementation grading, doc-vs-code drift checks, or any ad-hoc adherence question. Prime designation is optional: with no prime, scoring is symmetric.
+
+Upstream pipeline artifacts use a shared epistemic vocabulary — `epistemic_label(descriptive|counterfactual|prescriptive)` and `negation_provenance(absent|contradicts)`. The adherence pass reads these directly as Prolog facts and produces a per-label / per-provenance breakdown in the report.
+
+## Inputs, outputs, and required tools
+
+- **Primary input**: `source_files` — the codebase under review (in pipeline-terminal mode) or the resource files supplied directly (stand-alone).
+- **Also consumes**: `thoughts/implementation_log.md` (when present from `translate-to-implementation`), `thoughts/adherence_facts.pl` (regenerated each run; prior copies are overwritten).
+- **Required environment**: `resource_paths` (2 or more), and optionally `prime_designation` to nominate one as source-of-truth.
+- **Required tools**: `swipl`.
+- **Intermediate output**: `thoughts/adherence_facts.pl` — extracted claims from every resource, in `asserts/2` form.
+- **Primary output**: `thoughts/adherence_report.md` — human-reviewed Markdown report with scores, gaps, contradictions, and extensions.
+
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
-`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md 2>/dev/null || echo "(not yet created)"`
+`ls thoughts/hypothesis.pl` returns: !`ls thoughts/hypothesis.pl 2>/dev/null || echo "(not yet created)"`
 
 ```
 PROLOG="${CLAUDE_SKILL_DIR}/prolog"
@@ -24,11 +44,26 @@ PROLOG="${CLAUDE_SKILL_DIR}/prolog"
 
 ## Input
 
+### Stand-alone mode
+
 - **Two or more resource paths** — files to compare
 - **Optional: `--prime` designation** — the resource that other resources are graded against
 - If no prime is designated, ask the user: *"Should one of these be the source of truth (prime)? If so, which one? If not, I'll measure mutual adherence between them."*
   - If the user says no prime: proceed with symmetric measurement
   - If the user designates one: treat it as prime for all scoring
+
+### Pipeline-terminal mode
+
+When run as the last step of the logic-focused pipeline (after `translate-to-implementation`):
+
+- **Source files** — the implemented codebase under review
+- **`thoughts/implementation_log.md`** — produced by `translate-to-implementation`, narrating what was actually built
+- **`thoughts/hypothesis.pl`** — the prime; the implementation is graded against the `claim/2` (and related) facts here
+- **Optionally, the upstream artifacts** — pulled in to enrich the report:
+  - `thoughts/existing-world.pl` — the pre-implementation world
+  - `thoughts/target-world.pl` — the world the hypothesis described
+  - `thoughts/lean_proof_results.pl` — Lean-side proof outcomes
+  - `thoughts/model_results.pl` — Prolog-side model verification outcomes
 
 ## Process
 
@@ -181,6 +216,13 @@ Record:
 
 ### 6. Write the Report
 
+In **pipeline-terminal mode**, the report must explicitly call out:
+
+- **Per-claim adherence** — for each `claim/2` in `thoughts/hypothesis.pl`, how well does the implementation realize it? Score and cite evidence per claim.
+- **Counterfactual claims** — claims tagged `epistemic_label(..., counterfactual)` should be *absent* in the implementation. Verify each one and flag any that still appear.
+- **Prescriptive claims** — claims tagged `epistemic_label(..., prescriptive)` should now be *provable* in the implementation. Verify their evidence and link back to source files / tests / proof artifacts.
+- **Per-label and per-provenance breakdown** — group results by `epistemic_label(descriptive|counterfactual|prescriptive)` and `negation_provenance(absent|contradicts)` so reviewers see at a glance which categories are healthy and which have drift.
+
 Write to `thoughts/adherence_report.md`:
 
 ```markdown
@@ -243,6 +285,10 @@ Tell the user:
 - Whether the extensions are notable
 - Path to the report
 - One-sentence interpretation: e.g., "impl covers 87.5% of the spec, with 1 direct contradiction on response format that should be resolved."
+
+### Hand off for human review
+
+`thoughts/adherence_report.md` is a `reviewed_by(_, human_review)` artifact in the target KB — it is the terminal pipeline output a human reads to decide whether the implementation entails the original proposition. Surface at the top of the report: (a) any contradictions found, (b) all `claim_label(_, counterfactual)` claims that still appear in the implementation, (c) any prescriptive claims missing evidence. These three categories are what a reviewer needs to see first.
 
 ---
 

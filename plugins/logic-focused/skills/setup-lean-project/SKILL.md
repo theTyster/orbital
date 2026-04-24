@@ -1,16 +1,20 @@
 ---
 name: setup-lean-project
 description: >
-  Set up a minimal Lean 4 project referencing a shared system-wide Mathlib clone. Run before prove-hypothesis-lean if no project exists. Triggered by: "set up/create lean project", "initialize lean", or when thoughts/lean/ is missing.
+  Project scaffolding for the Lean-based proof stage, NOT a pipeline stage. Initializes a thin Lean 4 project at `thoughts/lean/` referencing the shared Mathlib clone at `~/.lean/mathlib4`. Satisfies the `lean_project_built` environment requirement of `prove-hypothesis-lean` (the project must exist with `.lake/build/` populated). Run once before `prove-hypothesis-lean` if no project exists. Triggered by: "set up/create lean project", "initialize lean", or when `thoughts/lean/` is missing.
 user-invocable: true
 argument-hint: "[optional: target directory, default: thoughts/lean]"
 ---
 
 # Setup Lean Project
 
-Create a thin Lean 4 project at `thoughts/lean/` (or a caller-specified path) in the current
-working directory. The project references the shared `~/.lean/mathlib4` clone via a path
-require — no Mathlib re-download or recompilation needed.
+This skill is **project scaffolding for the Lean-based proof stage**, not a pipeline stage. It
+creates a thin Lean 4 project at `thoughts/lean/` (or a caller-specified path) that references the
+shared `~/.lean/mathlib4` clone via a path require — no Mathlib re-download or recompilation
+needed. It satisfies the `lean_project_built` environment requirement of `prove-hypothesis-lean`:
+the project must exist at `thoughts/lean/` with `.lake/build/` populated before any theorem can be
+checked. Invoke it once to provision the project skeleton, then `prove-hypothesis-lean` writes its
+theorems into `Proofs/`. It does not appear in the linear pipeline flow.
 
 ## Prerequisites
 
