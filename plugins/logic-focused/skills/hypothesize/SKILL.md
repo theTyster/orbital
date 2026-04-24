@@ -1,42 +1,69 @@
 ---
 name: hypothesize
 description: >
-  Explore a proposition against a Prolog KB through a counterfactual lens: identify which existing KB facts would need to be false for the proposition to hold. Takes a .pl facts file and a proposition; decomposes it into falsifiable sub-hypotheses and produces a structured hypothesis file naming the counterfactual requirements.
+  Explore a proposition against a Prolog KB through a counterfactual lens: identify which existing-world KB facts would need to be false, and which new facts would need to become provable, for the proposition to hold. Takes an existing-world `.pl` file and a proposition; decomposes it into falsifiable sub-hypotheses and emits `thoughts/hypothesis.pl` — a Prolog facts file carrying labeled claims (descriptive / counterfactual / prescriptive), query evidence, and formal-property sketches.
 user-invocable: true
 allowed-tools: Bash, Write, Agent
-argument-hint: "[prolog facts file] [proposition or question to explore]"
+argument-hint: "[existing-world.pl path] [proposition or question to explore]"
 ---
 
 - **Proof that `swipl` exists:** !`which swipl`
 
 # Hypothesize
 
-Take a proposition — a planned change, an architectural claim, a design question — and systematically explore what would have to be different in the existing KB for the proposition to hold. The end product is a structured hypothesis file that names specific, falsifiable properties ready for formal verification in Lean4.
+**Logical operation:** *decompose_proposition* — split a proposition into claims each labeled with its `epistemic_label` (descriptive / counterfactual / prescriptive) and backed by Prolog evidence.
 
-**The counterfactual lens.** The Prolog KB is a snapshot of what IS true about the codebase today (`translate-to-prolog` only models existing facts). A proposition — especially one about a planned change or a desired invariant — is usually about a state the KB does *not* yet reflect. So the driving question is:
+Take a proposition — a planned change, an architectural claim, a design question — and systematically explore what would have to be different in the existing-world KB for the proposition to hold. The end product is `thoughts/hypothesis.pl`, a Prolog facts file that names specific, labelled, falsifiable claims ready for model construction (`prove-hypothesis-prolog`) and machine-checked proof (`prove-hypothesis-lean`).
 
-> **What about the existing KB would need to be false for `{proposition}` to be true?**
+**The counterfactual lens.** The existing-world KB is a snapshot of what IS true about the codebase today (`translate-to-prolog` only models existing facts). A proposition — especially one about a planned change or a desired invariant — is usually about a state the KB does *not* yet reflect. So the driving question is:
 
-A hypothesis that merely restates facts the KB already entails proves nothing interesting. A hypothesis that names the *delta* — the specific KB facts that must be falsified, removed, or refactored away — is falsifiable, actionable, and worth formalizing.
+> **What about the existing world would need to be false, and what new facts would need to become provable, for `{proposition}` to be true?**
 
-**Epistemic origin tags.** Every counterfactual requirement this skill emits carries an *epistemic origin* tag drawn from the vocabulary in `../../references/epistemic-types.md`. Downstream skills — especially `prove-hypothesis-lean` — rely on this tag to avoid treating Prolog's closed-world absence as Lean-style logical falsity. The three tag values a counterfactual can carry are:
-- `KB_PRESENT` — the KB asserts the fact; falsifying it is concrete deletion or refactoring work.
-- `KB_ABSENT_CWA` — the KB does not derive the fact; closed-world absence is weak evidence of falsity and can be wrong if the KB is incomplete.
-- `KB_CONTRADICTED` — the KB explicitly derives `¬fact` from negative facts or integrity constraints; strongest of the three.
+A hypothesis that merely restates facts the KB already entails proves nothing interesting. A hypothesis that names the *delta* — the specific KB facts that must be falsified plus the new obligations that must be provable — is falsifiable, actionable, and worth formalizing.
 
-The reasoning follows a simple arc: **proposition → counterfactual decomposition → evidence → hypothesis**.
+## Two orthogonal dimensions
+
+Every claim this skill emits carries two independent tags. Downstream skills depend on both — dropping either is an epistemic bug.
+
+**Dimension 1 — `epistemic_label/1` on the claim itself.** Exactly one of:
+
+| Label | Meaning | World semantics |
+|---|---|---|
+| `descriptive` | What is currently true in the existing world | Prolog KB under CWA |
+| `counterfactual` | What must become false for the goal to hold | Prolog KB under CWA, inverted |
+| `prescriptive` | What must exist or be provable in the target world | Lean proof under OWA |
+
+**Dimension 2 — `negation_provenance/1` on any *negated* fact** (applies to counterfactual claims and any negative premise). Exactly one of:
+
+| Provenance | Meaning | Strength |
+|---|---|---|
+| `absent` | False because the fact is not declared in the KB (CWA default) | Fragile — depends on KB completeness |
+| `contradicts` | False because the KB contains an explicit conflicting fact | Structurally necessary — holds regardless of KB completeness |
+
+These are orthogonal: a single counterfactual claim has both a label (`counterfactual`) *and* a negation provenance (`absent` or `contradicts`). Downstream:
+- `prove-hypothesis-prolog` reads `epistemic_label` to decide whether a claim enters `target-world.pl` as a negation (counterfactual) or as a new assertion (prescriptive).
+- `prove-hypothesis-lean` reads `negation_provenance` to decide whether a theorem over a negated premise is CWA-fragile (`absent`) or structurally sound (`contradicts`).
+
+Reference: `../../references/epistemic-types.md`.
+
+The reasoning follows a simple arc: **proposition → labeled decomposition → evidence → hypothesis.pl**.
 Prolog is the evidence-gathering tool, not the focus.
+
+## Loopback role
+
+This skill is re-invoked whenever a downstream prove step fails. If `prove-hypothesis-prolog` reports `inconsistent` or `gap` verdicts in `model_results.pl`, or `prove-hypothesis-lean` reports `unprovable` theorems in `lean_proof_results.pl`, the pipeline returns here to refine `hypothesis.pl` — typically by resharpening a claim, adjusting an epistemic label, adding missing counterfactual requirements, or breaking a formal property into provable sub-properties. The loopback is **human-gated**: neither prove skill re-invokes `hypothesize` automatically. A user (or the previous prove-skill's report) must explicitly request a refinement pass, pointing at the specific unresolved property. On re-invocation, consult the previous `hypothesis.pl` plus any `model_results.pl` / `lean_proof_results.pl` verdicts and *amend* the hypothesis file — do not regenerate from scratch unless the proposition itself changed.
 
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
-`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md 2>/dev/null || echo "(not yet created)"`
+`ls thoughts/existing-world.pl` returns: !`ls thoughts/existing-world.pl 2>/dev/null || echo "(not yet created)"`
+`ls thoughts/hypothesis.pl` returns: !`ls thoughts/hypothesis.pl 2>/dev/null || echo "(not yet created)"`
 
-**Find Prolog facts file**: The `.pl` KB that the hypothesis was derived from.
+**Find the existing-world file**: The `.pl` KB produced by `translate-to-prolog`. Default: `thoughts/existing-world.pl`.
 
 ## Input
 
-- **Facts file path** — the `.pl` file that models the domain
+- **Existing-world file path** — the `.pl` file that models the existing world (default `thoughts/existing-world.pl`)
 - **Proposition** — a claim, action, or question to explore. Examples:
   - "Changing the auth layer won't break the CLI tool"
   - "The dependency graph from cli_tool is acyclic"
@@ -93,11 +120,12 @@ Now query the knowledge base. Each query should target a specific sub-hypothesis
 Prefer spawning the `logic-focused:agent-of-questions` sub-agent with the `Agent` tool to run the evidence-gathering pass. That agent is the Prolog query specialist — it never reads `.pl` files directly, it discovers the schema through `swipl` introspection (`kb_summary`, `kb_describe`, `kb_find`, `kb_related`, `kb_graph`, `kb_stats`) and writes targeted queries against whatever predicates actually exist. This avoids a common failure mode where the main agent guesses at predicate names from memory and writes queries that silently return empty.
 
 Brief the sub-agent with:
-- The facts file path
+- The existing-world file path
 - Each sub-hypothesis from step 2, phrased as a counterfactual question: "Enumerate every KB fact that would contradict `{sub-hypothesis}`. The absence of such facts is itself a result — report 'no counterfactuals found after exhaustive search' rather than going silent."
 - An instruction to return, for each sub-hypothesis: the queries it ran, the raw results, and **the specific KB facts (if any) that must be false for the sub-hypothesis to hold**
-- For each counterfactual fact reported, tag its origin: `KB_PRESENT` if the fact is asserted in the KB; `KB_ABSENT_CWA` if `\+ fact` succeeds but no explicit contradiction exists; `KB_CONTRADICTED` if the KB derives `\+ fact` from stated negative facts or integrity constraints.
-- An instruction that contradiction-hunting is the priority; confirming queries are secondary. The hypothesis file's value comes from the concrete list of counterfactual facts, not from restating what the KB already entails.
+- For each claim reported, assign an `epistemic_label`: `descriptive` if the claim restates what the existing world already entails; `counterfactual` if the claim asserts that an existing fact must become false; `prescriptive` if the claim asserts that a new fact (not yet in the KB) must become true in target-world.
+- For every *negated* premise (counterfactual claims and any claim with a negative assertion in its body), also assign a `negation_provenance`: `absent` if the negation comes from closed-world absence (`\+ fact` succeeds under CWA); `contradicts` if the KB or an integrity constraint explicitly derives the negation. The two dimensions are orthogonal — one tags the claim, one tags each negation it depends on.
+- An instruction that contradiction-hunting is the priority; confirming queries are secondary. The hypothesis file's value comes from the concrete list of counterfactual claims plus new prescriptive obligations, not from restating what the KB already entails.
 
 If the KB is clearly missing facts the hypothesis depends on, spawn `logic-focused:agent-of-truth` to extend the KB before continuing — don't try to patch facts by hand.
 
@@ -109,8 +137,8 @@ Start with the schema and contents:
 
 ```bash
 PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
-swipl -g "use_module('${PROLOG}/introspect'), kb_summary" -t halt facts.pl
-swipl -g "use_module('${PROLOG}/introspect'), kb_describe" -t halt facts.pl
+swipl -g "use_module('${PROLOG}/introspect'), kb_summary" -t halt existing-world.pl
+swipl -g "use_module('${PROLOG}/introspect'), kb_describe" -t halt existing-world.pl
 ```
 
 This tells you what predicates exist and what the data looks like. Use this to refine your hypotheses if needed — you may discover relationships you didn't know about.
@@ -122,7 +150,8 @@ Run targeted queries. For each one, record:
 - What a counterfactual fact would look like (the shape of a contradicting result)
 - What the KB actually returned
 - The concrete list of KB facts (if any) that must be falsified for the sub-hypothesis to hold
-- The **epistemic origin** of each counterfactual: `KB_PRESENT` if the fact is present in the KB, `KB_ABSENT_CWA` if it is absent under closed-world assumption, or `KB_CONTRADICTED` if the KB explicitly derives its negation. This tag travels with the counterfactual into the hypothesis file and must not be dropped — downstream prove skills depend on it to calibrate the strength of any Lean lift.
+- The **epistemic label** of each claim: `descriptive` (what the existing world already entails), `counterfactual` (an existing fact that must become false), or `prescriptive` (a new fact that must become provable in target-world).
+- For every *negated* premise, the **negation_provenance**: `absent` (CWA default — the KB does not derive the fact) or `contradicts` (the KB explicitly derives the negation from negative facts or integrity constraints). The `absent` case is fragile — it holds only as strongly as the KB is complete; the `contradicts` case is structurally necessary. Downstream `prove-hypothesis-lean` uses this tag to annotate theorems at the CWA→OWA boundary; dropping it silently upgrades CWA-absence into logical falsity.
 
 Prioritize contradiction-hunting. A sub-hypothesis that survives exhaustive attempts to falsify it is a strong invariant. A sub-hypothesis with a concrete list of contradicting facts is a roadmap — state both outcomes explicitly.
 
@@ -144,7 +173,7 @@ swipl -g "
   use_module('${PROLOG}/introspect'),
   coverage(( <your queries here> )),
   show_coverage([modules([user])])
-" -t halt facts.pl
+" -t halt existing-world.pl
 ```
 
 Interpret coverage as a confidence signal:
@@ -165,8 +194,8 @@ From the evidence, formulate the hypothesis. It must be:
 
 Each sub-hypothesis from step 2 lands in one of three states:
 
-- **Clear** — no contradicting KB facts found after exhaustive search → becomes a formal property asserting the universal negation (e.g., `∀ x, ¬ depends_on_trans(auth_lib, x) ∧ x = cli_tool`). This is a strong invariant of the current KB.
-- **Conditional** — contradicting KB facts found → these become the **counterfactual requirements**: the hypothesis is "the proposition holds *iff* the following KB facts are false: `{list}`." This is the most informative outcome — it names a concrete refactoring target. Each counterfactual requirement must carry its origin tag (`KB_PRESENT`, `KB_ABSENT_CWA`, or `KB_CONTRADICTED`); the prove skill will use the tag to decide whether the corresponding Lean lift needs to be marked `LEAN_CWA_LIFTED`.
+- **Clear** — no contradicting KB facts found after exhaustive search → becomes a formal property asserting the universal negation (e.g., `∀ x, ¬ depends_on_trans(auth_lib, x) ∧ x = cli_tool`). This is a strong invariant of the current KB. Label the claim `descriptive`.
+- **Conditional** — contradicting KB facts found → these become **counterfactual claims** (KB facts that must become false in target-world) plus optional **prescriptive claims** (new facts that must become provable in target-world). Each claim carries its `epistemic_label` and, if it involves a negation, its `negation_provenance` (`absent` or `contradicts`). The prove skills use both: `prove-hypothesis-prolog` reads the label to decide whether a claim enters target-world as a removal or as a new assertion; `prove-hypothesis-lean` reads the provenance to calibrate how fragile the corresponding theorem is at the CWA→OWA boundary.
 - **Open** — insufficient evidence → flag as an assumption and note what additional facts would resolve it.
 
 A hypothesis with zero counterfactual requirements is a proved invariant. A hypothesis with counterfactual requirements is a roadmap for the change the proposition implies — and that roadmap is exactly what the downstream proof skill formalizes.
@@ -188,76 +217,76 @@ Good hypotheses:
 
 ### 6. Write the Hypothesis File
 
-Write to `thoughts/hypothesis.md` (create `thoughts/` if needed):
+Write to `thoughts/hypothesis.pl` (create `thoughts/` if needed). The file is a Prolog facts file — loadable with `swipl` and queryable by downstream skills. Every piece of hypothesis content lands as a ground fact, not as prose.
 
-```markdown
-# Hypothesis: {title}
+Use the schema below. Predicate names are stable across pipeline runs; downstream skills match on them.
 
-## Proposition
-{The original proposition, stated clearly}
+```prolog
+% ==========================================================================
+% Hypothesis: {short title} — machine-readable record of the decomposition
+% Generated by: hypothesize skill
+% ==========================================================================
 
-## Statement
-{One-sentence formal statement of the hypothesis}
+:- discontiguous claim/2, claim_label/2, claim_status/2, negation_provenance/2,
+                 evidence/3, formal_property/3, sub_hypothesis/2, coverage/2,
+                 assumption/2.
 
-## Knowledge Coverage
-- Facts file: {path}
-- Total clauses: {N}
-- Clauses exercised: {M} ({percentage}%)
-- Coverage assessment: {high/medium/low}
-- Unexercised predicates: {list, if any}
+% --- Source ---
+proposition("{one-sentence natural-language proposition}").
+existing_world_file('thoughts/existing-world.pl').
+counterfactual_question("What about the existing world needs to be false, and what new facts must become provable, for the proposition to be true?").
 
-## Counterfactual Question
-{The proposition restated as: "What about the existing KB needs to be false
-for this proposition to be true?"}
+% --- Coverage snapshot against existing-world ---
+coverage(total_clauses, {N}).
+coverage(clauses_exercised, {M}).
+coverage(percentage, {P}).
+coverage(assessment, {high|medium|low}).
+coverage(unexercised_predicates, [{pred/arity}, ...]).
 
-## Decomposition
-{List of sub-hypotheses and their status: clear / conditional / open}
+% --- Sub-hypotheses ---
+% sub_hypothesis(Id, "natural-language statement").
+sub_hypothesis(sh_001, "cli_tool has no transitive dependency on logging in depends_on").
+% ...
 
-## Prolog Evidence
+% --- Claims (one fact per labeled claim) ---
+% claim(ClaimId, "natural-language statement").
+% claim_label(ClaimId, descriptive|counterfactual|prescriptive).
+% claim_status(ClaimId, clear|conditional|open).
+% If the claim is a counterfactual or otherwise involves negation, record provenance:
+% negation_provenance(ClaimId, absent|contradicts).
+claim(c_001, "depends_on(cli_tool, logging) must not hold in target-world").
+claim_label(c_001, counterfactual).
+claim_status(c_001, conditional).
+negation_provenance(c_001, absent).   % CWA absence post-refactor
 
-### Queries Run
-{List of queries and key results, organized by sub-hypothesis}
+claim(c_002, "auth_lib exposes a stable public interface").
+claim_label(c_002, prescriptive).
+claim_status(c_002, open).
 
-### Supporting Facts
-{Specific output that supports the hypothesis}
+% --- Evidence (ties claims to Prolog queries and results) ---
+% evidence(ClaimId, query_text, result_summary).
+evidence(c_001,
+         "findall(P, depends_on_trans(cli_tool, logging, P), Ps)",
+         "found paths: [[cli_tool,formatter,logging], [cli_tool,logging]]").
 
-### Counterevidence
-{Results that contradict or complicate the hypothesis — or explicit
-statement that none was found despite searching}
+% --- Formal properties (sketches for the prove skills) ---
+% formal_property(PropertyId, "natural-language description", "lean-sketch").
+formal_property(p_001,
+                "cli_tool has no transitive path to logging in the target relation",
+                "theorem cli_tool_not_reaches_logging : ¬ Reach depends_on_target Module.cli_tool Module.logging := by sorry").
 
-## Counterfactual Requirements
-KB facts that must be false for the proposition to hold. This is the delta
-between the current KB and the world in which the proposition is true.
-
-- **`{fact as it appears in the KB}`** (from sub-hypothesis `{id}`, origin: `{KB_PRESENT | KB_ABSENT_CWA | KB_CONTRADICTED}`) —
-  {why this fact blocks the proposition, and what change to the underlying
-  system would falsify it. If origin is `KB_ABSENT_CWA`, note: this is a
-  closed-world negation; Lean cannot detect this provenance and will treat
-  it as logical falsity unless the prove skill marks the lifted theorem
-  `LEAN_CWA_LIFTED`.}
-- ...
-
-If no counterfactuals were found: state explicitly *"The KB contains no facts
-contradicting the proposition; it holds as an invariant of the current system."*
-
-## Formal Properties
-Properties to prove in Lean4:
-
-1. **{property_name}**: {natural language description}
-   - Lean sketch: `theorem {name} : {type signature sketch}`
-   - Depends on: {what definitions are needed}
-   - Derived from: {which sub-hypothesis}
-
-2. ...
-
-## Scope
-- **Proves**: {what this establishes if true — either "the proposition is an
-  invariant of the current KB" or "the proposition holds iff the
-  counterfactual requirements above are falsified"}
-- **Does not prove**: {explicit limitations}
-- **Assumptions**: {what we take as given — especially sub-hypotheses that
-  remained open}
+% --- Assumptions (open sub-hypotheses and their unresolved questions) ---
+% assumption(Id, "what would resolve this").
+assumption(a_001, "need structural facts about public-interface definitions before we can close c_002").
 ```
+
+**Schema notes.**
+- `claim_label/2` is the `epistemic_label` dimension: exactly one of `descriptive`, `counterfactual`, `prescriptive`. Every claim must have one.
+- `negation_provenance/2` applies only to claims whose body involves a negation (every `counterfactual` claim, plus any `prescriptive` claim whose body contains `¬...`). Absent from a `descriptive` claim.
+- `claim_status/2` is `clear` (no evidence-backed counterfactuals), `conditional` (counterfactual or prescriptive claim with enumerable evidence), or `open` (insufficient evidence to decide — becomes an assumption).
+- If the hypothesis has no counterfactual or prescriptive claims (pure invariant mode), emit `claim_label(_, descriptive)` for every claim and skip `negation_provenance` entirely.
+
+**Validate** with `swipl -g halt thoughts/hypothesis.pl` before reporting done. The file must load without errors and every `claim/2` must have a matching `claim_label/2` and `claim_status/2`.
 
 ## References
 
@@ -270,24 +299,24 @@ Keeping the wiki content inside sub-agent contexts preserves your context window
 
 ## Output
 
-Write `thoughts/hypothesis.md` structured for the prove-hypothesis-lean skill.
+Write `thoughts/hypothesis.pl` — a Prolog facts file structured for both `prove-hypothesis-prolog` (target-world model construction) and `prove-hypothesis-lean` (theorem proving).
 
 Report to the user:
 - The original proposition (one line)
-- The counterfactual question ("what about the KB must be false for this to hold?")
-- Hypothesis statement (one line)
-- Count and summary of **counterfactual requirements** — the KB facts that must be falsified (or "none: the KB already entails the proposition")
-- Counterfactual origin breakdown: N present / M absent-CWA / K contradicted — the absent-CWA subset is the part the prove skill will mark `LEAN_CWA_LIFTED`.
+- The counterfactual question
+- Claim breakdown by `epistemic_label`: N descriptive / M counterfactual / K prescriptive
+- Claim status breakdown: N clear / M conditional / K open
+- `negation_provenance` breakdown across all negated premises: N absent / M contradicts — the `absent` subset is what `prove-hypothesis-lean` will annotate as CWA-fragile at the Prolog→Lean boundary
 - Number of formal properties identified
 - Coverage percentage
 - Open questions / assumptions
 - File path
 
-Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run one of:"**
-- **`/prove-hypothesis-prolog thoughts/hypothesis.md`** — verify in Prolog (model-based, no extra setup, best for relational/structural properties)
-- **`/prove-hypothesis-lean thoughts/hypothesis.md`** — verify in Lean 4 (machine-checked, best for mathematical/abstract properties)
+Then state: **"This hypothesis is ready for model construction and proof. In a follow-up session, run:"**
+- **`/prove-hypothesis-prolog thoughts/hypothesis.pl`** — construct `target-world.pl` from the claims (applies counterfactual negations, asserts prescriptive obligations) and emit per-property `model_results.pl` verdicts.
+- **`/prove-hypothesis-lean thoughts/hypothesis.pl`** — machine-check each formal property against `target-world.pl` and emit `lean_proof_results.pl`.
 
-Do not automatically invoke either proof skill. The user should review first.
+In the new pipeline `prove-hypothesis-prolog` runs *before* `prove-hypothesis-lean`: the first builds the substrate, the second proves over it. Do not automatically invoke either — the user should review `hypothesis.pl` first.
 
 ---
 
@@ -309,10 +338,10 @@ swipl -g "<goal>" -t halt <files_to_load...>
 PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
 
 # Load a facts file and run a goal
-swipl -g "<goal>" -t halt facts.pl
+swipl -g "<goal>" -t halt existing-world.pl
 
 # Load the introspect module + facts file
-swipl -g "use_module('${PROLOG}/introspect'), <goal>" -t halt facts.pl
+swipl -g "use_module('${PROLOG}/introspect'), <goal>" -t halt existing-world.pl
 ```
 
 ### Introspect module
@@ -364,7 +393,7 @@ swipl -g "
   use_module('${PROLOG}/introspect'),
   coverage(( kb_summary, kb_graph )),
   show_coverage([modules([user])])
-" -t halt facts.pl
+" -t halt existing-world.pl
 ```
 
 - `coverage(Goal)` runs Goal while tracking clause entry/exit

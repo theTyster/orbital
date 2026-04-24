@@ -1,7 +1,7 @@
 ---
 name: translate-to-prolog
 description: >
-  Use this skill whenever the user wants to translate a codebase, document, or logical system into a Prolog facts file — "translate to prolog", "model this as prolog facts", "create a knowledge base from", "make this queryable with swipl". Builds the KB incrementally from source files and validates with SWI-Prolog.
+  Use this skill whenever the user wants to translate a codebase, document, or logical system into a Prolog facts file — "translate to prolog", "model this as prolog facts", "create a knowledge base from", "make this queryable with swipl". Stage 1 of the 7-stage pipeline: applies the Closed World Assumption to source material and produces `thoughts/existing-world.pl` — ground facts, relationship rules, and constraint rules. Everything absent from the output is, by CWA, false.
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: "[source code, requirements, domain rules, or any logical system to document]"
@@ -9,17 +9,24 @@ argument-hint: "[source code, requirements, domain rules, or any logical system 
 
 # Translate to Prolog
 
-Document any logical system as a validated Prolog facts file. The output is a
-knowledge base that can be loaded, queried, and inspected — a precise, executable
-record of what is true, how things relate, what constraints must hold, and what patterns emerge.
-The knowledge base is built incrementally: each source file is read, analyzed, and its Prolog
-representation is written or appended to the facts file before the next file is processed.
-This approach provides faster feedback and catches errors early.
+**Logical operation:** `close_world` (CWA application) — apply the closed-world assumption to source material, producing a descriptive KB where everything absent is false.
+
+**Pipeline position:** Stage 1 of 7. Primary input: `source_material` (env-provided). Primary output: `thoughts/existing-world.pl`. Downstream: `hypothesize` (stage 2) consumes `existing-world.pl`.
+
+The three ingredients the KB must contain — and nothing else — are:
+
+1. **Ground facts** — true statements about entities, values, states.
+2. **Relationship rules** — rules that express how entities compose/relate.
+3. **Constraint rules** — validation rules that express invariants.
+
+Everything the source asserts becomes one of these; everything the source does not assert is, by CWA, false. The KB is the "existing world" snapshot. Build it incrementally: each source file is read, analyzed, and its Prolog representation is written or appended before the next file is processed. This provides faster feedback and catches errors early.
+
+The output filename — `thoughts/existing-world.pl` — names what it models: the world as it currently is, under CWA. The "target world" (what must become true for a proposition to hold) is built downstream by `model_obligations` / `prove-hypothesis-prolog`.
 
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
-`ls thoughts/hypothesis.md` returns: !`ls thoughts/hypothesis.md 2>/dev/null || echo "(not yet created)"`
+`ls thoughts/existing-world.pl` returns: !`ls thoughts/existing-world.pl 2>/dev/null || echo "(not yet created)"`
 
 ## Input
 
@@ -51,7 +58,7 @@ For any non-trivial domain (more than a handful of files, or any unfamiliar subj
 
 Brief the agent with:
 - The source material (file paths, or the domain description)
-- The target output path (`thoughts/facts.pl` by default)
+- The target output path (`thoughts/existing-world.pl` by default; `thoughts/<domain>-world.pl` if the user has a specific domain name)
 - Any predicates or constraints the user has already asked for
 - The validation tiers below — the agent must run each one before reporting done
 
@@ -69,7 +76,7 @@ For each source file in sequence:
 3. **Capture facts** — Write ground facts (true statements about entities, values, states).
 4. **Capture relationships** — Write rules that express how entities relate or compose.
 5. **Capture constraints** — Write validation rules that express invariants or domain rules.
-6. **Write/append to facts file** — Immediately write or append all facts, relationships, and constraints from this file to `thoughts/facts.pl`. Do not batch all file reading first.
+6. **Write/append to facts file** — Immediately write or append all facts, relationships, and constraints from this file to `thoughts/existing-world.pl`. Do not batch all file reading first.
 7. **Move to the next file** — Repeat steps 1–6 for each source file.
 
 This incremental approach gives faster feedback, makes errors easier to localize, and allows the facts file to grow in parallel with your understanding.
@@ -117,7 +124,9 @@ If any fact is wrong, audit neighboring facts from the same source — errors te
 Write to the `thoughts/` directory (create it if it doesn't exist).
 After, ask the user: "Are you ready to hypothesize on this file?"
 
-Filename: `thoughts/facts.pl` or `thoughts/<domain>_facts.pl` for specificity.
+Filename: **`thoughts/existing-world.pl`** (default) or `thoughts/<domain>-world.pl` for specificity. The name is deliberate — this KB models the *existing* world under CWA; downstream skills build a separate `target-world.pl` when the hypothesis requires counterfactual changes.
+
+**Artifact contract** (what stage 2 will read): ground facts, relationship rules, and constraint rules for the current state. CWA — everything absent is false.
 
 Report:
 - File path
@@ -137,3 +146,4 @@ The plugin ships a SWI-Prolog wiki at `${CLAUDE_SKILL_DIR}/../../references/prol
 - **Constraints are rules**: Use Prolog rules (`:- ...`) for invariants, not just facts.
 - **One file, one domain**: Each facts file should cover one coherent analysis scope.
 - **Verify before asserting**: Only write facts you can confirm from the source material.
+- **CWA is the whole contract**: `existing-world.pl` says only what the source says. Absence in the KB means "not asserted in the source," not "false." The `negation_provenance` distinction (`absent` vs. `contradicts`) is consumed downstream — do not paper over it here by writing speculative facts to fill gaps. Two boundary crossings downstream depend on this contract — `prolog → lean` (carrier `thoughts/target-world.pl`) and `lean → tdd` (carrier `thoughts/lean_proof_results.pl`). The `negation_provenance(absent | contradicts)` distinction set up here is the only signal that survives the first crossing intact.
