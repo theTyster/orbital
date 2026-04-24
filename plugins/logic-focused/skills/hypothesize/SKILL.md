@@ -1,7 +1,7 @@
 ---
 name: hypothesize
 description: >
-  Explore whether a proposition holds in a Prolog KB. Takes a .pl facts file and a proposition; decomposes it into falsifiable sub-hypotheses and produces a structured hypothesis file.
+  Explore a proposition against a Prolog KB through a counterfactual lens: identify which existing KB facts would need to be false for the proposition to hold. Takes a .pl facts file and a proposition; decomposes it into falsifiable sub-hypotheses and produces a structured hypothesis file naming the counterfactual requirements.
 user-invocable: true
 allowed-tools: Bash, Write, Agent
 argument-hint: "[prolog facts file] [proposition or question to explore]"
@@ -11,9 +11,20 @@ argument-hint: "[prolog facts file] [proposition or question to explore]"
 
 # Hypothesize
 
-Take a proposition — a planned change, an architectural claim, a design question — and systematically explore whether it holds. The end product is a structured hypothesis file that names specific, falsifiable properties ready for formal verification in Lean4.
+Take a proposition — a planned change, an architectural claim, a design question — and systematically explore what would have to be different in the existing KB for the proposition to hold. The end product is a structured hypothesis file that names specific, falsifiable properties ready for formal verification in Lean4.
 
-The reasoning follows a simple arc: **proposition → decomposition → evidence → hypothesis**.
+**The counterfactual lens.** The Prolog KB is a snapshot of what IS true about the codebase today (`translate-to-prolog` only models existing facts). A proposition — especially one about a planned change or a desired invariant — is usually about a state the KB does *not* yet reflect. So the driving question is:
+
+> **What about the existing KB would need to be false for `{proposition}` to be true?**
+
+A hypothesis that merely restates facts the KB already entails proves nothing interesting. A hypothesis that names the *delta* — the specific KB facts that must be falsified, removed, or refactored away — is falsifiable, actionable, and worth formalizing.
+
+**Epistemic origin tags.** Every counterfactual requirement this skill emits carries an *epistemic origin* tag drawn from the vocabulary in `../../references/epistemic-types.md`. Downstream skills — especially `prove-hypothesis-lean` — rely on this tag to avoid treating Prolog's closed-world absence as Lean-style logical falsity. The three tag values a counterfactual can carry are:
+- `KB_PRESENT` — the KB asserts the fact; falsifying it is concrete deletion or refactoring work.
+- `KB_ABSENT_CWA` — the KB does not derive the fact; closed-world absence is weak evidence of falsity and can be wrong if the KB is incomplete.
+- `KB_CONTRADICTED` — the KB explicitly derives `¬fact` from negative facts or integrity constraints; strongest of the three.
+
+The reasoning follows a simple arc: **proposition → counterfactual decomposition → evidence → hypothesis**.
 Prolog is the evidence-gathering tool, not the focus.
 
 ## Current Environment
@@ -46,25 +57,32 @@ A good proposition is:
 Weak: "The code is well-structured."
 Strong: "auth_lib has no transitive dependency on cli_tool."
 
-### 2. Decompose into Hypotheses
+Once the proposition is sharp, immediately restate it as a counterfactual question against the KB:
 
-A proposition rarely stands on a single fact. Break it into smaller claims that can each be independently tested. Use these heuristics:
+> **What about the existing KB would need to be false for this proposition to be true?**
+
+This is the question the rest of the skill answers. If the answer is "nothing — the KB already entails it," say so and report the proposition as a trivial invariant. The interesting hypotheses are ones where the KB contains facts that stand in the way.
+
+### 2. Decompose into Counterfactual Sub-Hypotheses
+
+A proposition rarely stands on a single fact. Break it into smaller claims that can each be independently tested against the KB. The goal is to locate the *counterfactual surface*: the specific KB facts or relations whose falsity is a precondition for the proposition.
+
+**Counterfactual decomposition (primary)** — For each entity and relation named in the proposition, ask: "If the KB contained a fact that contradicts this proposition, what would that fact look like?" Then query for exactly those facts. A proposition like "auth_lib has no transitive dependency on cli_tool" decomposes into the counterfactual query: "enumerate every path `auth_lib →* cli_tool` in `depends_on`." Any such path found is a *counterfactual requirement* — a KB fact that must be falsified (removed, refactored, broken) for the proposition to hold.
 
 **Assumption surfacing** — What must be true for the proposition to hold? If someone claims "changing logging won't break anything," the hidden assumptions might be:
 (a) nothing depends on logging's internal API,
 (b) all dependents use logging through a stable interface,
 (c) logging has no transitive dependents beyond the obvious ones.
+Each assumption becomes a counterfactual question: "what KB fact would violate (a)?"
 
-**Boundary identification** — Where does the claim stop being true? "auth_lib is isolated" might hold for direct dependencies but fail for transitive ones. Identify the boundary.
+**Boundary identification** — Where does the claim stop being true? "auth_lib is isolated" might hold for direct dependencies but fail for transitive ones. The boundary is usually where counterfactual facts start appearing.
 
-**Negation testing** — What would a counterexample look like? Before searching for evidence *for* the proposition, describe what evidence *against* it would look like. This prevents confirmation bias.
+**Dependency tracing** — What entities are involved, and what connects them? Most propositions about a system involve paths through a graph. Trace the relevant paths — each existing path is a candidate counterfactual.
 
-**Dependency tracing** — What entities are involved, and what connects them? Most propositions about a system involve paths through a graph. Trace the relevant paths before querying.
-
-Write each sub-hypothesis as a concrete, falsifiable statement:
-- "logging has no reverse transitive dependencies from cli_tool"
-- "Every module in the depends_on graph from web_framework also appears in the depends_on graph from cli_tool"
-- "The depends_on relation contains no cycles"
+Write each sub-hypothesis as a concrete, falsifiable statement phrased against the KB:
+- "The KB contains no path from `cli_tool` to `logging` in `depends_on`" (counterfactual: any such path must be broken)
+- "The KB contains no module that `depends_on(web_framework)` but does not `depends_on(logging)`"
+- "The `depends_on` relation in the KB contains no cycles"
 
 ### 3. Gather Evidence
 
@@ -76,9 +94,10 @@ Prefer spawning the `logic-focused:agent-of-questions` sub-agent with the `Agent
 
 Brief the sub-agent with:
 - The facts file path
-- Each sub-hypothesis from step 2, phrased as a question it should answer
-- An instruction to return, for each sub-hypothesis: the queries it ran, the raw results, and whether the evidence supports, contradicts, or is neutral
-- An instruction to actively search for counterexamples, not just confirmations
+- Each sub-hypothesis from step 2, phrased as a counterfactual question: "Enumerate every KB fact that would contradict `{sub-hypothesis}`. The absence of such facts is itself a result — report 'no counterfactuals found after exhaustive search' rather than going silent."
+- An instruction to return, for each sub-hypothesis: the queries it ran, the raw results, and **the specific KB facts (if any) that must be false for the sub-hypothesis to hold**
+- For each counterfactual fact reported, tag its origin: `KB_PRESENT` if the fact is asserted in the KB; `KB_ABSENT_CWA` if `\+ fact` succeeds but no explicit contradiction exists; `KB_CONTRADICTED` if the KB derives `\+ fact` from stated negative facts or integrity constraints.
+- An instruction that contradiction-hunting is the priority; confirming queries are secondary. The hypothesis file's value comes from the concrete list of counterfactual facts, not from restating what the KB already entails.
 
 If the KB is clearly missing facts the hypothesis depends on, spawn `logic-focused:agent-of-truth` to extend the KB before continuing — don't try to patch facts by hand.
 
@@ -100,11 +119,12 @@ This tells you what predicates exist and what the data looks like. Use this to r
 
 Run targeted queries. For each one, record:
 - The query itself
-- What you expected to find
-- What you actually found
-- Whether this supports, contradicts, or is neutral toward the sub-hypothesis
+- What a counterfactual fact would look like (the shape of a contradicting result)
+- What the KB actually returned
+- The concrete list of KB facts (if any) that must be falsified for the sub-hypothesis to hold
+- The **epistemic origin** of each counterfactual: `KB_PRESENT` if the fact is present in the KB, `KB_ABSENT_CWA` if it is absent under closed-world assumption, or `KB_CONTRADICTED` if the KB explicitly derives its negation. This tag travels with the counterfactual into the hypothesis file and must not be dropped — downstream prove skills depend on it to calibrate the strength of any Lean lift.
 
-Look for **both** supporting and contradicting evidence. A hypothesis that survives contradiction attempts is stronger than one with only confirming data.
+Prioritize contradiction-hunting. A sub-hypothesis that survives exhaustive attempts to falsify it is a strong invariant. A sub-hypothesis with a concrete list of contradicting facts is a roadmap — state both outcomes explicitly.
 
 #### Query patterns (reference)
 
@@ -139,17 +159,31 @@ If important predicates show 0% coverage, investigate them before finalizing.
 From the evidence, formulate the hypothesis. It must be:
 
 - **Specific** — names concrete entities or relationships from the KB
-- **Falsifiable** — a Lean4 proof could demonstrate it false
+- **Falsifiable** — a Lean4 or Prolog proof could demonstrate it false
 - **Formalizable** — expressible as a logical proposition (∀, ∃, →, ¬)
+- **Counterfactual-aware** — explicitly names the KB facts (if any) that must be false for it to hold
 
-Each sub-hypothesis from step 2 should either:
-- **Survive** — it has supporting evidence and no counterevidence → becomes a formal property
-- **Fall** — counterevidence found → note it and revise the proposition
-- **Remain open** — insufficient evidence → flag as an assumption
+Each sub-hypothesis from step 2 lands in one of three states:
+
+- **Clear** — no contradicting KB facts found after exhaustive search → becomes a formal property asserting the universal negation (e.g., `∀ x, ¬ depends_on_trans(auth_lib, x) ∧ x = cli_tool`). This is a strong invariant of the current KB.
+- **Conditional** — contradicting KB facts found → these become the **counterfactual requirements**: the hypothesis is "the proposition holds *iff* the following KB facts are false: `{list}`." This is the most informative outcome — it names a concrete refactoring target. Each counterfactual requirement must carry its origin tag (`KB_PRESENT`, `KB_ABSENT_CWA`, or `KB_CONTRADICTED`); the prove skill will use the tag to decide whether the corresponding Lean lift needs to be marked `LEAN_CWA_LIFTED`.
+- **Open** — insufficient evidence → flag as an assumption and note what additional facts would resolve it.
+
+A hypothesis with zero counterfactual requirements is a proved invariant. A hypothesis with counterfactual requirements is a roadmap for the change the proposition implies — and that roadmap is exactly what the downstream proof skill formalizes.
+
+**Phrasing formal properties for the prove backends.** How a property is stated determines whether the prove skill can actually verify it.
+
+- *Clear* sub-hypothesis → state the property directly over the KB's predicates (e.g. `¬ depends_on_trans(auth_lib, cli_tool)`). The prove skill will verify it as an invariant.
+- *Conditional* sub-hypothesis → state the property over a *target relation* that excludes the counterfactual facts, and name each counterfactual as a companion necessity claim. Example:
+
+  > **Property**: `cli_tool` has no transitive dependency on `logging` in `depends_on_target`, where `depends_on_target(X,Y) := depends_on(X,Y) ∧ ¬ cf(X,Y)` and `cf` is the set of counterfactual facts listed above.
+  > **Necessity claims** (one per counterfactual): re-introducing `cf_fact(cli_tool, logging)` to the target relation restores a path `cli_tool →* logging`.
+
+  The prove skills (`prove-hypothesis-prolog`, `prove-hypothesis-lean`) both consume this shape: they derive the target relation from the counterfactual list, prove sufficiency over the target, and prove a necessity lemma for each counterfactual fact. A property phrased directly over the base relation in conditional mode is unprovable by construction — the current KB contradicts it.
 
 Good hypotheses:
-- "auth_lib has no transitive dependency on cli_tool"
-- "Every module that depends_on web_framework also depends_on logging"
+- "auth_lib has no transitive dependency on cli_tool" (with an empty counterfactual list, if the KB confirms it)
+- "`cli_tool` can stop depending on `logging` iff the KB facts `{depends_on(cli_tool, logging), depends_on(cli_tool, formatter), depends_on(formatter, logging)}` are falsified"
 - "The dependency graph from cli_tool is acyclic"
 
 ### 6. Write the Hypothesis File
@@ -172,8 +206,12 @@ Write to `thoughts/hypothesis.md` (create `thoughts/` if needed):
 - Coverage assessment: {high/medium/low}
 - Unexercised predicates: {list, if any}
 
+## Counterfactual Question
+{The proposition restated as: "What about the existing KB needs to be false
+for this proposition to be true?"}
+
 ## Decomposition
-{List of sub-hypotheses and their status: confirmed / refuted / assumed}
+{List of sub-hypotheses and their status: clear / conditional / open}
 
 ## Prolog Evidence
 
@@ -187,6 +225,21 @@ Write to `thoughts/hypothesis.md` (create `thoughts/` if needed):
 {Results that contradict or complicate the hypothesis — or explicit
 statement that none was found despite searching}
 
+## Counterfactual Requirements
+KB facts that must be false for the proposition to hold. This is the delta
+between the current KB and the world in which the proposition is true.
+
+- **`{fact as it appears in the KB}`** (from sub-hypothesis `{id}`, origin: `{KB_PRESENT | KB_ABSENT_CWA | KB_CONTRADICTED}`) —
+  {why this fact blocks the proposition, and what change to the underlying
+  system would falsify it. If origin is `KB_ABSENT_CWA`, note: this is a
+  closed-world negation; Lean cannot detect this provenance and will treat
+  it as logical falsity unless the prove skill marks the lifted theorem
+  `LEAN_CWA_LIFTED`.}
+- ...
+
+If no counterfactuals were found: state explicitly *"The KB contains no facts
+contradicting the proposition; it holds as an invariant of the current system."*
+
 ## Formal Properties
 Properties to prove in Lean4:
 
@@ -198,7 +251,9 @@ Properties to prove in Lean4:
 2. ...
 
 ## Scope
-- **Proves**: {what this establishes if true}
+- **Proves**: {what this establishes if true — either "the proposition is an
+  invariant of the current KB" or "the proposition holds iff the
+  counterfactual requirements above are falsified"}
 - **Does not prove**: {explicit limitations}
 - **Assumptions**: {what we take as given — especially sub-hypotheses that
   remained open}
@@ -219,10 +274,13 @@ Write `thoughts/hypothesis.md` structured for the prove-hypothesis-lean skill.
 
 Report to the user:
 - The original proposition (one line)
+- The counterfactual question ("what about the KB must be false for this to hold?")
 - Hypothesis statement (one line)
+- Count and summary of **counterfactual requirements** — the KB facts that must be falsified (or "none: the KB already entails the proposition")
+- Counterfactual origin breakdown: N present / M absent-CWA / K contradicted — the absent-CWA subset is the part the prove skill will mark `LEAN_CWA_LIFTED`.
 - Number of formal properties identified
 - Coverage percentage
-- Notable counterevidence or open questions
+- Open questions / assumptions
 - File path
 
 Then state: **"This hypothesis is ready for formal verification. In a follow-up session, run one of:"**
