@@ -1,20 +1,20 @@
 ---
-name: prove-hypothesis-lean
+name: prove-invariants
 description: >
-  Use this skill whenever the user wants to prove a hypothesis in Lean4 — "formalize this", "prove this in lean", "verify formally", "machine-check these properties". Reads thoughts/target-world.pl (the open-world Prolog model emitted by prove-hypothesis-prolog), translates each formal property into a Lean4 theorem with a mandatory provenance annotation, and proves it; loops back to hypothesize if unprovable.
+  Use this skill whenever the user wants to prove a hypothesis in Lean4 — "formalize this", "prove this in lean", "verify formally", "machine-check these properties". Reads thoughts/target-world.pl (the open-world Prolog model emitted by model-obligations), translates each formal property into a Lean4 theorem with a mandatory provenance annotation, and proves it; loops back to decompose-proposition if unprovable.
 user-invocable: true
 model: opus
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[thoughts/target-world.pl path]"
 ---
 
-# Formalize in Lean4
+# prove-invariants
 
-Logical operation: **prove_invariants** — machine-checked proof of universal properties (∀x.P(x)) against the open-world Prolog model in `thoughts/target-world.pl`.
+Logical operation: **prove-invariants** — machine-checked proof of universal properties (∀x.P(x)) against the open-world Prolog model in `thoughts/target-world.pl`.
 
-The **only** input artifact is `thoughts/target-world.pl`. The upstream `prove-hypothesis-prolog` skill has already constructed it: existing-world facts ∪ counterfactual negations ∪ prescriptive obligations, with each fact carrying a provenance tag. Lean does not read `hypothesis.pl`, `existing-world.pl`, or any other intermediate — `target-world.pl` is the sole carrier across the prolog → lean boundary.
+The **only** input artifact is `thoughts/target-world.pl`. The upstream `model-obligations` skill has already constructed it: existing-world facts ∪ counterfactual negations ∪ prescriptive obligations, with each fact carrying a provenance tag. Lean does not read `hypothesis.pl`, `existing-world.pl`, or any other intermediate — `target-world.pl` is the sole carrier across the prolog → lean boundary.
 
-If a property is unprovable, loop back to `hypothesize` to refine.
+If a property is unprovable, loop back to `decompose-proposition` to refine.
 
 ## Boundary: prolog → lean (carrier: `thoughts/target-world.pl`)
 
@@ -42,7 +42,7 @@ This skill cites three reference resources. They are **not** pipeline predecesso
 - `setup-lean-project` — initializes a thin Lean project at `thoughts/lean/` referencing the shared Mathlib clone.
 - `explain` — produces plain-language explanations of pipeline output (including this skill's `lean_proof_results.pl`) for non-technical review.
 
-The pipeline predecessor of this skill is `prove-hypothesis-prolog` (which produces `target-world.pl`); the pipeline successor is `translate-to-tests`.
+The pipeline predecessor of this skill is `model-obligations` (which produces `target-world.pl`); the pipeline successor is `instantiate-properties`.
 
 ## Prerequisites
 
@@ -58,7 +58,7 @@ The pipeline predecessor of this skill is `prove-hypothesis-prolog` (which produ
    LEAN_PROOFS="${LEAN_PROJECT}/Proofs"
    ```
    If `${LEAN_PROJECT}/.lake/build/` does not exist, invoke the `setup-lean-project` skill to create and build it before continuing.
-4. **Required input** — `thoughts/target-world.pl` from the `prove-hypothesis-prolog` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact provenance tags. If absent, stop and tell the user to run `prove-hypothesis-prolog` first.
+4. **Required input** — `thoughts/target-world.pl` from the `model-obligations` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact provenance tags. If absent, stop and tell the user to run `model-obligations` first.
 
 ## Reading the input
 
@@ -120,7 +120,7 @@ set_option autoImplicit false
 {domain definitions}
 
 -- Target relation: sourced directly from target-world.pl
--- (counterfactual edges already excluded upstream by prove-hypothesis-prolog)
+-- (counterfactual edges already excluded upstream by model-obligations)
 def depends_on_target (x y : Module) : Prop := ...
 
 /-
@@ -263,7 +263,7 @@ For each formal property, create a `.lean` file in `${LEAN_PROOFS}/` (i.e. `thou
 
 For every theorem, place the `provenance(absent)` or `provenance(contradicts)` block immediately above the theorem statement. The value comes from the provenance tag in `target-world.pl`; do not derive it.
 
-A necessity lemma that trivially cannot be closed is a signal: either the fact isn't load-bearing (flag as extraneous and loop back to `hypothesize`) or the target-relation encoding is wrong. Don't paper over it with `sorry` — abstain.
+A necessity lemma that trivially cannot be closed is a signal: either the fact isn't load-bearing (flag as extraneous and loop back to `decompose-proposition`) or the target-relation encoding is wrong. Don't paper over it with `sorry` — abstain.
 
 **Translation guidelines:**
 - Map domain types to Lean types (use Mathlib where feasible)
@@ -331,12 +331,12 @@ If a property exhausts its correction budget:
 | Type mismatch | Lean model doesn't match domain | Revise definitions |
 | Logical contradiction | Property may be false | **Loop back** |
 | Timeout | Property too complex for automation | Decompose into sub-properties |
-| Necessity lemma unprovable (counterfactual claim) | The negated fact is not load-bearing — the target property survives re-inclusion | **Loop back** to `hypothesize` to prune the negation premises |
-| Sufficiency theorem unprovable (counterfactual claim) | The negation premise list is incomplete — the target relation still admits a violation | **Loop back** to `hypothesize` with the remaining counterexample; more facts must be named |
+| Necessity lemma unprovable (counterfactual claim) | The negated fact is not load-bearing — the target property survives re-inclusion | **Loop back** to `decompose-proposition` to prune the negation premises |
+| Sufficiency theorem unprovable (counterfactual claim) | The negation premise list is incomplete — the target relation still admits a violation | **Loop back** to `decompose-proposition` with the remaining counterexample; more facts must be named |
 
-**Loop back to hypothesize:**
+**Loop back to decompose-proposition:**
 
-When a property appears genuinely unprovable (logical contradiction or persistent type mismatches after modeling revisions), stop and tell the user to re-run `hypothesize`, providing this context:
+When a property appears genuinely unprovable (logical contradiction or persistent type mismatches after modeling revisions), stop and tell the user to re-run `decompose-proposition`, providing this context:
 
 ```
 The following property from target-world.pl could not be proven:
@@ -350,7 +350,7 @@ Possible causes:
 - The property may need additional assumptions
 - target-world.pl may be missing relevant facts (or carry the wrong provenance tag)
 
-Please re-run hypothesize against the source KB to:
+Please re-run decompose-proposition against the source KB to:
 1. Check if the property has counterexamples in target-world.pl
 2. Identify missing relationships that would make it provable
 3. Formulate a revised, weaker hypothesis if needed
@@ -358,7 +358,7 @@ Please re-run hypothesize against the source KB to:
 
 ### 7. Produce Results
 
-Write Prolog facts to `thoughts/lean_proof_results.pl` (create `thoughts/` if it doesn't exist). The file is consumed by downstream skills (`translate-to-tests`, `realize-specification`, and the `explain` reference) as a structured KB — **not** as prose.
+Write Prolog facts to `thoughts/lean_proof_results.pl` (create `thoughts/` if it doesn't exist). The file is consumed by downstream skills (`instantiate-properties`, `realize-specification`, and the `explain` reference) as a structured KB — **not** as prose.
 
 Per the target-state contract:
 > "Per-theorem verdict: `theorem_verdict(TheoremId, proven|unprovable)` with proof strategy, failure modes, and mandatory provenance annotation (`absent|contradicts`)."
@@ -367,7 +367,7 @@ Per the target-state contract:
 
 ```prolog
 % thoughts/lean_proof_results.pl
-% Output of prove-hypothesis-lean over thoughts/target-world.pl
+% Output of prove-invariants over thoughts/target-world.pl
 
 % Per-theorem verdict (mandatory, one per formal property in target-world.pl)
 theorem_verdict(TheoremId, proven).
@@ -391,7 +391,7 @@ theorem_source(TheoremId, "thoughts/lean/Proofs/{File}.lean").
 
 % For counterfactual claims: status of each necessity lemma
 necessity_lemma_status(TheoremId, FactId, proven).
-necessity_lemma_status(TheoremId, FactId, extraneous).   % reduced to False — loop back to hypothesize
+necessity_lemma_status(TheoremId, FactId, extraneous).   % reduced to False — loop back to decompose-proposition
 necessity_lemma_status(TheoremId, FactId, unprovable).   % strategy failed — distinct from extraneous
 
 % Optional: aggregate run summary
@@ -412,7 +412,7 @@ All artifacts are written to the `thoughts/` directory (create it if it doesn't 
 
 - One or more `.lean` files in `${LEAN_PROOFS}/`, each carrying mandatory `provenance(absent|contradicts)` annotations on every theorem (per `requires_annotation('thoughts/lean/Proofs/*.lean', provenance)`).
 - A `thoughts/lean_proof_results.pl` Prolog facts file (schema above) — **not** markdown.
-- If any properties looped back: a request to re-run `hypothesize`.
+- If any properties looped back: a request to re-run `decompose-proposition`.
 
 ## Configuration
 
@@ -424,4 +424,4 @@ All artifacts are written to the `thoughts/` directory (create it if it doesn't 
 ## Guidance
 
 - **Negation provenance is the only thing carrying CWA semantics across this boundary.** Lean sees `¬P` regardless of whether P originated as `absent(F)` (closed-world default) or `contradicts(F, G)` (KB asserts a conflicting fact). The mandatory `provenance(absent|contradicts)` annotation in each `.lean` file plus the `provenance_annotation/3` facts in `lean_proof_results.pl` are the only mechanisms preserving the distinction. Per the `cwa_negation_neq_lean_proof` rule: a fact that is false because absent from the KB is categorically different from a formally disproved fact — treat dropping the annotation as a correctness bug, not a style issue.
-- **`target-world.pl` is the single source of truth for this skill.** Do not reach back to `hypothesis.pl` or `existing-world.pl` — counterfactual edges have already been excluded and prescriptive obligations have already been added by `prove-hypothesis-prolog`. Any apparent need to re-read upstream artifacts means the upstream skill failed to materialize the world correctly; loop back rather than patch around it.
+- **`target-world.pl` is the single source of truth for this skill.** Do not reach back to `hypothesis.pl` or `existing-world.pl` — counterfactual edges have already been excluded and prescriptive obligations have already been added by `model-obligations`. Any apparent need to re-read upstream artifacts means the upstream skill failed to materialize the world correctly; loop back rather than patch around it.

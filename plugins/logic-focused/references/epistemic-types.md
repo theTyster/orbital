@@ -34,9 +34,9 @@ Every `claim/2` in `thoughts/hypothesis.pl` carries exactly one `epistemic_label
 | `prescriptive` | What must exist or be provable in the target state | Lean proof (OWA) — a fact that does not yet exist; the implementation must make it true |
 
 Downstream consumption:
-- `prove-hypothesis-prolog` reads the label to decide how each claim contributes to `target-world.pl`. A `counterfactual` claim removes a fact; a `prescriptive` claim adds one; a `descriptive` claim is already satisfied by `existing-world.pl`.
-- `prove-hypothesis-lean` reads the label to decide which claims become formal theorems and how to phrase them.
-- `translate-to-tests` reads the label when sampling a property: counterfactual claims project to absence-style tests; prescriptive claims project to presence-style tests; descriptive claims project to invariant tests.
+- `model-obligations` reads the label to decide how each claim contributes to `target-world.pl`. A `counterfactual` claim removes a fact; a `prescriptive` claim adds one; a `descriptive` claim is already satisfied by `existing-world.pl`.
+- `prove-invariants` reads the label to decide which claims become formal theorems and how to phrase them.
+- `instantiate-properties` reads the label when sampling a property: counterfactual claims project to absence-style tests; prescriptive claims project to presence-style tests; descriptive claims project to invariant tests.
 
 ### Dimension 2 — `negation_provenance` on every negated premise
 
@@ -53,7 +53,7 @@ The tag is most load-bearing at the `prolog → lean` boundary: when a negated p
 
 ### Test-level classification — `test_category`
 
-Every test emitted by `translate-to-tests` carries exactly one `test_category`. The domain has exactly two values.
+Every test emitted by `instantiate-properties` carries exactly one `test_category`. The domain has exactly two values.
 
 | Category | Derivation | Failure semantics |
 |---|---|---|
@@ -70,7 +70,7 @@ These rules are invariants of the pipeline. Skills surface them in their guidanc
 
 2. **`lean_universal_neq_test_verified`** — A passing test samples one point in a proof domain. It does not re-verify ∀x.P(x). A green `projection` test is a *witness*, not a re-proof; the upstream Lean theorem remains the authority on universality.
 
-3. **`behavioral_claim_neq_proven_property`** — A test covering I/O, state, or concurrency has no proof ancestry. It must be distinguishable from a projection test. A failing `behavioral_claim` test cannot loop back to `hypothesize` or the prove skills — those nodes never expressed the claim.
+3. **`behavioral_claim_neq_proven_property`** — A test covering I/O, state, or concurrency has no proof ancestry. It must be distinguishable from a projection test. A failing `behavioral_claim` test cannot loop back to `decompose-proposition` or the prove skills — those nodes never expressed the claim.
 
 ## Boundary crossings
 
@@ -90,36 +90,36 @@ Carrier: `thoughts/lean_proof_results.pl`.
 
 Each boundary-crossing skill carries explicit loss/gain obligations.
 
-### `translate-to-prolog` — source code → existing-world.pl
+### `close-world` — source code → existing-world.pl
 - **Preserved**: declared relationships, structural dependencies, named entities.
 - **Lost**: runtime behaviour, state transitions, timing, I/O, concurrency.
 - **Introduced**: CWA default — every fact not asserted is implicitly absent.
 
-### `hypothesize` — existing-world.pl + proposition → hypothesis.pl
+### `decompose-proposition` — existing-world.pl + proposition → hypothesis.pl
 - **Preserved**: what the KB says positively and negatively.
 - **Introduced**: claim decomposition. Every claim is tagged with an `epistemic_label`; every negated premise additionally with a `negation_provenance`.
 
-### `prove-hypothesis-prolog` — hypothesis.pl + existing-world.pl → target-world.pl + model_results.pl
+### `model-obligations` — hypothesis.pl + existing-world.pl → target-world.pl + model_results.pl
 - **Preserved**: CWA provenance is native; it travels through `negation_provenance` annotations on every removed-or-contradicted fact in target-world.pl.
 - **Introduced**: per-property `verdict(PropertyId, consistent | inconsistent | gap)` records in `model_results.pl`.
 
-### `prove-hypothesis-lean` — hypothesis.pl + target-world.pl → lean_proof_results.pl
+### `prove-invariants` — hypothesis.pl + target-world.pl → lean_proof_results.pl
 - **Preserved**: logical structure of each property (∀, ∃, →, ¬). The `negation_provenance` of every negated premise is preserved as a docstring/comment block above its theorem.
 - **Lost (if not actively preserved)**: CWA provenance. Lean cannot distinguish a theorem with a genuinely false premise from one with a CWA-absent premise. The skill MUST record the `provenance(absent | contradicts)` annotation on every relevant theorem.
 - **Introduced**: universal quantification over arbitrary types — real new strength when the type is larger than the KB's enumeration. Per-theorem `theorem_verdict(TheoremId, proven | unprovable)` facts in `lean_proof_results.pl`.
 
-### `translate-to-tests` — lean_proof_results.pl + (optional) hypothesis.pl + target-world.pl + model_results.pl + .lean files → test suite
+### `instantiate-properties` — lean_proof_results.pl + (optional) hypothesis.pl + target-world.pl + model_results.pl + .lean files → test suite
 - **Preserved**: per-test reference to the source property; per-test `epistemic_label` and (if applicable) `negation_provenance` carried from the source claim.
 - **Weakened — the sampling downgrade**: universality is lost. Each `projection` test records the quantified domain it samples and the values of that domain it does NOT cover.
 - **Lost**: the ability to re-verify the full strength of the proof.
 - **Introduced**: `behavioral_claim` tests. They have no upstream backing; they appear in their own phase and cannot loop back to upstream stages.
 
-### `translate-to-implementation` — test suite + (optional) lean_proof_results.pl + hypothesis.pl + target-world.pl + model_results.pl → source code + implementation_log.md
+### `realize-specification` — test suite + (optional) lean_proof_results.pl + hypothesis.pl + target-world.pl + model_results.pl → source code + implementation_log.md
 - **Preserved**: the test-to-property link via the implementation log. Each entry records the cited claim's `epistemic_label` and (if applicable) `negation_provenance`.
 - **Routing**: the orchestrator chooses its briefing shape from `test_category` and the cited claim's `epistemic_label`. A `projection` test whose claim is `counterfactual` triggers a *removal* briefing (delete the fact's source location); a `projection` test whose claim is `descriptive` or `prescriptive` triggers an *addition* briefing; a `behavioral_claim` test triggers a *behavioral* briefing.
 - **Loopback constraint**: `behavioral_claim` failures do NOT loop back into the formal pipeline. There is no upstream property to revise.
 
-### `measure-adherance` — implemented codebase + implementation_log.md + hypothesis.pl → adherence_facts.pl + adherence_report.md
+### `measure-entailment` — implemented codebase + implementation_log.md + hypothesis.pl → adherence_facts.pl + adherence_report.md
 - **Obligation**: score how much the implemented system entails the original proposition. Per-claim breakdown surfaces how each `epistemic_label` was realized: counterfactual claims should have absent fact-sources; prescriptive claims should have provable evidence; descriptive claims should remain entailed.
 
 ## How skills should emit and consume tags
@@ -133,5 +133,5 @@ Each boundary-crossing skill carries explicit loss/gain obligations.
 - **CWA-as-truth**: Treating `\+ depends_on(A, B)` as a proof that A does not depend on B. It is a proof that the KB does not *say* A depends on B. The `negation_provenance(absent)` tag exists to keep this audible.
 - **Universal-as-tested**: Treating a green test suite as re-verifying the upstream proof. Green means "the implementation passed the sampled witnesses." The proof is still the authority on universality; the suite is a tripwire. (`lean_universal_neq_test_verified`)
 - **Behavioral-as-formal**: Treating a `behavioral_claim` test as though it were backed by a proof. A green behavioral test means the fixture passed on this run. It does not mean the behaviour is guaranteed for other inputs, other timings, or other environments. (`behavioral_claim_neq_proven_property`)
-- **Loopback-to-wrong-stage**: Failing a `behavioral_claim` test and looping back to `hypothesize`. The hypothesize/prove stages never expressed a behavioral claim — there is nothing to revise upstream. The fix lives in the TDD layer or in a manual decision.
+- **Loopback-to-wrong-stage**: Failing a `behavioral_claim` test and looping back to `decompose-proposition`. The decompose-proposition/prove stages never expressed a behavioral claim — there is nothing to revise upstream. The fix lives in the TDD layer or in a manual decision.
 - **Silent dimension drop across a boundary**: Stripping `negation_provenance` when translating into Lean, or `epistemic_label` when translating into the test file, or `test_category` when entering implementation. Each strip is a category error that compounds downstream.

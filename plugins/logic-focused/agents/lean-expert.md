@@ -140,7 +140,7 @@ A curated Lean 4 / Mathlib wiki ships with this plugin at `references/lean4-wiki
 
 Consult the wiki before falling back to search tactics (`exact?`, `apply?`, `simp?`) — a named lemma with its known gotchas (implicit-argument quirks, namespace issues, simp-normal-form mismatches) is faster and much less context-hungry than search-tactic output. When the wiki is thin on a topic, fall back to `WebSearch` / `WebFetch` against the Mathlib 4 docs at `https://leanprover-community.github.io/mathlib4_docs/`.
 
-The skill-local `references/lean-proof-method.md` methodology doc (under the prove-hypothesis-lean skill) is also yours to read directly — the caller will pass its absolute path alongside the wiki path.
+The skill-local `references/lean-proof-method.md` methodology doc (under the prove-invariants skill) is also yours to read directly — the caller will pass its absolute path alongside the wiki path.
 
 ## Verification
 

@@ -1,5 +1,5 @@
 ---
-name: prove-hypothesis-prolog
+name: model-obligations
 description: >
   Use this skill to construct the target-world model that Lean will later prove against — "build the target world", "apply counterfactuals and obligations", "construct the model substrate", "derive model verdicts". Reads thoughts/existing-world.pl and thoughts/hypothesis.pl, applies counterfactual negations and prescriptive obligations, and emits thoughts/target-world.pl plus thoughts/model_results.pl.
 user-invocable: true
@@ -8,20 +8,20 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[hypothesis.pl path] [existing-world.pl path]"
 ---
 
-# Construct the Target World (model_obligations)
+# model-obligations
 
-This skill performs the **model_obligations** logical operation: it builds a new
+This skill performs the **model-obligations** logical operation: it builds a new
 Prolog knowledge base — `thoughts/target-world.pl` — from the existing-world KB
-and the hypothesis. The target world is the substrate that `prove-hypothesis-lean`
+and the hypothesis. The target world is the substrate that `prove-invariants`
 proves over; without it, Lean has no model to reason against.
 
 The skill no longer "proves" against a fixed KB as an alternative to Lean. It is
 the **first** of two sequential proof steps:
 
-1. `prove-hypothesis-prolog` (this skill) — construct `target-world.pl` from
+1. `model-obligations` (this skill) — construct `target-world.pl` from
    `existing-world.pl` + `hypothesis.pl`. Emits per-property verdicts as Prolog
    facts in `model_results.pl`.
-2. `prove-hypothesis-lean` — prove the formal properties hold in `target-world.pl`.
+2. `prove-invariants` — prove the formal properties hold in `target-world.pl`.
 
 Conceptually, `target-world.pl` is **`existing-world.pl` with counterfactual
 negations applied and prescriptive obligations asserted**. Each fact carries a
@@ -148,10 +148,10 @@ Verdict semantics:
   a universal proof; this skill establishes structural consistency, not the
   Lean-grade universal claim — see `lean_universal_neq_test_verified`).
 - `inconsistent` — target-world contains a counterexample. Lean cannot prove
-  the property; loop back to `hypothesize`.
+  the property; loop back to `decompose-proposition`.
 - `gap` — target-world lacks the facts needed to decide. Either the hypothesis
   is missing prescriptive obligations or the existing-world is incomplete. Loop
-  back to `hypothesize` to record the missing obligations.
+  back to `decompose-proposition` to record the missing obligations.
 
 ## Constructing target-world: counterfactual + prescriptive encoding
 
@@ -205,7 +205,7 @@ dep_tpl_reaches(A, B) :- depends_on_target_plus_cli_logging(A, Mid),
 A property verdict is `consistent` only when (a) the target-relation check
 succeeds and (b) every counterfactual feeding into that property is
 `load_bearing`. Any `extraneous` counterfactual gets recorded for a loop back
-to `hypothesize` to prune the claim list.
+to `decompose-proposition` to prune the claim list.
 
 ## Delegate to `prolog-prover`
 
@@ -385,7 +385,7 @@ For each `property/2` in `hypothesis.pl`, write its verdict block in
 For each counterfactual claim feeding the property, also emit the
 `load_bearing | extraneous` minimality check shown in §"Constructing
 target-world." Any `extraneous` counterfactual flags the hypothesis's claim
-list as over-specified and triggers a loop back to `hypothesize`.
+list as over-specified and triggers a loop back to `decompose-proposition`.
 
 Run target-world together with existing-world to populate verdicts:
 
@@ -410,12 +410,12 @@ swipl -g "
 ```
 
 After each verdict:
-- `consistent` → record it; safe to hand off to `prove-hypothesis-lean`.
+- `consistent` → record it; safe to hand off to `prove-invariants`.
 - `inconsistent` → counterexample found. Stop and diagnose (see §Handle
   Inconsistent Verdicts).
 - `gap` → target-world lacks deciding facts. Either the hypothesis is missing
   prescriptive obligations or existing-world is incomplete. Loop back to
-  `hypothesize` to add the missing obligations.
+  `decompose-proposition` to add the missing obligations.
 - `Prolog error` → fix the encoding before proceeding.
 
 Per the enforcement rules: a `consistent` verdict is structural consistency in
@@ -475,15 +475,15 @@ swipl -g "
 
 | Situation | Meaning | Action |
 |-----------|---------|--------|
-| Counterexample is a real violation | Property does not hold in target-world | **Loop back to `hypothesize`** — the claim list is incomplete |
+| Counterexample is a real violation | Property does not hold in target-world | **Loop back to `decompose-proposition`** — the claim list is incomplete |
 | Counterexample is an existing-world error | Existing-world has a bad fact | Fix existing-world and re-run |
 | Encoding is wrong | Helper rules don't capture the intent | Fix the encoding and retry |
-| `gap` (no counterexamples, no proof) | Target-world is missing deciding facts | Loop back to `hypothesize` to add the prescriptive obligation |
-| Counterfactual `extraneous` flag | A counterfactual claim is not load-bearing | Loop back to `hypothesize` to prune the claim |
+| `gap` (no counterexamples, no proof) | Target-world is missing deciding facts | Loop back to `decompose-proposition` to add the prescriptive obligation |
+| Counterfactual `extraneous` flag | A counterfactual claim is not load-bearing | Loop back to `decompose-proposition` to prune the claim |
 
-**Loop back to `hypothesize`** when a genuine counterexample shows the
+**Loop back to `decompose-proposition`** when a genuine counterexample shows the
 property cannot be made consistent in target-world. Stop and tell the user to
-re-run hypothesize, providing this context:
+re-run decompose-proposition, providing this context:
 
 ```
 The following property from hypothesis "{title}" is inconsistent in target-world:
@@ -496,7 +496,7 @@ Target-world (existing-world with {N} counterfactuals applied and {M}
 prescriptive obligations asserted) still contains a counterexample because:
 {explanation}
 
-Please re-run hypothesize to:
+Please re-run decompose-proposition to:
 1. Confirm the counterexample is real (not an existing-world error)
 2. Decide whether the property needs additional counterfactual or prescriptive
    claims to reach consistency
@@ -511,8 +511,8 @@ markdown). Schema:
 ```prolog
 % model_results.pl
 %
-% Per-property model verdicts produced by prove-hypothesis-prolog.
-% Hand off to prove-hypothesis-lean as the substrate description.
+% Per-property model verdicts produced by model-obligations.
+% Hand off to prove-invariants as the substrate description.
 
 % verdict(PropertyId, consistent | inconsistent | gap).
 verdict(p_acyclic_deps, consistent).
@@ -541,7 +541,7 @@ summary(extraneous_counterfactuals, 1).
 ```
 
 Downstream skills query `model_results.pl` directly with swipl rather than
-parsing prose. `translate-to-tests` reads `verdict/2` to decide which
+parsing prose. `instantiate-properties` reads `verdict/2` to decide which
 properties become live tests vs. skipped pre-failing tests.
 
 ## Verification
@@ -550,7 +550,7 @@ Never declare a verdict `consistent` if the verdict directive hasn't run
 cleanly (no Prolog errors, no `inconsistent` output). Low coverage (<30%) means
 target-world lacks the facts to decide the property — record as `gap`, not
 silently as `consistent`. Gap verdicts are intentional and feed back into
-`hypothesize` so the next iteration adds the missing prescriptive obligations.
+`decompose-proposition` so the next iteration adds the missing prescriptive obligations.
 
 - **CWA-absent ≠ Lean-disproved** (`cwa_negation_neq_lean_proof`). A
   `negation_provenance(_, absent)` marker means the fact is missing from
@@ -576,8 +576,8 @@ All artifacts are written to `thoughts/` (create it if it doesn't exist):
   `gap_reason/2`, and `cf_status/2` facts plus summary counts. **Primary
   deliverable** — downstream skills query it directly.
 - If any verdicts are `inconsistent` or `gap`: a request to re-run
-  `hypothesize`.
-- Gap verdicts feed directly into `translate-to-tests` as pre-failing test
+  `decompose-proposition`.
+- Gap verdicts feed directly into `instantiate-properties` as pre-failing test
   cases.
 
 Both files are designed to be re-run at any time against an updated
@@ -589,6 +589,6 @@ immediately which verdicts still hold.
 - **Inner corrections per property**: 5
 - **Outer iterations (fresh approach)**: 3
 - **Max properties per hypothesis**: no limit
-- **Role**: model_obligations (constructs target-world.pl as the substrate that
-  `prove-hypothesis-lean` proves over). Runs *before* `prove-hypothesis-lean`
+- **Role**: model-obligations (constructs target-world.pl as the substrate that
+  `prove-invariants` proves over). Runs *before* `prove-invariants`
   in the pipeline, not as an alternative to it.

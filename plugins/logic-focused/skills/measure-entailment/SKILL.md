@@ -1,5 +1,5 @@
 ---
-name: measure-adherance
+name: measure-entailment
 description: >
   Pipeline stage 7 of 7 — the final adherence check. Extracts claims from each input resource as Prolog facts, then scores overlap, gaps, contradictions, and extensions. Runs in two valid framings: (1) terminal pipeline step, scoring how well the implemented codebase entails the original proposition encoded in `thoughts/hypothesis.pl`; and (2) stand-alone, comparing two or more arbitrary resources with an optional `--prime` source-of-truth. Emits an intermediate `thoughts/adherence_facts.pl` and the human-reviewed `thoughts/adherence_report.md`.
 user-invocable: true
@@ -7,7 +7,7 @@ allowed-tools: Bash, Read, Glob, Grep, Write, Agent
 argument-hint: "[resource1] [resource2] [...] [--prime resource1]"
 ---
 
-# Measure Adherance
+# measure-entailment
 
 **Pipeline stage 7 of 7.** This is the final adherence check: it scores how much the pipeline's output entails the original proposition. Note the (intentional) misspelling — the target KB uses "adherance" consistently and this skill keeps it.
 
@@ -15,11 +15,11 @@ Compare two or more resources and score how well they agree. The core idea is si
 
 The word "resource" is broad on purpose — specs, implementation docs, code files, configs, READMEs, test plans, data models. Anything with extractable claims.
 
-## Logical operation: `measure_entailment`
+## Logical operation: `measure-entailment`
 
-This skill realizes *measure_entailment* — scoring how much one KB (or codebase) entails the claims of another. Both framings below are valid uses:
+This skill realizes *measure-entailment* — scoring how much one KB (or codebase) entails the claims of another. Both framings below are valid uses:
 
-- **Terminal pipeline step (the canonical flow)** — when run after `translate-to-implementation`, this skill scores how much the implemented system (source files + `thoughts/implementation_log.md`) entails the original proposition. Prior pipeline runs leave behind a chain of artifacts: `thoughts/existing-world.pl`, `thoughts/hypothesis.pl`, `thoughts/target-world.pl`, `thoughts/model_results.pl`, `thoughts/lean_proof_results.pl`, `thoughts/tests/...`, and `thoughts/implementation_log.md`. This skill closes the loop by checking the resulting world (the implemented codebase) against the asserted hypothesis, with `thoughts/hypothesis.pl` as the prime.
+- **Terminal pipeline step (the canonical flow)** — when run after `realize-specification`, this skill scores how much the implemented system (source files + `thoughts/implementation_log.md`) entails the original proposition. Prior pipeline runs leave behind a chain of artifacts: `thoughts/existing-world.pl`, `thoughts/hypothesis.pl`, `thoughts/target-world.pl`, `thoughts/model_results.pl`, `thoughts/lean_proof_results.pl`, `thoughts/tests/...`, and `thoughts/implementation_log.md`. This skill closes the loop by checking the resulting world (the implemented codebase) against the asserted hypothesis, with `thoughts/hypothesis.pl` as the prime.
 - **Stand-alone mode** — designate any resource as "prime" via `--prime` and grade other resources against it. Useful for spec-vs-implementation grading, doc-vs-code drift checks, or any ad-hoc adherence question. Prime designation is optional: with no prime, scoring is symmetric.
 
 Upstream pipeline artifacts use a shared epistemic vocabulary — `epistemic_label(descriptive|counterfactual|prescriptive)` and `negation_provenance(absent|contradicts)`. The adherence pass reads these directly as Prolog facts and produces a per-label / per-provenance breakdown in the report.
@@ -27,7 +27,7 @@ Upstream pipeline artifacts use a shared epistemic vocabulary — `epistemic_lab
 ## Inputs, outputs, and required tools
 
 - **Primary input**: `source_files` — the codebase under review (in pipeline-terminal mode) or the resource files supplied directly (stand-alone).
-- **Also consumes**: `thoughts/implementation_log.md` (when present from `translate-to-implementation`), `thoughts/adherence_facts.pl` (regenerated each run; prior copies are overwritten).
+- **Also consumes**: `thoughts/implementation_log.md` (when present from `realize-specification`), `thoughts/adherence_facts.pl` (regenerated each run; prior copies are overwritten).
 - **Required environment**: `resource_paths` (2 or more), and optionally `prime_designation` to nominate one as source-of-truth.
 - **Required tools**: `swipl`.
 - **Intermediate output**: `thoughts/adherence_facts.pl` — extracted claims from every resource, in `asserts/2` form.
@@ -54,10 +54,10 @@ PROLOG="${CLAUDE_SKILL_DIR}/prolog"
 
 ### Pipeline-terminal mode
 
-When run as the last step of the logic-focused pipeline (after `translate-to-implementation`):
+When run as the last step of the logic-focused pipeline (after `realize-specification`):
 
 - **Source files** — the implemented codebase under review
-- **`thoughts/implementation_log.md`** — produced by `translate-to-implementation`, narrating what was actually built
+- **`thoughts/implementation_log.md`** — produced by `realize-specification`, narrating what was actually built
 - **`thoughts/hypothesis.pl`** — the prime; the implementation is graded against the `claim/2` (and related) facts here
 - **Optionally, the upstream artifacts** — pulled in to enrich the report:
   - `thoughts/existing-world.pl` — the pre-implementation world

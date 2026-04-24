@@ -17,25 +17,25 @@ Skills reference an agent by reading its `.md` file and incorporating the instru
 
 Lean 4 formal proof specialist. Uses `lake build` as deductive reasoning steps rather than chain-of-thought. Incorporates adversarial verification patterns: interpretation checking, extracted-lemma counterexample search, and calibrated abstention.
 
-**Used by**: prove-hypothesis-lean
+**Used by**: prove-invariants
 
 ### agent-of-truth
 
 Prolog KB construction specialist. Identifies facts, relationships, and constraints in any domain. Expert in domain-fitting predicate design, graph/ontology modeling, DCGs for structured parsing, and constraint validation rules. Reads `references/prolog-wiki/` directly when an extension recipe is needed.
 
-**Used by**: translate-to-prolog, hypothesize, measure-adherance
+**Used by**: close-world, decompose-proposition, measure-entailment
 
 ### agent-of-questions
 
 Prolog query specialist. Discovers KB structure through `swipl` introspection alone — never reads `.pl` files directly. Uses the introspect module to understand any KB, then writes precise queries. Reads `references/prolog-wiki/` directly when a query needs an advanced extension.
 
-**Used by**: hypothesize, prove-hypothesis-prolog, measure-adherance
+**Used by**: decompose-proposition, model-obligations, measure-entailment
 
 ### prolog-prover
 
 Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search. Reads `references/prolog-wiki/` directly for CLP and tabling recipes.
 
-**Used by**: prove-hypothesis-prolog
+**Used by**: model-obligations
 
 ## Plugin References
 

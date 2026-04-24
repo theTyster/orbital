@@ -1,5 +1,5 @@
 ---
-name: translate-to-tests
+name: instantiate-properties
 description: >
   Stage 5 of the 7-stage pipeline. Reads `thoughts/lean/Proofs/*.lean` (primary) and `thoughts/lean_proof_results.pl` (required); optionally consumes `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl`. Instantiates each universal Lean property as a `projection` test at a specific fixture, or emits a `behavioral_claim` test for an I/O / state / concurrency / timing claim that no upstream proof expressed. Universality is intentionally discarded at the lean → tdd boundary — this is a design choice, not a leak. Every test is tagged with exactly one of `projection` or `behavioral_claim`. All tests start skipped.
 user-invocable: true
@@ -7,13 +7,13 @@ allowed-tools: Read, Glob, Grep, Write, Agent, Bash
 argument-hint: "[optional: target codebase directory; without it, pseudotest format is used]"
 ---
 
-# Translate to Tests
+# instantiate-properties
 
-**Logical operation: `instantiate_properties`.** Instantiate: `∀x.P(x) → P(specific_fixture)`. Universality is **intentionally discarded** at the TDD boundary — this is not a loss of rigor but a deliberate sampling of one point from each proof domain, with the loss accounted for explicitly (see `unsampled_domain` in every projection test and the COVERAGE GAPS block).
+**Logical operation: `instantiate-properties`.** Instantiate: `∀x.P(x) → P(specific_fixture)`. Universality is **intentionally discarded** at the TDD boundary — this is not a loss of rigor but a deliberate sampling of one point from each proof domain, with the loss accounted for explicitly (see `unsampled_domain` in every projection test and the COVERAGE GAPS block).
 
 Turn each universal Lean property into a `projection` test that samples the proof at a specific fixture, or emit a `behavioral_claim` test for an I/O / state / concurrency / timing claim that no upstream proof ever expressed. The implementor runs the suite, watches it fail, and drives their code toward green. No separate plan document is produced — the test file is the deliverable.
 
-**Pipeline position:** Stage 5 of 7. Consumes `thoughts/lean/Proofs/*.lean` (primary input), `thoughts/lean_proof_results.pl` (required), and optionally `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl` — all of these are **Prolog facts files, not markdown**. Produces `thoughts/tests/{file}`. Downstream: `realize_specification` / `translate-to-implementation` un-skips one test at a time.
+**Pipeline position:** Stage 5 of 7. Consumes `thoughts/lean/Proofs/*.lean` (primary input), `thoughts/lean_proof_results.pl` (required), and optionally `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl` — all of these are **Prolog facts files, not markdown**. Produces `thoughts/tests/{file}`. Downstream: `realize-specification` un-skips one test at a time.
 
 **Boundary semantics: `lean → tdd`** (carrier: `thoughts/lean_proof_results.pl`).
 
@@ -31,7 +31,7 @@ Turn each universal Lean property into a `projection` test that samples the proo
 **Two test categories — that is the entire domain.** Every emitted test carries `test_category(projection | behavioral_claim)`:
 
 - `projection` — derived from a Lean proof applied to a specific fixture. Failure means "implementation bug: the proved property fails at this sample point." This bucket includes both positive sampling of `∀x.P(x)` AND counterfactual-removal tests (formerly absence/guard) that project a `claim_label(_, counterfactual)` claim from `hypothesis.pl` plus a corresponding fact removal recorded in `target-world.pl`. Counterfactual projections are still emitted — they are the structural counter-pressure to the "only reason about what exists" bias — they just live under `projection`.
-- `behavioral_claim` — new claim introduced at the TDD boundary. Failure means "contract failure — no upstream proof; the claim itself may need scrutiny." Has no upstream proof ancestry. A failing `behavioral_claim` test is NOT a loopback signal to `hypothesize` or `prove-hypothesis-*` — those nodes never expressed the claim.
+- `behavioral_claim` — new claim introduced at the TDD boundary. Failure means "contract failure — no upstream proof; the claim itself may need scrutiny." Has no upstream proof ancestry. A failing `behavioral_claim` test is NOT a loopback signal to `decompose-proposition` or `model-obligations` / `prove-invariants` — those nodes never expressed the claim.
 
 Alongside `test_category`, each test carries diagnostic dimensions inherited from the source claim where applicable:
 
@@ -45,7 +45,7 @@ Reference: `../../references/epistemic-types.md`.
 All structured inputs are **Prolog facts files** (`.pl`), not markdown. Query them with `swipl -g`, not with grep or Read.
 
 - **Primary input**: `thoughts/lean/Proofs/*.lean` — the actual Lean theorem source. Each theorem's statement is the specification to instantiate.
-- **Required**: `thoughts/lean_proof_results.pl` from `prove-hypothesis-lean`. Carries `theorem_verdict/2`, `formal_property/3`, and mandatory provenance annotations (`absent | contradicts`).
+- **Required**: `thoughts/lean_proof_results.pl` from `prove-invariants`. Carries `theorem_verdict/2`, `formal_property/3`, and mandatory provenance annotations (`absent | contradicts`).
 - **Optional**: `thoughts/hypothesis.pl` — provides `claim/2`, `claim_label/2` (descriptive/counterfactual/prescriptive), `claim_status/2`, `negation_provenance/2`, `formal_property/3`, edge predicates, and the original proposition's scope.
 - **Optional**: `thoughts/model_results.pl` — Prolog model verification results that may supplement Lean proofs. A verified model fact can seed a `projection` test the same way a Lean universal can.
 - **Optional**: `thoughts/target-world.pl` — records fact removals corresponding to counterfactual claims (used to drive counterfactual `projection` tests).
@@ -230,7 +230,7 @@ Use named entities from the KB as test inputs rather than abstract placeholders.
 
 - Some test needs cannot be projections of any proven property. Side effects, I/O sequencing, timing, concurrency, error-mode behaviour, and integration-level state transitions live in the TDD layer and nowhere else — this is the *gain* crossing the `lean → tdd` boundary.
 - If the implementor explicitly asked for behavioral tests, or if the target codebase clearly requires them (e.g., a server handler that must return 503 on backpressure), generate them — but tag each one `test_category: behavioral_claim` in its comment block and list them under a dedicated `## Behavioral Contracts` section at the bottom of the test file (above `COVERAGE GAPS`).
-- `behavioral_claim` tests have no upstream formal backing. A failing `behavioral_claim` test cannot loop back to `hypothesize` or `prove-hypothesis-*` — those nodes never expressed the claim. The classification matters for `translate-to-implementation`'s loopback logic.
+- `behavioral_claim` tests have no upstream formal backing. A failing `behavioral_claim` test cannot loop back to `decompose-proposition` or `model-obligations` / `prove-invariants` — those nodes never expressed the claim. The classification matters for `realize-specification`'s loopback logic.
 - If no behavioral additions are needed, skip this step — but note in the suite header "no behavioral additions".
 
 ### 6. Assign Tests to Phases
@@ -253,7 +253,7 @@ After mapping all proven properties, scan for anything that could not be transla
 - Properties about infinite structures (termination, totality) that require property-based testing tooling — flag these and suggest a PBT library (Hypothesis, fast-check, QuickCheck) if appropriate
 - Properties that depend on unprovable assumptions (from Step 1) — stub the test with a clear TODO
 - **EXTRANEOUS counterfactuals** (from Step 1): each fact the proof flagged as non-load-bearing belongs in the gap block with the recommendation "prune from hypothesis next cycle" — the removal test is still emitted but the hypothesis was imprecise.
-- **INSUFFICIENT proof status**: if the overall proof was `INSUFFICIENT`, the counterfactual set did not close the gap. Record the entire conditional property as a coverage gap with the recommendation "loop back to `hypothesize` — additional counterfactual requirements needed."
+- **INSUFFICIENT proof status**: if the overall proof was `INSUFFICIENT`, the counterfactual set did not close the gap. Record the entire conditional property as a coverage gap with the recommendation "loop back to `decompose-proposition` — additional counterfactual requirements needed."
 - **`negation_provenance(_, absent)` premises**: a CWA-default negation is fragile. Flag every projection test that descends from such a premise so the implementor knows the proof rests on a closed-world assumption.
 - Properties that were left in `conditional` mode but produced no enumerable counterfactual facts — these cannot become removal tests and must be flagged.
 - **Unsampled domain slices**: for each `∀`-quantified property, list values of the quantified variable NOT covered by any projection test. This is the shape of the universality loss at the `lean → tdd` boundary — surface it explicitly rather than pretending the suite re-verifies the proof.
@@ -263,7 +263,7 @@ Report every gap at the end of the test file in a dedicated comment block.
 
 ### 8. Mark Every Generated Test as Skipped
 
-**All tests start skipped — no exceptions.** Apply a skip/pending annotation to every test in the file using the target framework's idiom. The implementation skill (`translate-to-implementation`) un-skips them one at a time. This ensures the newly-added suite does not turn CI red on merge — the tests are a specification, not a regression check on existing behavior.
+**All tests start skipped — no exceptions.** Apply a skip/pending annotation to every test in the file using the target framework's idiom. The implementation skill (`realize-specification`) un-skips them one at a time. This ensures the newly-added suite does not turn CI red on merge — the tests are a specification, not a regression check on existing behavior.
 
 The implementor's workflow is: pick the next skipped test top-to-bottom, remove the skip annotation, run the suite, watch it fail, implement until it passes, commit, repeat. The skip state is the TDD progress ledger.
 
@@ -450,4 +450,4 @@ Report:
 
 - **Reintroduction tests lock in load-bearing reasoning**: A NECESSARY counterfactual was proven to be the reason the property holds. The reintroduction test — "if we put it back, the property breaks" — is the only mechanism that prevents silent regression when a future contributor un-deletes the fact without re-running the proof. Do not skip these; they are the most high-value artifact conditional mode produces.
 
-- **A failing `behavioral_claim` test is not a loopback signal.** `projection` test failures can loop back to `hypothesize` or `prove-hypothesis-*` because the upstream proof produced the property. `behavioral_claim` failures stop at the TDD layer — the formal pipeline never expressed the claim, so there is nothing to re-prove. The implementor decides whether the claim is correct or the implementation is wrong.
+- **A failing `behavioral_claim` test is not a loopback signal.** `projection` test failures can loop back to `decompose-proposition` or `model-obligations` / `prove-invariants` because the upstream proof produced the property. `behavioral_claim` failures stop at the TDD layer — the formal pipeline never expressed the claim, so there is nothing to re-prove. The implementor decides whether the claim is correct or the implementation is wrong.

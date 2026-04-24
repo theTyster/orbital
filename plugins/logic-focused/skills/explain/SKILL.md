@@ -1,13 +1,13 @@
 ---
 name: explain
 description: >
-  Cross-cutting support resource — produces a plain-language explanation of logic-focused work for non-technical review. Triggers: "explain what we did", "explain the proof", "summarize for my PM", "write this up for a stakeholder". NOT a pipeline stage and has no place in the linear flow; invoke it at any time, against whatever artifacts already exist. Cited by `prove-hypothesis-lean` as a downstream readability resource, but never consumed by any other skill.
+  Cross-cutting support resource — produces a plain-language explanation of logic-focused work for non-technical review. Triggers: "explain what we did", "explain the proof", "summarize for my PM", "write this up for a stakeholder". NOT a pipeline stage and has no place in the linear flow; invoke it at any time, against whatever artifacts already exist. Cited by `prove-invariants` as a downstream readability resource, but never consumed by any other skill.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write
 argument-hint: "[optional: thoughts/ directory, specific file, or codebase directory]"
 ---
 
-# Explain
+# explain
 
 Produce a plain-language narrative of whatever work has been done in simple terms. The reader is someone who was not involved, does not know Lean4 or Prolog, and needs to understand what happened, what was decided, and what guarantees (if any) exist — without ever reading a formal artifact.
 
@@ -42,16 +42,16 @@ These are the artifacts this pipeline produces. Not all will exist at any given 
 
 | Artifact | Producing skill | What it tells you |
 |----------|-----------------|-------------------|
-| `thoughts/existing-world.pl` | translate-to-prolog | A structured model of the codebase or domain as it exists today — entities, relationships, rules |
-| `thoughts/hypothesis.pl` | hypothesize | A falsifiable claim decomposed into Prolog sub-hypotheses, with evidence for and against |
-| `thoughts/target-world.pl` | prove-hypothesis-prolog | The hypothesised target world being verified against the existing world |
-| `thoughts/model_results.pl` | prove-hypothesis-prolog | Per-obligation outcomes from model-based verification |
-| `thoughts/lean/Proofs/*.lean` | prove-hypothesis-lean | Machine-checked proofs that certain properties are mathematically guaranteed |
-| `thoughts/lean_proof_results.pl` | prove-hypothesis-lean | Per-theorem outcomes (proved / failed / sorry) from Lean |
-| `thoughts/tests/*` | translate-to-tests | Tests that check whether the implementation satisfies proven properties |
-| `thoughts/implementation_log.md` | translate-to-implementation | A record of how each test was driven to green |
+| `thoughts/existing-world.pl` | close-world | A structured model of the codebase or domain as it exists today — entities, relationships, rules |
+| `thoughts/hypothesis.pl` | decompose-proposition | A falsifiable claim decomposed into Prolog sub-hypotheses, with evidence for and against |
+| `thoughts/target-world.pl` | model-obligations | The hypothesised target world being verified against the existing world |
+| `thoughts/model_results.pl` | model-obligations | Per-obligation outcomes from model-based verification |
+| `thoughts/lean/Proofs/*.lean` | prove-invariants | Machine-checked proofs that certain properties are mathematically guaranteed |
+| `thoughts/lean_proof_results.pl` | prove-invariants | Per-theorem outcomes (proved / failed / sorry) from Lean |
+| `thoughts/tests/*` | instantiate-properties | Tests that check whether the implementation satisfies proven properties |
+| `thoughts/implementation_log.md` | realize-specification | A record of how each test was driven to green |
 | Implementation files (`.ts`, `.py`, `.go`, etc.) | manual or planned | The actual code that was written or changed |
-| `thoughts/adherence_report.md` | measure-adherance | How well two or more resources agree on shared facts |
+| `thoughts/adherence_report.md` | measure-entailment | How well two or more resources agree on shared facts |
 | `thoughts/explanation.md` | previous explain run | An existing narrative (check if it needs updating rather than rewriting) |
 
 ---
@@ -231,7 +231,7 @@ After writing, tell the user:
 
 **Narrate, don't list.** The explanation should read as a story with a beginning (the problem), middle (the work), and end (where we are now). Lists are for the "What We Know Now" section. Everything else should be prose that a person can read straight through.
 
-**Explain absence.** If the pipeline stopped at hypothesize and never reached proofs, say so and explain what that means: "The prediction has supporting evidence from the model but has not been formally verified — it should be treated as a well-informed estimate, not a guarantee." Missing stages are information, not failures.
+**Explain absence.** If the pipeline stopped at decompose-proposition and never reached proofs, say so and explain what that means: "The prediction has supporting evidence from the model but has not been formally verified — it should be treated as a well-informed estimate, not a guarantee." Missing stages are information, not failures.
 
 **Don't pad.** If only one artifact exists, the explanation might be a single page. That's fine. Don't inflate the narrative to seem more thorough than the work actually was.
 

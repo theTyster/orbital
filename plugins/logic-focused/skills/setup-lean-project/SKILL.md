@@ -1,19 +1,19 @@
 ---
 name: setup-lean-project
 description: >
-  Project scaffolding for the Lean-based proof stage, NOT a pipeline stage. Initializes a thin Lean 4 project at `thoughts/lean/` referencing the shared Mathlib clone at `~/.lean/mathlib4`. Satisfies the `lean_project_built` environment requirement of `prove-hypothesis-lean` (the project must exist with `.lake/build/` populated). Run once before `prove-hypothesis-lean` if no project exists. Triggered by: "set up/create lean project", "initialize lean", or when `thoughts/lean/` is missing.
+  Project scaffolding for the Lean-based proof stage, NOT a pipeline stage. Initializes a thin Lean 4 project at `thoughts/lean/` referencing the shared Mathlib clone at `~/.lean/mathlib4`. Satisfies the `lean_project_built` environment requirement of `prove-invariants` (the project must exist with `.lake/build/` populated). Run once before `prove-invariants` if no project exists. Triggered by: "set up/create lean project", "initialize lean", or when `thoughts/lean/` is missing.
 user-invocable: true
 argument-hint: "[optional: target directory, default: thoughts/lean]"
 ---
 
-# Setup Lean Project
+# setup-lean-project
 
 This skill is **project scaffolding for the Lean-based proof stage**, not a pipeline stage. It
 creates a thin Lean 4 project at `thoughts/lean/` (or a caller-specified path) that references the
 shared `~/.lean/mathlib4` clone via a path require — no Mathlib re-download or recompilation
-needed. It satisfies the `lean_project_built` environment requirement of `prove-hypothesis-lean`:
+needed. It satisfies the `lean_project_built` environment requirement of `prove-invariants`:
 the project must exist at `thoughts/lean/` with `.lake/build/` populated before any theorem can be
-checked. Invoke it once to provision the project skeleton, then `prove-hypothesis-lean` writes its
+checked. Invoke it once to provision the project skeleton, then `prove-invariants` writes its
 theorems into `Proofs/`. It does not appear in the linear pipeline flow.
 
 ## Prerequisites
@@ -98,4 +98,4 @@ A built Lean project at `${LEAN_PROJECT}/` with:
 - `Proofs/` — directory for proof files
 - `.lake/build/` — compiled oleans (from shared clone via symlink/cache)
 
-Proof files written by `prove-hypothesis-lean` go in `Proofs/`.
+Proof files written by `prove-invariants` go in `Proofs/`.

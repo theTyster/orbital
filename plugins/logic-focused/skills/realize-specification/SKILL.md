@@ -1,5 +1,5 @@
 ---
-name: translate-to-implementation
+name: realize-specification
 description: >
   Use this skill whenever the user wants to implement code from proven formal properties — "drive the TDD suite to green", "implement the skipped tests", "implement from proof", or "make these tests pass". Unskips one test at a time and orchestrates sub-agents to realize the specification, routing each test by its `test_category` (projection vs behavioral_claim) and the `epistemic_label` of its cited claim in `hypothesis.pl`.
 user-invocable: true
@@ -7,11 +7,11 @@ allowed-tools: Bash, Read, Glob, Grep, Write, Edit, Agent
 argument-hint: "[test file path] [target codebase directory — REQUIRED] (optionally reads thoughts/hypothesis.pl, thoughts/lean_proof_results.pl)"
 ---
 
-# Translate to Implementation
+# realize-specification
 
-Logical operation: **realize_specification** — implement code so that every `projection` test goes green and every `behavioral_claim` test reflects deliberate engineering judgment.
+Logical operation: **realize-specification** — implement code so that every `projection` test goes green and every `behavioral_claim` test reflects deliberate engineering judgment.
 
-Take the skipped test file produced by `translate-to-tests` and drive it to green. Every `projection` test samples a machine-verified invariant at one fixture; every `behavioral_claim` test encodes a TDD-layer contract with no upstream proof. The implementation must satisfy all of them without weakening any.
+Take the skipped test file produced by `instantiate-properties` and drive it to green. Every `projection` test samples a machine-verified invariant at one fixture; every `behavioral_claim` test encodes a TDD-layer contract with no upstream proof. The implementation must satisfy all of them without weakening any.
 
 This skill is a **thin orchestrator** — the real work of reading code, writing code, and refactoring is delegated to sub-agents. The orchestrator decides what to do next, runs the test suite as the source of truth, and keeps the implementation log.
 
@@ -21,7 +21,7 @@ The tests and proofs are the specification. Refactoring existing code to satisfy
 
 ## Inputs
 
-- **Required**: `thoughts/tests/{file}` — the skipped TDD suite from `translate-to-tests`. Each test in this file carries `test_category(projection | behavioral_claim)` plus carried-forward `epistemic_label` and (for projections) `negation_provenance` annotations.
+- **Required**: `thoughts/tests/{file}` — the skipped TDD suite from `instantiate-properties`. Each test in this file carries `test_category(projection | behavioral_claim)` plus carried-forward `epistemic_label` and (for projections) `negation_provenance` annotations.
 - **Required environment**: `target_codebase_dir` — the directory whose source files will be modified. There is no default; if the caller did not provide it, halt and ask.
 - **Optional**: `thoughts/hypothesis.pl` — Prolog facts for claims, with `claim/2`, `claim_label(_, descriptive | counterfactual | prescriptive)`, `negation_provenance(_, absent | contradicts)`, sub-hypothesis decomposition, and edge predicates. When present, the orchestrator routes briefing shape by reading `claim_label` here.
 - **Optional**: `thoughts/lean_proof_results.pl` — Prolog facts file containing `theorem_verdict/2` and accompanying facts. Each `projection` test cites a theorem here; when present, the proof is the ground truth for ambiguous tests.
@@ -241,7 +241,7 @@ If two implementation attempts on the same test fail, do not keep grinding. Dele
 > - **Missing context** — the proof depends on a precondition not expressed in any test
 > - **Fragile counterfactual (CWA-absent)** *(only when `test_category(projection)` AND cited claim has `claim_label(_, counterfactual)` AND `negation_provenance(_, absent)`)* — the proof's negation depends on closed-world absence; the absent premise may be the cause of failure. The KB's completeness is suspect.
 > - **Counterfactual list inaccurate** — the enumerated counterfactual claims in `hypothesis.pl` do not match reality: either a named fact cannot be cleanly removed because another proven property depends on it, or removing the fact is not enough to satisfy the downstream invariant (additional counterfactuals are needed).
-> - **Behavioral test has no upstream property** — the failing test is `test_category(behavioral_claim)`. There is no proof to revise, no hypothesis to re-run. This is a TDD-layer decision: either fix the implementation, weaken the test (with human review), or accept it as a known-red behavioral contract. Recommendation: do NOT loop back to `hypothesize` or `prove-hypothesis-*`; surface to the user.
+> - **Behavioral test has no upstream property** — the failing test is `test_category(behavioral_claim)`. There is no proof to revise, no hypothesis to re-run. This is a TDD-layer decision: either fix the implementation, weaken the test (with human review), or accept it as a known-red behavioral contract. Recommendation: do NOT loop back to `decompose-proposition` or `model-obligations` / `prove-invariants`; surface to the user.
 >
 > **Test:** {name and path}
 > **Test category:** {projection | behavioral_claim}
@@ -251,14 +251,14 @@ If two implementation attempts on the same test fail, do not keep grinding. Dele
 > **First attempt:** {diff summary and failure}
 > **Second attempt:** {diff summary and failure}
 >
-> Do not edit anything. Read the test file, the proof artifact, the hypothesis, and the relevant source. Return the classification plus a recommendation of which pipeline stage to revisit (`hypothesize`, `prove-hypothesis-{lean,prolog}`, or `translate-to-tests`). For "counterfactual list inaccurate", recommend `hypothesize`. For "fragile counterfactual (CWA-absent)", recommend `hypothesize` (the fragile CWA premise must be re-examined). For "behavioral test has no upstream property", recommend no formal-pipeline revisit and surface to the user.
+> Do not edit anything. Read the test file, the proof artifact, the hypothesis, and the relevant source. Return the classification plus a recommendation of which pipeline stage to revisit (`decompose-proposition`, `prove-invariants` or `model-obligations`, or `instantiate-properties`). For "counterfactual list inaccurate", recommend `decompose-proposition`. For "fragile counterfactual (CWA-absent)", recommend `decompose-proposition` (the fragile CWA premise must be re-examined). For "behavioral test has no upstream property", recommend no formal-pipeline revisit and surface to the user.
 
 **Loopback routing (recommendations only — the human chooses):**
-- Persistent failure on a `projection` test whose cited claim has `claim_label(_, counterfactual)` and `negation_provenance(_, absent)` → recommend the user revisit `hypothesize` (the fragile CWA premise may be the cause).
-- Persistent failure on any other `projection` test → recommend revisiting one of the prove skills (`prove-hypothesis-lean` or `prove-hypothesis-prolog`, depending on which produced the cited property).
-- Persistent failure on a `behavioral_claim` test → recommend NO formal-pipeline revisit. Surface to the user. The upstream nodes never expressed this claim; rerunning `hypothesize` cannot revise it.
+- Persistent failure on a `projection` test whose cited claim has `claim_label(_, counterfactual)` and `negation_provenance(_, absent)` → recommend the user revisit `decompose-proposition` (the fragile CWA premise may be the cause).
+- Persistent failure on any other `projection` test → recommend revisiting one of the prove skills (`prove-invariants` or `model-obligations`, depending on which produced the cited property).
+- Persistent failure on a `behavioral_claim` test → recommend NO formal-pipeline revisit. Surface to the user. The upstream nodes never expressed this claim; rerunning `decompose-proposition` cannot revise it.
 
-For `test_category(behavioral_claim)` classifications, the `implementation_blocked.md` output must explicitly say "no upstream pipeline stage revises this claim" — this prevents the user from wasting a cycle re-running hypothesize on a behavioral failure.
+For `test_category(behavioral_claim)` classifications, the `implementation_blocked.md` output must explicitly say "no upstream pipeline stage revises this claim" — this prevents the user from wasting a cycle re-running decompose-proposition on a behavioral failure.
 
 Write the classification and recommended pipeline stage to `thoughts/implementation_blocked.md`. Halt. Leave the offending test unskipped with its failure intact. **This skill does not auto-restart any upstream stage** — the human reads the blocked report and decides what to re-run.
 
@@ -303,7 +303,7 @@ Prefer delegation aggressively. The orchestrator's own edits are limited to: tog
 
 - **Behavioral_claim tests have no upstream proof. Treat their outcomes as `behavioral_witness` in the log, not as `property_verified`.** A green behavioral_claim test means "the fixture passed on this run." Describe it that way; do not upgrade its confidence to match projection tests.
 
-- **CWA-absent ≠ Lean-disproved: a counterfactual claim with `negation_provenance(absent)` is fragile against KB completeness; treat such failures as candidates for hypothesize-loopback.** The closed-world reading underlying an `absent` premise can dissolve if the KB is incomplete. When a projection test backed by such a claim cannot be made green, the right response is often to re-examine the hypothesis, not to grind on the implementation.
+- **CWA-absent ≠ Lean-disproved: a counterfactual claim with `negation_provenance(absent)` is fragile against KB completeness; treat such failures as candidates for decompose-proposition-loopback.** The closed-world reading underlying an `absent` premise can dissolve if the KB is incomplete. When a projection test backed by such a claim cannot be made green, the right response is often to re-examine the hypothesis, not to grind on the implementation.
 
 - **The test runner is the judge.** Not the sub-agent's summary. Not your reading of the diff. Re-run the full suite after every agent returns. If the suite disagrees with the agent, trust the suite.
 
@@ -313,7 +313,7 @@ Prefer delegation aggressively. The orchestrator's own edits are limited to: tog
 
 - **Refactoring goes through Explore first.** Do not let an implementation agent make sweeping structural decisions mid-feature. Test-scoped edits during Stage 2, structure-scoped edits during Stage 3, each with its own Explore-then-edit split.
 
-- **Use domain names from the Prolog facts.** If `existing-world.pl` or `target-world.pl` calls a component `auth_lib`, the implementation module should be `auth_lib`. This preserves the formal artifacts' reachability: future `explain` and `measure-adherance` runs depend on the code and the facts sharing vocabulary.
+- **Use domain names from the Prolog facts.** If `existing-world.pl` or `target-world.pl` calls a component `auth_lib`, the implementation module should be `auth_lib`. This preserves the formal artifacts' reachability: future `explain` and `measure-entailment` runs depend on the code and the facts sharing vocabulary.
 
 - **Assumption stubs stay skipped.** Tests marked with `skip(reason="assumption not proven — verify manually")` are deliberate gaps in the formal coverage. The skill does not unskip them. They appear in the final report as manual verification owed.
 
@@ -325,4 +325,4 @@ Prefer delegation aggressively. The orchestrator's own edits are limited to: tog
 
 - **A silently re-introduced counterfactual is worse than a failing test.** The Stage 3d re-check exists because a refactor against a descriptive/prescriptive projection can add back a forbidden import at a new call site without any counterfactual-projection test noticing (those tests assert specific source locations or identifiers, which a refactor may not trip). Grep for each counterfactual claim's signature after every refactor pass.
 
-- **Behavioral failures don't loop back.** The upstream pipeline stages never expressed a behavioral_claim, so re-running `hypothesize` or `prove-hypothesis-*` cannot produce a revised formal artifact. The correct response to a persistent `test_category(behavioral_claim)` failure is a human decision, not a pipeline cycle.
+- **Behavioral failures don't loop back.** The upstream pipeline stages never expressed a behavioral_claim, so re-running `decompose-proposition` or `model-obligations` / `prove-invariants` cannot produce a revised formal artifact. The correct response to a persistent `test_category(behavioral_claim)` failure is a human decision, not a pipeline cycle.

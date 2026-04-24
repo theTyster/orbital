@@ -11,11 +11,11 @@ This repository contains 4 plugins, decomposed by concern domain:
 Formal logic reasoning pipeline — from Prolog translation through proof verification to TDD tests and implementation review.
 
 ```
-a. translate-to-prolog    — Translate a codebase into a Prolog knowledge base
-b. hypothesize            — Ingest a proposition and create a hypothesis based on the Prolog KB
-c. prove-hypothesis-{lean,prolog} — Formally verify the hypothesis (loops back to b if unprovable)
-d. translate-to-tests     — Combine proven logical patterns into TDD tests that verify those patterns
-e. translate-to-implementation — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
+a. close-world    — Translate a codebase into a Prolog knowledge base
+b. decompose-proposition  — Ingest a proposition and create a hypothesis based on the Prolog KB
+c. model-obligations / prove-invariants — Formally verify the hypothesis (loops back to b if unprovable)
+d. instantiate-properties     — Combine proven logical patterns into TDD tests that verify those patterns
+e. realize-specification — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
 f. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
 ```
 
@@ -24,7 +24,7 @@ Step c has two alternative proof backends — use Lean for mathematical/abstract
 Also includes:
 - **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
 - **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
-- **measure-adherance** — Score how well two or more resources adhere to each other using Prolog-based relational analysis (shared facts, gaps, contradictions, extensions)
+- **measure-entailment** — Score how well two or more resources adhere to each other using Prolog-based relational analysis (shared facts, gaps, contradictions, extensions)
 
 ### c4-prolog
 
@@ -50,8 +50,8 @@ Standalone developer utilities.
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-hypothesis-lean and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
-- **SWI-Prolog** (`swipl`): Required for translate-to-prolog, hypothesize, and multi-plan.
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-invariants and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
+- **SWI-Prolog** (`swipl`): Required for close-world, decompose-proposition, and multi-plan.
 
 ## Installation
 

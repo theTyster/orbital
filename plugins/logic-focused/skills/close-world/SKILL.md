@@ -1,5 +1,5 @@
 ---
-name: translate-to-prolog
+name: close-world
 description: >
   Use this skill whenever the user wants to translate a codebase, document, or logical system into a Prolog facts file — "translate to prolog", "model this as prolog facts", "create a knowledge base from", "make this queryable with swipl". Stage 1 of the 7-stage pipeline: applies the Closed World Assumption to source material and produces `thoughts/existing-world.pl` — ground facts, relationship rules, and constraint rules. Everything absent from the output is, by CWA, false.
 user-invocable: true
@@ -7,11 +7,11 @@ allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: "[source code, requirements, domain rules, or any logical system to document]"
 ---
 
-# Translate to Prolog
+# close-world
 
-**Logical operation:** `close_world` (CWA application) — apply the closed-world assumption to source material, producing a descriptive KB where everything absent is false.
+**Logical operation:** `close-world` (CWA application) — apply the closed-world assumption to source material, producing a descriptive KB where everything absent is false.
 
-**Pipeline position:** Stage 1 of 7. Primary input: `source_material` (env-provided). Primary output: `thoughts/existing-world.pl`. Downstream: `hypothesize` (stage 2) consumes `existing-world.pl`.
+**Pipeline position:** Stage 1 of 7. Primary input: `source_material` (env-provided). Primary output: `thoughts/existing-world.pl`. Downstream: `decompose-proposition` (stage 2) consumes `existing-world.pl`.
 
 The three ingredients the KB must contain — and nothing else — are:
 
@@ -21,7 +21,7 @@ The three ingredients the KB must contain — and nothing else — are:
 
 Everything the source asserts becomes one of these; everything the source does not assert is, by CWA, false. The KB is the "existing world" snapshot. Build it incrementally: each source file is read, analyzed, and its Prolog representation is written or appended before the next file is processed. This provides faster feedback and catches errors early.
 
-The output filename — `thoughts/existing-world.pl` — names what it models: the world as it currently is, under CWA. The "target world" (what must become true for a proposition to hold) is built downstream by `model_obligations` / `prove-hypothesis-prolog`.
+The output filename — `thoughts/existing-world.pl` — names what it models: the world as it currently is, under CWA. The "target world" (what must become true for a proposition to hold) is built downstream by `model-obligations`.
 
 ## Current Environment
 
@@ -122,7 +122,7 @@ If any fact is wrong, audit neighboring facts from the same source — errors te
 ## Output
 
 Write to the `thoughts/` directory (create it if it doesn't exist).
-After, ask the user: "Are you ready to hypothesize on this file?"
+After, ask the user: "Are you ready to decompose-proposition on this file?"
 
 Filename: **`thoughts/existing-world.pl`** (default) or `thoughts/<domain>-world.pl` for specificity. The name is deliberate — this KB models the *existing* world under CWA; downstream skills build a separate `target-world.pl` when the hypothesis requires counterfactual changes.
 

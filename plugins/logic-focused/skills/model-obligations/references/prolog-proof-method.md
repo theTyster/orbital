@@ -1,13 +1,13 @@
 ---
 name: prolog-proof-method
-description: Prolog proof patterns, encoding strategies, and anti-patterns for prove-hypothesis-prolog.
+description: Prolog proof patterns, encoding strategies, and anti-patterns for model-obligations.
 ---
 
 # Prolog Proof Methodology
 
 Full reference for encoding formal properties as Prolog rules and running verdict
 queries against `thoughts/target-world.pl` — the constructed substrate that
-`prove-hypothesis-lean` later proves over. Every pattern below assumes you are
+`prove-invariants` later proves over. Every pattern below assumes you are
 building helper rules and verdict directives *into* `target-world.pl`, not
 querying `hypothesis.pl` directly.
 
