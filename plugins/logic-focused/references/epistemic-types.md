@@ -9,7 +9,7 @@ The pipeline has three reasoning systems. Each is strong in a different dimensio
 | Node | Strong on | Weak on | Negation semantics |
 |---|---|---|---|
 | **Prolog** | *what is* — deterministic, closed, contradiction-native over a finite KB | generality beyond the KB; cannot reason about state it was never told about | `\+ P` = "not derivable" under closed-world assumption (CWA) — absence, not falsity |
-| **Lean** | *what must be* — universal, constructive, ∀-quantified over arbitrary types | purely logical; cannot reason about side effects, I/O, state mutation, timing, concurrency | `¬ P` = logical negation — a theorem `¬P` proves P is inconsistent with axioms |
+| **Lean** | *what must be* — universal, constructive, ∀-quantified over arbitrary types | purely mathematically provable logic | `¬ P` = logical negation — a theorem `¬P` proves P is inconsistent with axioms |
 | **TDD** | *what does* — behavioral, imperative, implementation-bound, can assert against runtime | no universality — every assertion is over a specific fixture; no automatic generalisation | a failing test = implementation-does-not-satisfy-property-on-this-fixture, not ¬property |
 
 The skills that cross between these nodes are the **edges of the ontology**. An edge must encode four facts about every claim that crosses it:
@@ -30,7 +30,7 @@ Every `claim/2` in `thoughts/hypothesis.pl` carries exactly one `epistemic_label
 | Label | Meaning | World semantics |
 |---|---|---|
 | `descriptive` | What is currently true in the existing world | Prolog KB (CWA) — a positive assertion the existing-world.pl already entails |
-| `counterfactual` | What must become false for the goal to hold | Prolog KB (CWA, inverted) — a fact that exists in existing-world.pl but must not exist in target-world.pl |
+| `counterfactual` | What must become false for the goal to hold | Prolog KB (CWA, inverted) — a fact that exists in existing-world.pl but must not exist in target-world.pl in order for the goal to be true. |
 | `prescriptive` | What must exist or be provable in the target state | Lean proof (OWA) — a fact that does not yet exist; the implementation must make it true |
 
 Downstream consumption:
@@ -83,7 +83,7 @@ Carrier: `thoughts/target-world.pl`.
 
 ### `lean → tdd` boundary
 Carrier: `thoughts/lean_proof_results.pl`.
-- **Gain**: behavioral claims Lean cannot express — I/O, side effects, state mutation, concurrency, timing. These appear as `test_category(behavioral_claim)` tests.
+- **Gain**: behavioral claims Lean cannot express. These appear as `test_category(behavioral_claim)` tests.
 - **Loss**: modality is discarded; universality is lost. A Lean proof of ∀x.P(x) becomes P(specific_fixture) when projected to a test. A green test does not re-verify the full proof strength. The mechanism that surfaces this loss is the `test_category` tag plus the per-test `unsampled_domain` annotation.
 
 ## Edge semantics, skill by skill
@@ -92,11 +92,11 @@ Each boundary-crossing skill carries explicit loss/gain obligations.
 
 ### `close-world` — source code → existing-world.pl
 - **Preserved**: declared relationships, structural dependencies, named entities.
-- **Lost**: runtime behaviour, state transitions, timing, I/O, concurrency.
-- **Introduced**: CWA default — every fact not asserted is implicitly absent.
+- **Lost**: runtime behaviour and Code-level semantics and syntax
+- **Introduced**: CWA default — every fact not asserted is implicitly false.
 
 ### `decompose-proposition` — existing-world.pl + proposition → hypothesis.pl
-- **Preserved**: what the KB says positively and negatively.
+- **Preserved**: A logical interpretation, positive and negative, of the KB.
 - **Introduced**: claim decomposition. Every claim is tagged with an `epistemic_label`; every negated premise additionally with a `negation_provenance`.
 
 ### `model-obligations` — hypothesis.pl + existing-world.pl → target-world.pl + model_results.pl
