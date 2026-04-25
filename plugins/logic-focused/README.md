@@ -5,11 +5,12 @@ Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lea
 ## Pipeline
 
 ```
-a. close-world    — Translate a codebase into a Prolog knowledge base
-b. decompose-proposition  — Ingest a proposition and create a hypothesis based on the Prolog KB
-c. model-obligations / prove-invariants  — Formally verify the hypothesis (loops back to b if unprovable)
-d. instantiate-properties    — Combine logical patterns into TDD tests that verify those patterns
-e. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
+a. close-world             — Translate a codebase into a Prolog knowledge base
+b. decompose-proposition   — Ingest a proposition and create a hypothesis based on the Prolog KB
+c. model-obligations / prove-invariants — Formally verify the hypothesis (loops back to b if unprovable)
+d. instantiate-properties  — Combine logical patterns into TDD tests that verify those patterns
+e. realize-specification   — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
+f. explain                 — Explain whatever was done at any pipeline stage in plain language for non-technical review
 ```
 
 Step c has two alternative proof backends — use Lean for mathematical/abstract proofs, Prolog for model-based verification of relational/structural properties.
