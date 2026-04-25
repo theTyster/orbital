@@ -83,7 +83,7 @@ Carrier: `thoughts/target-world.pl`.
 
 ### `lean → tdd` boundary
 Carrier: `thoughts/lean_proof_results.pl`.
-- **Gain**: behavioral claims Lean cannot express. These appear as `test_category(behavioral_claim)` tests.
+- **Gain**: behavioral claims Lean cannot express — I/O, side effects, state mutation, concurrency, timing. These appear as `test_category(behavioral_claim)` tests.
 - **Loss**: modality is discarded; universality is lost. A Lean proof of ∀x.P(x) becomes P(specific_fixture) when projected to a test. A green test does not re-verify the full proof strength. The mechanism that surfaces this loss is the `test_category` tag plus the per-test `unsampled_domain` annotation.
 
 ## Edge semantics, skill by skill
@@ -92,8 +92,8 @@ Each boundary-crossing skill carries explicit loss/gain obligations.
 
 ### `close-world` — source code → existing-world.pl
 - **Preserved**: declared relationships, structural dependencies, named entities.
-- **Lost**: runtime behaviour and Code-level semantics and syntax
-- **Introduced**: CWA default — every fact not asserted is implicitly false.
+- **Lost**: runtime behaviour, state transitions, timing, I/O, and concurrency.
+- **Introduced**: CWA default — every fact not asserted is implicitly absent.
 
 ### `decompose-proposition` — existing-world.pl + proposition → hypothesis.pl
 - **Preserved**: A logical interpretation, positive and negative, of the KB.
