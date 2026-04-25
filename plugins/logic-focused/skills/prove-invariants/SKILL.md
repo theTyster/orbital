@@ -65,8 +65,10 @@ The pipeline predecessor of this skill is `model-obligations` (which produces `t
 `thoughts/target-world.pl` is the sole input. Load it with `swipl` (or read it directly) and enumerate:
 
 - The ground facts of the world (these are what Lean proves universals over).
-- The provenance tag on every fact whose negation participates in any theorem premise (domain: `[absent, contradicts]`).
-- The formal properties to discharge (each carries a natural-language statement, an epistemic claim label of `descriptive | counterfactual | prescriptive`, and the list of negated premises with their provenance tags).
+- The per-fact provenance tags: `provenance(Fact, descriptive|prescriptive)` for asserted facts, and `negation_provenance(Fact, absent|contradicts)` for counterfactually-removed facts. Domain of the negation tag: `[absent, contradicts]`.
+- The formal properties to discharge — enumerate `formal_property/3` facts directly from `target-world.pl` (propagated there verbatim by `model-obligations`). Each `formal_property(Id, NLDescription, LeanSketch)` gives the property identifier, natural-language statement, and a Lean sketch to start from. Claim labels (`descriptive | counterfactual | prescriptive`) and negated-premise provenance are read off the corresponding `cf_fact/N` and `negation_provenance/2` facts in the same file.
+
+The canonical wire format for `target-world.pl` lives in `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/target-world.md` (and `lean-proof-results.md` in the same directory for the output file this skill emits). Use them as the authoritative source when enumerating predicates.
 
 Counterfactual edges have already been excluded by the upstream skill, and prescriptive obligations have already been added — `target-world.pl` is the world to prove against, as-is.
 
@@ -360,47 +362,12 @@ Please re-run decompose-proposition against the source KB to:
 
 Write Prolog facts to `thoughts/lean_proof_results.pl` (create `thoughts/` if it doesn't exist). The file is consumed by downstream skills (`instantiate-properties`, `realize-specification`, and the `explain` reference) as a structured KB — **not** as prose.
 
-Per the target-state contract:
-> "Per-theorem verdict: `theorem_verdict(TheoremId, proven|unprovable)` with proof strategy, failure modes, and mandatory provenance annotation (`absent|contradicts`)."
-
-**Schema:**
-
-```prolog
-% thoughts/lean_proof_results.pl
-% Output of prove-invariants over thoughts/target-world.pl
-
-% Per-theorem verdict (mandatory, one per formal property in target-world.pl)
-theorem_verdict(TheoremId, proven).
-theorem_verdict(TheoremId, unprovable).
-
-% Proof strategy summary (one per proven theorem)
-proof_strategy(TheoremId, "brief description, e.g. 'induction on list, simp with List.append_nil'").
-
-% Failure mode (one per unprovable theorem; values: tactic | type_mismatch | contradiction | timeout | insufficient_negations | extraneous_negation)
-failure_mode(TheoremId, FailureMode).
-
-% Provenance annotation surfaced from the .lean source.
-% MANDATORY — one fact per theorem (and per negated premise on counterfactual theorems).
-% Annotation domain is exactly [absent, contradicts]; the value must agree with
-% the provenance tag of the corresponding fact in target-world.pl.
-provenance_annotation(TheoremId, FactId, absent).
-provenance_annotation(TheoremId, FactId, contradicts).
-
-% Lean source location for each theorem
-theorem_source(TheoremId, "thoughts/lean/Proofs/{File}.lean").
-
-% For counterfactual claims: status of each necessity lemma
-necessity_lemma_status(TheoremId, FactId, proven).
-necessity_lemma_status(TheoremId, FactId, extraneous).   % reduced to False — loop back to decompose-proposition
-necessity_lemma_status(TheoremId, FactId, unprovable).   % strategy failed — distinct from extraneous
-
-% Optional: aggregate run summary
-run_summary(properties_attempted, N).
-run_summary(proven, M).
-run_summary(unprovable, K).
-```
-
-`provenance_annotation/3` is the structured echo of the docstring above each theorem. It must agree with the provenance tag of the corresponding fact in `target-world.pl`. If a theorem has a negated premise but no `provenance_annotation/3` fact, the run is malformed.
+Emit against the canonical schema in
+`${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/lean-proof-results.md`.
+Every theorem must carry a `provenance_annotation/3` fact whose value agrees
+with the `negation_provenance/2` tag of the corresponding fact in
+`target-world.pl`. A theorem with a negated premise but no matching
+`provenance_annotation/3` is malformed.
 
 ## Verification
 

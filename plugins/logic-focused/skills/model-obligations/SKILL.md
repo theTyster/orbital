@@ -42,30 +42,9 @@ These shape every choice in this skill:
   claim is not the projection of a proof. The model verdict tracks structural
   consistency, not runtime behavior.
 
-## Two dimensions of epistemic provenance
+## Schema and epistemic dimensions
 
-Provenance is tracked along **two orthogonal dimensions**:
-
-**Dimension 1 — `epistemic_label` on each *claim*** (read directly from
-`hypothesis.pl` via `claim_label/2`). Exactly one of:
-
-- `descriptive` — the claim already holds in existing-world; it stays as-is.
-- `counterfactual` — the claim asserts a fact must *not* hold in target-world;
-  the corresponding existing-world fact must be removed.
-- `prescriptive` — the claim asserts a new fact that must hold in target-world
-  even though it isn't in existing-world; assert it as an obligation.
-
-**Dimension 2 — `negation_provenance` on each *negated premise*** (recorded per
-counterfactual claim in `hypothesis.pl`, propagated into `target-world.pl`).
-Exactly one of:
-
-- `absent` — CWA default; the fact is not in the KB. Fragile: depends on KB
-  completeness. Lean cannot lift this to a structural disproof.
-- `contradicts` — explicit conflicting fact (integrity constraint, explicit
-  `\+_fact` predicate, `false :- P`). Structurally necessary.
-
-Both dimensions are written as Prolog facts in the output, not as markdown
-sections. Reference: `../../references/epistemic-types.md`.
+Two orthogonal dimensions carry across the boundary: `epistemic_label` on each claim (descriptive / counterfactual / prescriptive) and `negation_provenance` on each negated premise (absent / contradicts). Semantics: `${CLAUDE_SKILL_DIR}/../../references/epistemic-types.md`. Wire format for every artifact this skill touches: `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/` — read `hypothesis.md` for the input, `target-world.md` and `model-results.md` for the outputs, and `cross-skill-map.md` for the per-claim → per-fact translation this skill performs.
 
 ## Current Environment
 
@@ -94,64 +73,11 @@ from. Defaults to `thoughts/existing-world.pl`.
    Already-true claims do not need fresh entries in target-world unless they are
    load-bearing for one of the formal properties Lean must prove.
 
-A schematic excerpt:
-
-```prolog
-% target-world.pl  (constructed; do not edit by hand)
-%
-% existing-world.pl with counterfactual negations applied and prescriptive
-% obligations asserted. Each fact carries a provenance tag. CWA-valid.
-
-% --- carried over from existing-world (descriptive baseline) ---
-depends_on(auth_lib, db).
-provenance(depends_on(auth_lib, db), descriptive).
-
-% --- prescriptive obligation from hypothesis claim h_03 ---
-depends_on(auth_lib, audit_log).
-provenance(depends_on(auth_lib, audit_log), prescriptive).
-
-% --- counterfactual: claim h_07 says cli_tool must not depend on logging ---
-% (depends_on(cli_tool, logging) is omitted from target-world)
-negation_provenance(depends_on(cli_tool, logging), absent).
-
-% --- counterfactual: claim h_09 says deploy must not be marked legacy ---
-% (legacy(deploy) is structurally contradicted, not merely absent)
-negation_provenance(legacy(deploy), contradicts).
-```
-
-This file is the substrate Lean proves against. It is self-documenting,
-re-runnable, and structurally distinct from `existing-world.pl` so the
-diff between worlds is auditable.
-
-## Per-property Verdicts (model_results.pl)
-
-Every formal property in `hypothesis.pl` gets a verdict, written as Prolog
-facts in `thoughts/model_results.pl`:
-
-```prolog
-% verdict(PropertyId, consistent | inconsistent | gap).
-verdict(p_acyclic_deps, consistent).
-verdict(p_no_cli_to_logging, consistent).
-verdict(p_unique_owner, inconsistent).
-verdict(p_role_minimality, gap).
-
-% Counterexample detail when verdict is inconsistent.
-counterexample(p_unique_owner, [user_42, user_99]).
-
-% Gap detail when target-world lacks deciding facts.
-gap_reason(p_role_minimality, "no role/2 facts in target-world; obligation needed").
-```
-
-Verdict semantics:
-
-- `consistent` — the property holds in target-world (Lean is now safe to attempt
-  a universal proof; this skill establishes structural consistency, not the
-  Lean-grade universal claim — see `lean_universal_neq_test_verified`).
-- `inconsistent` — target-world contains a counterexample. Lean cannot prove
-  the property; loop back to `decompose-proposition`.
-- `gap` — target-world lacks the facts needed to decide. Either the hypothesis
-  is missing prescriptive obligations or the existing-world is incomplete. Loop
-  back to `decompose-proposition` to record the missing obligations.
+For the exact predicate shape of `target-world.pl` and `model_results.pl`, see
+`${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/target-world.md` and
+`model-results.md` respectively. This file is the substrate Lean proves against —
+self-documenting, re-runnable, and structurally distinct from `existing-world.pl`
+so the diff between worlds is auditable.
 
 ## Constructing target-world: counterfactual + prescriptive encoding
 
@@ -320,8 +246,8 @@ swipl -g "
 ```
 
 Extract:
-- The formal property identifiers (`property/2` facts) and their natural-language
-  descriptions.
+- The formal property identifiers (`formal_property/3` facts) and their
+  natural-language descriptions and Lean sketches (arg 2 and arg 3).
 - The claim breakdown by `claim_label/2` value.
 - For each `claim_label(Id, counterfactual)`, the associated
   `claim_negation_provenance(Id, Fact, absent|contradicts)` record.
@@ -345,20 +271,34 @@ Open `thoughts/target-world.pl` for write. Emit, in order:
    `provenance(Fact, descriptive).`
 3. **Prescriptive obligations** — for each `claim_label(Id, prescriptive)`,
    assert the obligation fact and its `provenance(Fact, prescriptive).`
-4. **Negation-provenance markers** — for each counterfactual claim, emit
-   `negation_provenance(Fact, absent).` or `negation_provenance(Fact, contradicts).`
-   matching `hypothesis.pl`. The fact itself is *omitted* from target-world
-   (CWA-absent) but the provenance marker is preserved so Lean can decide how
-   to lift the negation.
+4. **Negation-provenance markers** — for each counterfactual claim's
+   `claim_negation_provenance(ClaimId, Fact, Mode)` in `hypothesis.pl`, emit the
+   per-fact form `negation_provenance(Fact, absent).` or
+   `negation_provenance(Fact, contradicts).` in `target-world.pl`. The per-claim
+   3-arg form becomes the per-fact 2-arg form here — this is the translation
+   step at the hypothesis → target-world boundary. The fact itself is *omitted*
+   from target-world (CWA-absent) but the provenance marker is preserved so
+   Lean can decide how to lift the negation.
 5. **cf_fact/N facts** for the counterfactual list, used by target-relation
    filters in step 3 (encoding).
+6. **Formal-property propagation** — copy every `formal_property(Id, NL, Sketch)`
+   fact from `hypothesis.pl` into `target-world.pl` verbatim. This is
+   `prove-invariants`'s schema-level handle on the property list; without it,
+   Lean has no source of truth for which theorems to discharge. Do **not**
+   rename to `property/2`; do **not** strip the Lean sketch.
 
 Annotate every fact with its provenance tag so the diff between existing-world
-and target-world is auditable from the file alone.
+and target-world is auditable from the file alone. The canonical schemas for
+the two files this skill touches live in
+`${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/` — read `hypothesis.md`
+before reading the input, `target-world.md` before emitting the output, and
+`model-results.md` before emitting the verdict dump. `cross-skill-map.md` in
+the same directory documents the per-claim → per-fact translation this skill
+performs at the boundary.
 
 ### 3. Encode and Run Verdict Directives
 
-For each `property/2` in `hypothesis.pl`, write its verdict block in
+For each `formal_property/3` in `hypothesis.pl`, write its verdict block in
 `target-world.pl`:
 
 ```prolog
@@ -506,43 +446,9 @@ Please re-run decompose-proposition to:
 ### 7. Produce model_results.pl
 
 The final artifact is `thoughts/model_results.pl` — a Prolog facts file (not
-markdown). Schema:
-
-```prolog
-% model_results.pl
-%
-% Per-property model verdicts produced by model-obligations.
-% Hand off to prove-invariants as the substrate description.
-
-% verdict(PropertyId, consistent | inconsistent | gap).
-verdict(p_acyclic_deps, consistent).
-verdict(p_no_cli_to_logging, consistent).
-verdict(p_unique_owner, inconsistent).
-verdict(p_role_minimality, gap).
-
-% counterexample(PropertyId, Witness) — present iff verdict is inconsistent.
-counterexample(p_unique_owner, [user_42, user_99]).
-
-% gap_reason(PropertyId, ReasonString) — present iff verdict is gap.
-gap_reason(p_role_minimality,
-           "no role/2 facts in target-world; prescriptive obligation missing").
-
-% cf_status(Fact, load_bearing | extraneous) — minimality of each counterfactual.
-cf_status(depends_on(cli_tool, logging), load_bearing).
-cf_status(depends_on(formatter, logging), extraneous).
-
-% summary(verdicts_total, N), summary(consistent, M), summary(inconsistent, K),
-% summary(gap, J), summary(extraneous_counterfactuals, E).
-summary(verdicts_total, 4).
-summary(consistent, 2).
-summary(inconsistent, 1).
-summary(gap, 1).
-summary(extraneous_counterfactuals, 1).
-```
-
-Downstream skills query `model_results.pl` directly with swipl rather than
-parsing prose. `instantiate-properties` reads `verdict/2` to decide which
-properties become live tests vs. skipped pre-failing tests.
+markdown). Emit against the schema in
+`${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/model-results.md`.
+Downstream skills query it directly with `swipl` rather than parsing prose.
 
 ## Verification
 
