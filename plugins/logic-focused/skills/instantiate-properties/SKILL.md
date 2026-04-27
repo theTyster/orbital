@@ -28,7 +28,7 @@ Each test also carries diagnostic tags (`epistemic_label`, `negation_provenance`
 
 ## Input
 
-Structured artifacts are **Prolog facts files** (`.pl`) — query them with `swipl -g`, not with grep or Read. The Lean source files are the exception: read them directly as text.
+Structured artifacts are **Prolog facts files** (`.pl`) — query them by delegating to the `logic-focused:agent-of-questions` sub-agent (the Prolog query specialist), or with `swipl -g` for one-off spot checks. Never grep or Read the `.pl` files. The Lean source files are the exception: read them directly as text.
 
 - **Primary input**: `thoughts/lean/Proofs/*.lean` — the actual Lean theorem source. Each theorem's statement is the specification to instantiate.
 - **Required**: `thoughts/lean_proof_results.pl` from `prove-invariants`. Carries `theorem_verdict/2`, `proof_strategy/2`, `failure_mode/2`, `theorem_source/2`, `necessity_lemma_status/3`, and mandatory `provenance_annotation(TheoremId, FactId, absent | contradicts)` for any theorem with a negated premise.
@@ -46,7 +46,9 @@ Read all available inputs before writing a single test. The richest test suites 
 
 ### 1. Read All Inputs
 
-Query `thoughts/lean_proof_results.pl` directly with `swipl` (or `swipl -g`) rather than parsing markdown. Useful queries:
+**Delegate Prolog interrogation to the `logic-focused:agent-of-questions` sub-agent.** That agent is the Prolog query specialist — it discovers predicates and arities via `swipl` introspection (never by reading `.pl` files as text) and writes precise queries that surface exactly the facts this step needs. Invoke it with `Agent(subagent_type="logic-focused:agent-of-questions")` and hand it the list of `.pl` artifacts (`thoughts/lean_proof_results.pl`, `thoughts/target-world.pl`, `thoughts/hypothesis.pl`, `thoughts/model_results.pl`) along with the extraction checklist below. Have it return a structured summary you can map directly into the per-test comment blocks. Do NOT grep or Read the `.pl` files yourself — query them.
+
+If you must run a one-off query inline (e.g., to spot-check the agent's output), use `swipl -g`:
 
 - `swipl -g "consult('thoughts/lean_proof_results.pl'), forall(theorem_verdict(T,V), format('~w ~w~n',[T,V])), halt."`
 - `swipl -g "consult('thoughts/target-world.pl'), forall(formal_property(P,NL,Sketch), format('~w | ~w | ~w~n',[P,NL,Sketch])), halt."` — `formal_property/3` is propagated verbatim into `target-world.pl`; query it there alongside the per-fact provenance.
@@ -66,7 +68,7 @@ Extract for each verdict:
   - **Per-counterfactual status** — each fact is labelled `NECESSARY` (removing it is load-bearing) or `EXTRANEOUS` (the property holds without requiring its removal).
   - **Overall status** — `SUFFICIENT` (the counterfactual set proves the property) or `INSUFFICIENT` (the set was not enough).
 
-If `thoughts/hypothesis.pl` exists, also extract (via `swipl` queries against `claim/2`, `claim_label/2`, `claim_status/2`, `claim_premise/2`, `claim_negation_provenance/3`, `formal_property/3`):
+If `thoughts/hypothesis.pl` exists, also extract (via the `agent-of-questions` sub-agent — or `swipl` directly when spot-checking — against `claim/2`, `claim_label/2`, `claim_status/2`, `claim_premise/2`, `claim_negation_provenance/3`, `formal_property/3`):
 
 - The original proposition (context for naming tests meaningfully)
 - The **counterfactual question** — "What about the existing KB would need to be false for `{proposition}` to be true?" — surfaces the intent behind every counterfactual-removal test
