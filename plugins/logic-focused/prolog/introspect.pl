@@ -20,18 +20,52 @@
 
 %% ---- Helpers ----
 
+%% kb_module(-Module) is nondet.
+%  Modules that may hold user-authored facts. Includes `user` (the default for
+%  unqualified consult) plus any module loaded from a file outside SWI's
+%  installation tree. This admits facts files that begin with `:- module(...)`,
+%  which previous versions silently ignored. The introspect module itself is
+%  excluded so kb_describe doesn't recurse into its own predicates.
+kb_module(user).
+kb_module(M) :-
+    current_module(M),
+    M \== user,
+    M \== introspect,
+    module_property(M, file(F)),
+    \+ system_file(F).
+
+%% system_file(+File) is semidet.
+%  True if File is under SWI's installation tree.
+system_file(F) :-
+    current_prolog_flag(home, Home),
+    sub_atom(F, 0, _, _, Home).
+
+%% user_predicate(+Module, +Head) is semidet.
+%  True if Head names a user-authored predicate in Module: it has clauses, was
+%  not imported, is not a built-in, is not a $-prefixed internal, and (if a
+%  defining file is known) that file lies outside SWI's installation tree.
+%  This last check filters multifile bookkeeping like file_search_path/2 that
+%  SWI ships into the user module, while still keeping user-authored multifile
+%  predicates declared in a project's own facts file.
+user_predicate(M, Head) :-
+    predicate_property(M:Head, number_of_clauses(N)), N > 0,
+    \+ predicate_property(M:Head, imported_from(_)),
+    \+ predicate_property(M:Head, built_in),
+    functor(Head, Name, _),
+    \+ sub_atom(Name, 0, _, _, '$'),
+    (   predicate_property(M:Head, file(F))
+    ->  \+ system_file(F)
+    ;   true
+    ).
+
 %% user_predicates(-Preds:list) is det.
-%  Sorted list of Name/Arity for every predicate with clauses in the user module.
-%  Excludes imported predicates, system internals ($-prefixed), and multifile
-%  predicates (which filters SWI-Prolog's file_search_path/2 etc.).
+%  Sorted list of Module:Name/Arity for every user-authored predicate.
 user_predicates(Preds) :-
-    findall(Name/Arity,
-        (   current_predicate(user:Name/Arity),
+    findall(M:Name/Arity,
+        (   kb_module(M),
+            current_predicate(M:Name/Arity),
             functor(Head, Name, Arity),
-            predicate_property(user:Head, number_of_clauses(N)), N > 0,
-            \+ predicate_property(user:Head, imported_from(_)),
-            \+ predicate_property(user:Head, multifile),
-            \+ sub_atom(Name, 0, _, _, '$')
+            user_predicate(M, Head)
         ),
         Raw),
     sort(Raw, Preds).
@@ -56,10 +90,13 @@ kb_summary :-
     length(Preds, NP),
     format('~n~w predicates, ~w total clauses~n', [NP, Total]).
 
-print_pred_count(Name/Arity, Acc, Acc1) :-
+print_pred_count(M:Name/Arity, Acc, Acc1) :-
     functor(Head, Name, Arity),
-    predicate_property(user:Head, number_of_clauses(Count)),
-    format('  ~w/~w  ~w clauses~n', [Name, Arity, Count]),
+    predicate_property(M:Head, number_of_clauses(Count)),
+    (   M == user
+    ->  format('  ~w/~w  ~w clauses~n', [Name, Arity, Count])
+    ;   format('  ~w:~w/~w  ~w clauses~n', [M, Name, Arity, Count])
+    ),
     Acc1 is Acc + Count.
 
 %% kb_describe is det.
@@ -70,17 +107,31 @@ kb_describe :-
 
 %% kb_describe(+Spec) is det.
 %  Print facts for a single predicate.
-%  Spec is Name/Arity (e.g., depends_on/2) or just Name (prints all arities).
-kb_describe(Name/Arity) :-
+%  Spec is Module:Name/Arity, Name/Arity, or just Name.
+kb_describe(M:Name/Arity) :-
     !,
     functor(Head, Name, Arity),
-    format('~n--- ~w/~w ---~n', [Name, Arity]),
-    forall(user:Head, format('  ~q.~n', [Head])).
+    format('~n--- ~w:~w/~w ---~n', [M, Name, Arity]),
+    forall(M:Head, format('  ~q.~n', [Head])).
+kb_describe(Name/Arity) :-
+    !,
+    forall(
+        (   kb_module(M),
+            current_predicate(M:Name/Arity),
+            functor(Head, Name, Arity),
+            user_predicate(M, Head)
+        ),
+        kb_describe(M:Name/Arity)
+    ).
 kb_describe(Name) :-
     atom(Name),
     forall(
-        current_predicate(user:Name/Arity),
-        kb_describe(Name/Arity)
+        (   kb_module(M),
+            current_predicate(M:Name/Arity),
+            functor(Head, Name, Arity),
+            user_predicate(M, Head)
+        ),
+        kb_describe(M:Name/Arity)
     ).
 
 %% kb_find(+Atom) is det.
@@ -89,12 +140,15 @@ kb_find(Atom) :-
     format('=== Facts mentioning ~w ===~n~n', [Atom]),
     user_predicates(Preds),
     forall(
-        (   member(Name/Arity, Preds),
+        (   member(M:Name/Arity, Preds),
             functor(Head, Name, Arity),
-            user:Head,
+            M:Head,
             term_mentions(Head, Atom)
         ),
-        format('  ~q.~n', [Head])
+        (   M == user
+        ->  format('  ~q.~n', [Head])
+        ;   format('  ~w: ~q.~n', [M, Head])
+        )
     ).
 
 %% kb_related(+Atom) is det.
@@ -103,9 +157,9 @@ kb_related(Atom) :-
     format('=== Atoms related to ~w ===~n~n', [Atom]),
     user_predicates(Preds),
     findall(Co,
-        (   member(Name/Arity, Preds),
+        (   member(M:Name/Arity, Preds),
             functor(Head, Name, Arity),
-            user:Head,
+            M:Head,
             term_mentions(Head, Atom),
             Head =.. [_|Args],
             member(Arg, Args),
@@ -124,9 +178,9 @@ kb_graph :-
     format('=== Graph (binary predicates) ===~n~n'),
     user_predicates(Preds),
     forall(
-        (   member(Name/2, Preds),
+        (   member(M:Name/2, Preds),
             functor(Head, Name, 2),
-            user:Head,
+            M:Head,
             arg(1, Head, A),
             arg(2, Head, B)
         ),
@@ -140,16 +194,19 @@ kb_stats :-
     user_predicates(Preds),
     forall(member(P, Preds), pred_stats(P)).
 
-pred_stats(Name/Arity) :-
+pred_stats(M:Name/Arity) :-
     functor(Head, Name, Arity),
-    predicate_property(user:Head, number_of_clauses(Count)),
-    format('~w/~w  (~w clauses)~n', [Name, Arity, Count]),
-    forall(between(1, Arity, Pos), arg_stats(Name, Arity, Pos)),
+    predicate_property(M:Head, number_of_clauses(Count)),
+    (   M == user
+    ->  format('~w/~w  (~w clauses)~n', [Name, Arity, Count])
+    ;   format('~w:~w/~w  (~w clauses)~n', [M, Name, Arity, Count])
+    ),
+    forall(between(1, Arity, Pos), arg_stats(M, Name, Arity, Pos)),
     nl.
 
-arg_stats(Name, Arity, Pos) :-
+arg_stats(M, Name, Arity, Pos) :-
     functor(Head, Name, Arity),
-    findall(V, (user:Head, arg(Pos, Head, V)), Vals),
+    findall(V, (M:Head, arg(Pos, Head, V)), Vals),
     sort(Vals, Uniq),
     length(Uniq, NU),
     (   NU =< 8
