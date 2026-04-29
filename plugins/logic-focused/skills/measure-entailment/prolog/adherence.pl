@@ -32,7 +32,16 @@
     adherence_or_fail/2,      % +Prime, +Threshold: halt(1) if any score < Threshold
     main/0,                   % CLI entry point: --threshold N [--threshold-for R=N]* facts.pl prime
     claim/2,                  % ?Resource, ?Claim
-    claim/3                   % ?Resource, ?Category, ?Claim
+    claim/3,                  % ?Resource, ?Category, ?Claim
+    hypothesis_loaded/0,        % semidet: succeeds when hypothesis.pl predicates are visible
+    counterfactual_violations/2, % +ImplResource, -Violations (Pattern 3: forbidden fact still present)
+    counterfactual_honored/2,    % +ImplResource, -Honored (forbidden fact correctly absent)
+    prescriptive_unfulfilled/2,  % +ImplResource, -Unfulfilled (required fact missing)
+    prescriptive_fulfilled/2,    % +ImplResource, -Fulfilled (required fact present)
+    prescriptive_negation_violations/2, % +ImplResource, -Violations (¬premise of prescriptive still present)
+    descriptive_drift/3,         % +ImplResource, +ExistingResource, -Lost (descriptive facts no longer present)
+    label_aware_report/1,        % +ImplResource: print per-epistemic-label section
+    label_aware_facts_out/2      % +ImplResource, +Stream: emit machine-readable result/N facts
 ]).
 
 :- use_module(library(ordsets)).
@@ -725,6 +734,266 @@ build_threshold(opts(NumT, PerR), List) :-
     ).
 build_threshold(opts(none, []), 0.0).
 
+%% ---- Label-aware verdicts (consume hypothesis.pl) ----
+%
+% These predicates close the Pattern 3 gap from
+% philosophy/cwa-owa-tension.md. The standard adherence machinery scores
+% facts as "shared / gap / contradiction / extension" without knowing which
+% facts the upstream hypothesis declared had to FLIP. Pattern 3 is the case
+% where a counterfactual obligation went unhonored: the implementation still
+% asserts a fact the hypothesis said had to become false. Without label
+% awareness, that fact appears as a benign "extension" of impl over the
+% prime — which it is not.
+%
+% The predicates below read hypothesis.pl directly, alongside
+% adherence_facts.pl. The hypothesis predicates (claim_label/2,
+% claim_premise/2, claim_negation_provenance/3) come from the user module
+% when hypothesis.pl is consulted via `swipl -g "..." thoughts/hypothesis.pl`
+% or an explicit consult/1 call from the runner.
+%
+% Domain conventions, per references/pipeline-schema/hypothesis.md:
+%   - claim_label(C, counterfactual) + claim_premise(C, F) +
+%     claim_negation_provenance(C, F, _) → F must be ABSENT in impl.
+%   - claim_label(C, prescriptive) + claim_premise(C, F)
+%     (no claim_negation_provenance) → F must be PRESENT in impl.
+%   - claim_label(C, prescriptive) + claim_premise(C, F) +
+%     claim_negation_provenance(C, F, _) → F must be ABSENT in impl
+%     (a prescriptive claim with a negated premise).
+%   - claim_label(C, descriptive) → no fact-level encoding in hypothesis;
+%     drift is detected only when existing-world.pl is supplied as a
+%     separate resource.
+
+%% hypothesis_loaded is semidet.
+%  Succeed when the hypothesis facts are visible — i.e., hypothesis.pl
+%  was consulted into a module reachable from `user`. Used as a guard so
+%  stand-alone runs (no hypothesis.pl) skip the label-aware section
+%  silently rather than erroring.
+hypothesis_loaded :-
+    current_predicate(user:claim_label/2),
+    once(user:claim_label(_, _)).
+
+%% canonical_premise(+ClaimId, -CanonFact, -RawFact) is nondet.
+%  Yield each ground claim_premise/2 fact with both its raw and canonical
+%  forms. Canonicalisation matches what `claim/2` does on the asserts/2
+%  side, so a hypothesis premise written with strings still matches an
+%  impl fact written with atoms.
+canonical_premise(ClaimId, CanonFact, RawFact) :-
+    user:claim_premise(ClaimId, RawFact),
+    canonicalize_claim(RawFact, CanonFact).
+
+%% impl_claim_set(+ImplResource, -Set) is det.
+%  Compute the impl resource's canonical claim set once. Used by the
+%  label-aware predicates so each hypothesis-claim membership check is a
+%  cheap memberchk on a sorted list rather than a backtracking call to
+%  claim/2 (which warns spuriously when the second argument is bound to a
+%  fact that doesn't match the next raw_assert/4 row — the warning would
+%  mislead a reader, and the cost of a cleaner membership check is
+%  negligible).
+impl_claim_set(ImplResource, Set) :-
+    claims_set(ImplResource, Set).
+
+%% counterfactual_violations(+ImplResource, -Violations) is det.
+%  Pattern 3 detector. A violation is a counterfactual claim whose
+%  forbidden premise still appears in ImplResource. Emits
+%  violation(ClaimId, Fact, Provenance) terms; sorted, deduplicated.
+%  Returns [] when hypothesis.pl is not loaded.
+counterfactual_violations(ImplResource, Violations) :-
+    (   hypothesis_loaded
+    ->  impl_claim_set(ImplResource, ImplSet),
+        findall(violation(ClaimId, CanonFact, Provenance),
+            ( user:claim_label(ClaimId, counterfactual),
+              canonical_premise(ClaimId, CanonFact, RawFact),
+              user:claim_negation_provenance(ClaimId, RawFact, Provenance),
+              memberchk(CanonFact, ImplSet)
+            ),
+            Raw),
+        sort(Raw, Violations)
+    ;   Violations = []
+    ).
+
+%% counterfactual_honored(+ImplResource, -Honored) is det.
+%  The complementary check: counterfactual claims whose forbidden premise
+%  is correctly absent from ImplResource. Emits honored/3 terms.
+counterfactual_honored(ImplResource, Honored) :-
+    (   hypothesis_loaded
+    ->  impl_claim_set(ImplResource, ImplSet),
+        findall(honored(ClaimId, CanonFact, Provenance),
+            ( user:claim_label(ClaimId, counterfactual),
+              canonical_premise(ClaimId, CanonFact, RawFact),
+              user:claim_negation_provenance(ClaimId, RawFact, Provenance),
+              \+ memberchk(CanonFact, ImplSet)
+            ),
+            Raw),
+        sort(Raw, Honored)
+    ;   Honored = []
+    ).
+
+%% prescriptive_unfulfilled(+ImplResource, -Unfulfilled) is det.
+%  Prescriptive claims whose required (positive) premise is missing from
+%  ImplResource. A premise counts as positive when it has no
+%  claim_negation_provenance/3 entry. Emits unfulfilled/2 terms.
+prescriptive_unfulfilled(ImplResource, Unfulfilled) :-
+    (   hypothesis_loaded
+    ->  impl_claim_set(ImplResource, ImplSet),
+        findall(unfulfilled(ClaimId, CanonFact),
+            ( user:claim_label(ClaimId, prescriptive),
+              canonical_premise(ClaimId, CanonFact, RawFact),
+              \+ user:claim_negation_provenance(ClaimId, RawFact, _),
+              \+ memberchk(CanonFact, ImplSet)
+            ),
+            Raw),
+        sort(Raw, Unfulfilled)
+    ;   Unfulfilled = []
+    ).
+
+%% prescriptive_fulfilled(+ImplResource, -Fulfilled) is det.
+prescriptive_fulfilled(ImplResource, Fulfilled) :-
+    (   hypothesis_loaded
+    ->  impl_claim_set(ImplResource, ImplSet),
+        findall(fulfilled(ClaimId, CanonFact),
+            ( user:claim_label(ClaimId, prescriptive),
+              canonical_premise(ClaimId, CanonFact, RawFact),
+              \+ user:claim_negation_provenance(ClaimId, RawFact, _),
+              memberchk(CanonFact, ImplSet)
+            ),
+            Raw),
+        sort(Raw, Fulfilled)
+    ;   Fulfilled = []
+    ).
+
+%% prescriptive_negation_violations(+ImplResource, -Violations) is det.
+%  Prescriptive claims whose negated premise still appears in
+%  ImplResource. Same Pattern-3 shape as counterfactuals, on the
+%  prescriptive side.
+prescriptive_negation_violations(ImplResource, Violations) :-
+    (   hypothesis_loaded
+    ->  impl_claim_set(ImplResource, ImplSet),
+        findall(violation(ClaimId, CanonFact, Provenance),
+            ( user:claim_label(ClaimId, prescriptive),
+              canonical_premise(ClaimId, CanonFact, RawFact),
+              user:claim_negation_provenance(ClaimId, RawFact, Provenance),
+              memberchk(CanonFact, ImplSet)
+            ),
+            Raw),
+        sort(Raw, Violations)
+    ;   Violations = []
+    ).
+
+%% descriptive_drift(+ImplResource, +ExistingResource, -Lost) is det.
+%  Descriptive claims have no fact-level encoding in hypothesis.pl, but
+%  semantically they should be entailed by both existing-world and the
+%  implementation. When the caller provides existing-world.pl as a
+%  resource, we surface facts present in ExistingResource that are
+%  missing from ImplResource — possible descriptive drift the reviewer
+%  should inspect. Returns [] when the existing resource is unknown.
+descriptive_drift(ImplResource, ExistingResource, Lost) :-
+    all_resources(All),
+    (   memberchk(ExistingResource, All)
+    ->  gap_claims(ExistingResource, ImplResource, Lost)
+    ;   Lost = []
+    ).
+
+%% label_aware_report(+ImplResource) is det.
+%  Print the per-epistemic-label verdict block. Skip with a single
+%  diagnostic line when hypothesis.pl is not loaded — stand-alone
+%  measure-entailment runs have nothing to verdict against.
+label_aware_report(ImplResource) :-
+    format('~n=== Epistemic Label Verdicts ===~n', []),
+    (   hypothesis_loaded
+    ->  emit_counterfactual_section(ImplResource),
+        emit_prescriptive_section(ImplResource),
+        emit_descriptive_section(ImplResource)
+    ;   format('  hypothesis.pl not loaded — per-label verdicts skipped.~n', []),
+        format('  Load hypothesis.pl alongside the facts file to enable~n', []),
+        format('  Pattern 3 (counterfactual still present) detection.~n', [])
+    ).
+
+emit_counterfactual_section(ImplResource) :-
+    counterfactual_violations(ImplResource, Violations),
+    counterfactual_honored(ImplResource, Honored),
+    length(Violations, VN),
+    length(Honored, HN),
+    Total is VN + HN,
+    format('~n--- Counterfactual claims (~w total) ---~n', [Total]),
+    format('  Honored:    ~w (forbidden fact correctly absent in ~w)~n',
+           [HN, ImplResource]),
+    format('  Violations: ~w (Pattern 3: forbidden fact still present)~n',
+           [VN]),
+    (   VN > 0
+    ->  format('  Pattern 3 details:~n'),
+        forall(member(violation(C, F, P), Violations),
+               format('    [~w / provenance=~w] ~q still asserted in ~w~n',
+                      [C, P, F, ImplResource]))
+    ;   true
+    ).
+
+emit_prescriptive_section(ImplResource) :-
+    prescriptive_unfulfilled(ImplResource, Unfulfilled),
+    prescriptive_fulfilled(ImplResource, Fulfilled),
+    prescriptive_negation_violations(ImplResource, NegViolations),
+    length(Unfulfilled, UN),
+    length(Fulfilled, FN),
+    length(NegViolations, NVN),
+    Positive is UN + FN,
+    format('~n--- Prescriptive claims (~w positive premise(s), ~w negated) ---~n',
+           [Positive, NVN]),
+    format('  Fulfilled:    ~w (required fact present in ~w)~n',
+           [FN, ImplResource]),
+    format('  Unfulfilled:  ~w (required fact missing)~n', [UN]),
+    (   UN > 0
+    ->  format('  Unfulfilled details:~n'),
+        forall(member(unfulfilled(C, F), Unfulfilled),
+               format('    [~w] ~q missing from ~w~n', [C, F, ImplResource]))
+    ;   true
+    ),
+    (   NVN > 0
+    ->  format('  Negated-premise violations (same shape as Pattern 3):~n'),
+        forall(member(violation(C, F, P), NegViolations),
+               format('    [~w / provenance=~w] ~q still asserted in ~w~n',
+                      [C, P, F, ImplResource]))
+    ;   true
+    ).
+
+emit_descriptive_section(ImplResource) :-
+    findall(C, user:claim_label(C, descriptive), DescClaims),
+    length(DescClaims, DN),
+    format('~n--- Descriptive claims (~w total) ---~n', [DN]),
+    (   DN =:= 0
+    ->  format('  (no descriptive claims in hypothesis.pl)~n')
+    ;   format('  Descriptive claims describe the existing world.~n'),
+        format('  To check drift, supply existing-world.pl as a resource and call~n'),
+        format('  descriptive_drift(~w, existing, Lost).~n', [ImplResource])
+    ).
+
+%% label_aware_facts_out(+ImplResource, +Stream) is det.
+%  Emit machine-readable result/N facts mirroring label_aware_report/1.
+%  Used by adherence_facts_out/2 callers and by tests that check the
+%  shape without parsing report text.
+label_aware_facts_out(ImplResource, Stream) :-
+    (   hypothesis_loaded
+    ->  counterfactual_violations(ImplResource, CV),
+        forall(member(violation(C, F, P), CV),
+               emit_term(Stream,
+                   result(counterfactual_violation, ImplResource, C, F, P))),
+        counterfactual_honored(ImplResource, CH),
+        forall(member(honored(C, F, P), CH),
+               emit_term(Stream,
+                   result(counterfactual_honored, ImplResource, C, F, P))),
+        prescriptive_unfulfilled(ImplResource, PU),
+        forall(member(unfulfilled(C, F), PU),
+               emit_term(Stream,
+                   result(prescriptive_unfulfilled, ImplResource, C, F))),
+        prescriptive_fulfilled(ImplResource, PF),
+        forall(member(fulfilled(C, F), PF),
+               emit_term(Stream,
+                   result(prescriptive_fulfilled, ImplResource, C, F))),
+        prescriptive_negation_violations(ImplResource, PNV),
+        forall(member(violation(C, F, P), PNV),
+               emit_term(Stream,
+                   result(prescriptive_negation_violation, ImplResource, C, F, P)))
+    ;   emit_term(Stream, result(label_aware, skipped, hypothesis_not_loaded))
+    ).
+
 %% ---- Tests ----
 
 :- begin_tests(adherence).
@@ -1201,5 +1470,167 @@ test(property_jaccard_symmetric,
           abs(J12 - J21) < 1.0e-9
         )
     ).
+
+%% --- Label-aware verdicts (Pattern 3 detection) ---
+
+:- multifile user:claim_label/2, user:claim_premise/2,
+             user:claim_negation_provenance/3.
+:- dynamic user:claim_label/2, user:claim_premise/2,
+           user:claim_negation_provenance/3.
+
+teardown_label_aware :-
+    retractall(user:asserts(_, _)),
+    retractall(user:asserts(_, _, _)),
+    retractall(user:claim_label(_, _)),
+    retractall(user:claim_premise(_, _)),
+    retractall(user:claim_negation_provenance(_, _, _)).
+
+%  Counterfactual fixture: c_001 says depends_on(cli_tool, logging) must
+%  become false; impl still asserts it (Pattern 3). c_002 says
+%  template_engine(physical_mail, lob) must become false; impl removed it
+%  (honored).
+setup_counterfactual_kb :-
+    teardown_label_aware,
+    assertz(user:claim_label(c_001, counterfactual)),
+    assertz(user:claim_premise(c_001, depends_on(cli_tool, logging))),
+    assertz(user:claim_negation_provenance(c_001, depends_on(cli_tool, logging), absent)),
+    assertz(user:claim_label(c_002, counterfactual)),
+    assertz(user:claim_premise(c_002, template_engine(physical_mail, lob))),
+    assertz(user:claim_negation_provenance(c_002, template_engine(physical_mail, lob), contradicts)),
+    %  impl: still has c_001's forbidden fact (Pattern 3 violation),
+    %  cleanly omits c_002's (honored).
+    assertz(user:asserts(impl, depends_on(cli_tool, logging))),
+    assertz(user:asserts(impl, depends_on(cli_tool, parser))).
+
+test(pattern_3_detected,
+     [setup(setup_counterfactual_kb), cleanup(teardown_label_aware)]) :-
+    counterfactual_violations(impl, Violations),
+    memberchk(violation(c_001, depends_on(cli_tool, logging), absent), Violations),
+    \+ memberchk(violation(c_002, _, _), Violations).
+
+test(counterfactual_honored_when_fact_removed,
+     [setup(setup_counterfactual_kb), cleanup(teardown_label_aware)]) :-
+    counterfactual_honored(impl, Honored),
+    memberchk(honored(c_002, template_engine(physical_mail, lob), contradicts), Honored),
+    \+ memberchk(honored(c_001, _, _), Honored).
+
+test(pattern_3_clean_after_removal,
+     [setup(( setup_counterfactual_kb,
+              retract(user:asserts(impl, depends_on(cli_tool, logging))) )),
+      cleanup(teardown_label_aware)]) :-
+    counterfactual_violations(impl, []),
+    counterfactual_honored(impl, Honored),
+    memberchk(honored(c_001, depends_on(cli_tool, logging), absent), Honored).
+
+%  String→atom canonicalisation: hypothesis premise written with strings
+%  matches an impl fact written with atoms.
+test(pattern_3_canonicalises_strings,
+     [setup(( teardown_label_aware,
+              assertz(user:claim_label(c_str, counterfactual)),
+              assertz(user:claim_premise(c_str, requires(auth, "oauth2"))),
+              assertz(user:claim_negation_provenance(c_str, requires(auth, "oauth2"), absent)),
+              assertz(user:asserts(impl, requires(auth, oauth2))) )),
+      cleanup(teardown_label_aware)]) :-
+    counterfactual_violations(impl, Violations),
+    memberchk(violation(c_str, requires(auth, oauth2), absent), Violations).
+
+%  Prescriptive: positive premise (no negation_provenance) must appear in impl.
+setup_prescriptive_kb :-
+    teardown_label_aware,
+    %  c_p1: required positive fact, present in impl → fulfilled
+    assertz(user:claim_label(c_p1, prescriptive)),
+    assertz(user:claim_premise(c_p1, exports(auth_module, login))),
+    %  c_p2: required positive fact, missing from impl → unfulfilled
+    assertz(user:claim_label(c_p2, prescriptive)),
+    assertz(user:claim_premise(c_p2, exports(auth_module, logout))),
+    %  c_p3: prescriptive with negated premise still present → negation violation
+    assertz(user:claim_label(c_p3, prescriptive)),
+    assertz(user:claim_premise(c_p3, depends_on(auth_module, legacy_lib))),
+    assertz(user:claim_negation_provenance(c_p3, depends_on(auth_module, legacy_lib), absent)),
+    assertz(user:asserts(impl, exports(auth_module, login))),
+    assertz(user:asserts(impl, depends_on(auth_module, legacy_lib))).
+
+test(prescriptive_fulfilled_detected,
+     [setup(setup_prescriptive_kb), cleanup(teardown_label_aware)]) :-
+    prescriptive_fulfilled(impl, Fulfilled),
+    memberchk(fulfilled(c_p1, exports(auth_module, login)), Fulfilled),
+    \+ memberchk(fulfilled(c_p2, _), Fulfilled).
+
+test(prescriptive_unfulfilled_detected,
+     [setup(setup_prescriptive_kb), cleanup(teardown_label_aware)]) :-
+    prescriptive_unfulfilled(impl, Unfulfilled),
+    memberchk(unfulfilled(c_p2, exports(auth_module, logout)), Unfulfilled),
+    \+ memberchk(unfulfilled(c_p1, _), Unfulfilled).
+
+test(prescriptive_negation_violation_detected,
+     [setup(setup_prescriptive_kb), cleanup(teardown_label_aware)]) :-
+    prescriptive_negation_violations(impl, NegViolations),
+    memberchk(violation(c_p3, depends_on(auth_module, legacy_lib), absent),
+              NegViolations),
+    %  Positive prescriptive claims must not appear in negation violations
+    \+ memberchk(violation(c_p1, _, _), NegViolations),
+    \+ memberchk(violation(c_p2, _, _), NegViolations).
+
+test(prescriptive_unfulfilled_excludes_negated_premises,
+     [setup(setup_prescriptive_kb), cleanup(teardown_label_aware)]) :-
+    %  c_p3's premise carries a negation_provenance, so it must NOT show up
+    %  as "unfulfilled" — it's a different obligation shape.
+    prescriptive_unfulfilled(impl, Unfulfilled),
+    \+ memberchk(unfulfilled(c_p3, _), Unfulfilled).
+
+%  hypothesis-not-loaded guard: stand-alone runs return [] silently.
+test(label_aware_silent_without_hypothesis,
+     [setup(retractall(user:asserts(_, _))), cleanup(teardown_label_aware)]) :-
+    retractall(user:claim_label(_, _)),
+    \+ hypothesis_loaded,
+    counterfactual_violations(any, []),
+    counterfactual_honored(any, []),
+    prescriptive_unfulfilled(any, []),
+    prescriptive_fulfilled(any, []),
+    prescriptive_negation_violations(any, []).
+
+test(label_aware_report_skips_message_without_hypothesis,
+     [setup(retractall(user:asserts(_, _))), cleanup(teardown_label_aware)]) :-
+    retractall(user:claim_label(_, _)),
+    with_output_to(string(Out), label_aware_report(any)),
+    once(sub_string(Out, _, _, _, "hypothesis.pl not loaded")).
+
+test(label_aware_report_calls_out_pattern_3,
+     [setup(setup_counterfactual_kb), cleanup(teardown_label_aware)]) :-
+    with_output_to(string(Out), label_aware_report(impl)),
+    once(sub_string(Out, _, _, _, "Counterfactual claims")),
+    once(sub_string(Out, _, _, _, "Pattern 3")),
+    once(sub_string(Out, _, _, _, "depends_on(cli_tool,logging)")).
+
+%  Descriptive drift: facts present in existing-world but absent from impl.
+test(descriptive_drift_against_existing_world,
+     [setup(( teardown_label_aware,
+              assertz(user:claim_label(c_d1, descriptive)),
+              assertz(user:asserts(existing, has_endpoint(login))),
+              assertz(user:asserts(existing, has_endpoint(logout))),
+              assertz(user:asserts(impl, has_endpoint(login))) )),
+      cleanup(teardown_label_aware)]) :-
+    descriptive_drift(impl, existing, Lost),
+    memberchk(has_endpoint(logout), Lost),
+    \+ memberchk(has_endpoint(login), Lost).
+
+test(descriptive_drift_empty_when_existing_unknown,
+     [setup(( teardown_label_aware,
+              assertz(user:asserts(impl, has_endpoint(login))) )),
+      cleanup(teardown_label_aware)]) :-
+    descriptive_drift(impl, existing_not_loaded, []).
+
+test(label_aware_facts_out_emits_pattern_3,
+     [setup(setup_counterfactual_kb), cleanup(teardown_label_aware)]) :-
+    new_memory_file(MF),
+    open_memory_file(MF, write, Out),
+    label_aware_facts_out(impl, Out),
+    close(Out),
+    open_memory_file(MF, read, In),
+    read_string(In, _, S),
+    close(In),
+    free_memory_file(MF),
+    once(sub_string(S, _, _, _, "result(counterfactual_violation,impl,c_001,")),
+    once(sub_string(S, _, _, _, "result(counterfactual_honored,impl,c_002,")).
 
 :- end_tests(adherence).
