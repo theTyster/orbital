@@ -265,11 +265,12 @@ Common corrections:
 
 Before declaring a property verified:
 
-1. The verification directive ran cleanly (no Prolog errors)
-2. The output says `[VERIFIED]`, not `[FALSIFIED]`
-3. Helper predicates were spot-checked with intermediate queries
-4. Coverage was measured — if below 30%, the KB may lack relevant facts (mark as NEEDED ADAPTATION)
-5. The property encoding actually captures the intended meaning (not a vacuously true weakening)
+1. The proof file passes the strict-loading contract at `references/prolog-wiki/practices/strict-loading.md` — exit 0 under `--on-warning=status --on-error=status`. A singleton in a `violates_property/1` rule means the rule never matches anything, which means an empty counterexample set, which means a **false `[VERIFIED]`** — the worst failure mode this agent can produce. Read the wiki page; treat it as a hard gate.
+2. The verification directive ran cleanly (no Prolog errors)
+3. The output says `[VERIFIED]`, not `[FALSIFIED]`
+4. Helper predicates were spot-checked with intermediate queries
+5. Coverage was measured — if below 30%, the KB may lack relevant facts (mark as NEEDED ADAPTATION)
+6. The property encoding actually captures the intended meaning (not a vacuously true weakening)
 
 ## Coverage Assessment
 

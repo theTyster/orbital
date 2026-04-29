@@ -8,6 +8,7 @@ A general knowledge source for SWI-Prolog: libraries, extensions, idioms, and an
 prolog-wiki/
 ├── index.md          — this file (wiki entry point + quick reference)
 ├── extensions/       — SWI-Prolog extensions: tabling, CLP, DCG, modules, etc.
+├── practices/        — engineering practices: validation, loading discipline, etc.
 └── <future-category>/ — additional topic areas as needed
 ```
 
@@ -61,6 +62,12 @@ Every category directory should contain one markdown file per entry, named after
 | Organize code into namespaces | [Modules](extensions/modules.md) |
 | Trace and profile execution | [Debugging](extensions/debugging.md) |
 | Install third-party libraries | [Pack System](extensions/pack-system.md) |
+
+## Practices
+
+| Topic | What it covers | File |
+|---|---|---|
+| Strict Loading | Treat singleton/discontiguous/undefined-procedure warnings as load failures via `--on-warning=status` | [practices/strict-loading.md](practices/strict-loading.md) |
 
 ## Common Import Block
 

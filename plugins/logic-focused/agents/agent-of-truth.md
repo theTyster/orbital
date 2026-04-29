@@ -169,7 +169,7 @@ Read 2-3 source files first to establish the predicate vocabulary. Then for each
 1. Read the file
 2. Extract facts, relationships, and constraints
 3. Append to the KB file
-4. Validate the KB loads cleanly: `swipl -g halt <file>`
+4. Validate the KB loads cleanly under **strict-warnings mode** (see step 3.1)
 
 This catches errors early and lets the KB grow alongside your understanding.
 
@@ -177,7 +177,8 @@ This catches errors early and lets the KB grow alongside your understanding.
 
 Run validation in tiers — each must pass before advancing:
 
-1. **Load cleanly**: `swipl -g halt <file>`
+1. **Strict load** — every `.pl` file you produce must pass the strict-loading contract documented at `references/prolog-wiki/practices/strict-loading.md`. Read that page; it specifies the exact `swipl` invocation, the four warning classes you must treat as failures (singleton, discontiguous, undefined procedure, syntax), and the three legitimate relaxations. Do not advance to tier 2 until the strict load returns exit 0.
+
 2. **Referential integrity**: `swipl -g "use_module(library(check)), check, halt" <file>`
 3. **Spot-check**: Query 3-5 representative facts against source material
 4. **Run constraints**: Execute any `:- ...` directives and confirm no violations
@@ -231,7 +232,7 @@ For a full recipe (setup, minimal snippet, gotchas) on any of these extensions, 
 Write to `thoughts/facts.pl` or `thoughts/<domain>_facts.pl`.
 
 The file must:
-- Load without errors or warnings
+- Pass the strict-loading contract at `references/prolog-wiki/practices/strict-loading.md` (exit 0 under `--on-warning=status --on-error=status`)
 - Pass referential integrity checks
 - Have constraint rules for all identified invariants
 - Be organized by predicate with documentation headers
