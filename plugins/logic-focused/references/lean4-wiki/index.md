@@ -1,6 +1,6 @@
 # Lean 4 Wiki
 
-A general knowledge source for Lean 4 and Mathlib: lemmas, theorems, tactics, idioms, and anything else worth cataloguing. Every entry lives inside a category subdirectory so the index stays navigable as the wiki grows. Today there are two categories (`lemmas/` and `theorems/`); new categories (e.g. `tactics/`, `idioms/`, `libraries/`) can be added alongside them following the same pattern.
+A general knowledge source for Lean 4 and Mathlib: lemmas, theorems, tactics, idioms, and library tours. Every entry lives inside a category subdirectory so the index stays navigable as the wiki grows. The five categories below — `lemmas/`, `theorems/`, `tactics/`, `idioms/`, `libraries/` — cover the working surface; new categories can be added alongside them following the same pattern.
 
 ## Structure
 
@@ -9,6 +9,9 @@ lean4-wiki/
 ├── index.md         — this file (wiki entry point + topic map)
 ├── lemmas/          — Mathlib lemmas organized by mathematical domain
 ├── theorems/        — famous Mathlib theorems with worked Lean 4 examples
+├── tactics/         — tactic families with decision tables and idioms
+├── idioms/          — proof-writing idioms (structure, naming, calc, destructuring)
+├── libraries/       — Mathlib namespace tours and pointers
 └── <future-category>/ — additional topic areas as needed
 ```
 
@@ -121,3 +124,51 @@ Famous mathematical theorems formalized in Mathlib.
 
 ### Miscellaneous
 - [Famous Results](theorems/famous-results.md) — irrationality of √2, Euler's formula, Stirling, symmetric polynomials, permutation signs
+
+---
+
+## Tactics
+
+Patterns for picking and combining tactics. Each entry covers a family of related tactics with a decision table, scoped examples, and common idioms.
+
+### Arithmetic
+- [Arithmetic Decision Procedures](tactics/arithmetic-decision-procedures.md) — `omega`, `linarith`, `nlinarith`, `polyrith`, `linear_combination`, `positivity`, `norm_num`, `decide`/`native_decide`, `ring`/`ring_nf`, `field_simp`, `abel`
+
+### Search & Suggestion
+- [Library Search and Tactic Suggestion](tactics/library-search-and-suggestion.md) — `exact?`, `apply?`, `simp?`, `rw?`, `aesop`/`aesop?`, `hint`, `tauto`, `loogle`, `#find`
+
+### Rewriting
+- [Simp and Rewriting](tactics/simp-and-rewriting.md) — `rw`, `simp`, `simp only`, `simp_rw`, `dsimp`, `conv`, `at` clauses, `@[simp]` attribute
+
+### Induction & Case Analysis
+- [Induction and Cases](tactics/induction-and-cases.md) — `induction`, `cases`, `induction … generalizing`, strong induction, induction on inductive propositions
+
+### Structural
+- [Structural Tactics](tactics/structural-tactics.md) — `congr`/`congr!`, `funext`, `ext`, `gcongr`, `mono`, `propext`
+
+---
+
+## Idioms
+
+Proof-writing idioms — vocabulary and patterns for turning automation into readable arguments.
+
+### Proof Structure
+- [Structuring Proofs](idioms/structuring-proofs.md) — `have`, `suffices`, `show`, `change`, `let`/`set`, `calc`, bullets/`case`, `refine` vs `exact`, closing tactics
+
+### Destructuring
+- [Destructuring](idioms/destructuring.md) — `obtain`, `rcases`, `rintro`, anonymous constructor `⟨…⟩`, `cases`, term-mode patterns
+
+### Naming & Conventions
+- [Mathlib Naming Conventions](idioms/naming-conventions.md) — operation/relation vocabulary, `_of_`/`_iff_`/`_left`/`_right`, namespace prefixes, name composition rules
+
+### Style
+- [Term Mode vs Tactic Mode](idioms/term-mode-vs-tactic-mode.md) — when to use `:=` versus `by`, hybrid patterns, `▸`, `.mp`/`.mpr` method-call style
+
+---
+
+## Libraries
+
+Tours of Mathlib's organization — where to look for what.
+
+### Mathlib
+- [Mathlib Tour](libraries/mathlib-tour.md) — top-level namespaces (`Nat`, `Int`, `List`, `Set`, `Finset`, `Order`, `Algebra`, `LinearAlgebra`, `Topology`, `Analysis`, `MeasureTheory`, `Probability`, `Combinatorics`, `NumberTheory`, `CategoryTheory`, …) with what each contains and where to search
