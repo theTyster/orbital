@@ -3,7 +3,7 @@ name: prove-invariants
 description: >
   Use this skill whenever the user wants to prove a hypothesis in Lean4 — "formalize this", "prove this in lean", "verify formally", "machine-check these properties". Reads thoughts/target-world.pl (the open-world Prolog model emitted by model-obligations), translates each formal property into a Lean4 theorem with a mandatory provenance annotation, and proves it; loops back to decompose-proposition if unprovable.
 user-invocable: true
-model: opus
+model: sonnet
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[thoughts/target-world.pl path]"
 ---
@@ -386,7 +386,7 @@ All artifacts are written to the `thoughts/` directory (create it if it doesn't 
 - **Inner corrections per property**: 5
 - **Outer iterations (fresh approach)**: 3
 - **Max properties per hypothesis**: no limit
-- **Prover model**: opus (for sub-agents)
+- **Prover model**: sonnet with high reasoning effort (for `lean-expert` sub-agent).
 
 ## Guidance
 
