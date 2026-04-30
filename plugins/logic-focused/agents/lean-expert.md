@@ -8,6 +8,7 @@ description: >
   checking, counterexample search on extracted lemmas, and calibrated abstention
   when a proof won't close.
 tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
+model: sonnet
 ---
 
 # Lean Expert Agent

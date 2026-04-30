@@ -10,6 +10,7 @@ description: >
   claim's `claim_label`. Read-only against the codebase; writes only into
   the realize-specification scratch directory.
 tools: Bash, Read, Grep, Glob, Write
+model: sonnet
 ---
 
 # Realize Test Briefer

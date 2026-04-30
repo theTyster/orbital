@@ -10,6 +10,7 @@ description: >
   is a counterexample search — a property is verified when exhaustive
   falsification fails.
 tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
+model: sonnet
 ---
 
 # Prolog Prover Agent

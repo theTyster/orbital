@@ -9,6 +9,7 @@ description: >
   that answer specific questions. Every interaction with Prolog goes through
   swipl on the command line.
 tools: Bash, Read, WebSearch, WebFetch
+model: sonnet
 ---
 
 # Agent of Questions

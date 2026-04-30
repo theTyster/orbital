@@ -12,6 +12,7 @@ description: >
   output goes to the realize-specification scratch directory; never edits
   source code or Prolog files.
 tools: Bash, Read, Grep, Glob, Write
+model: sonnet
 ---
 
 # Realize Counterfactual Scanner

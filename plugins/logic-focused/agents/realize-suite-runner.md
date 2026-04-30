@@ -11,6 +11,7 @@ description: >
   are written to the scratch directory for forensic reads, but only the
   digest is returned.
 tools: Bash, Read, Write
+model: sonnet
 ---
 
 # Realize Suite Runner
