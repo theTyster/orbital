@@ -11,6 +11,7 @@ description: >
   the realize-specification scratch directory.
 tools: Bash, Read, Grep, Glob, Write
 model: sonnet
+effort: medium
 ---
 
 # Realize Test Briefer

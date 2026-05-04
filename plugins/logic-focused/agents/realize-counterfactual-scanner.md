@@ -13,6 +13,7 @@ description: >
   source code or Prolog files.
 tools: Bash, Read, Grep, Glob, Write
 model: sonnet
+effort: low
 ---
 
 # Realize Counterfactual Scanner

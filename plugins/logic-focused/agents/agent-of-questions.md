@@ -10,6 +10,7 @@ description: >
   swipl on the command line.
 tools: Bash, Read, WebSearch, WebFetch
 model: sonnet
+effort: high
 ---
 
 # Agent of Questions

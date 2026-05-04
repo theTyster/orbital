@@ -11,6 +11,7 @@ description: >
   falsification fails.
 tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 model: sonnet
+effort: xhigh
 ---
 
 # Prolog Prover Agent

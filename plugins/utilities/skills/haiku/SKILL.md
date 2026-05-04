@@ -17,7 +17,7 @@ claude -p "Project context:
 - Branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'not a git repo')
 - Modified: $(git diff --name-only 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//')
 
-ARGUMENTS" --model "haiku" --allowedTools "Read"
+ARGUMENTS" --model "haiku" --effort "low" --allowedTools "Read"
 ```
 
 ## Rules

@@ -12,6 +12,7 @@ description: >
   digest is returned.
 tools: Bash, Read, Write
 model: sonnet
+effort: low
 ---
 
 # Realize Suite Runner

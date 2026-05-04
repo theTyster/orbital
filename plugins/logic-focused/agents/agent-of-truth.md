@@ -9,6 +9,7 @@ description: >
   it produces is the foundation that other agents query and prove against.
 tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 model: sonnet
+effort: high
 ---
 
 # Agent of Truth

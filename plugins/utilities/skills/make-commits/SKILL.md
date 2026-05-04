@@ -37,6 +37,7 @@ $(git log --oneline -n 10)
 ## Your task
 Review all unstaged and untracked changes in this git repository and organize them into logical commits. Use the Session Context above to inform the *why* in each commit message — don't restate the context, just let it shape your word choice and grouping. Group related changes together. One commit per coherent unit of work. Write concise commit messages focused on *why*, not what. Match the tone and format of the recent commits shown in \`git log --oneline -n 10\`. Do not include any Co-Authored-By trailer or mention of Claude in the message. Do not push. Do not amend. Create new commits only." \
   --model "sonnet" \
+  --effort "high" \
   --allowedTools "Bash Read Grep Glob"
 ```
 

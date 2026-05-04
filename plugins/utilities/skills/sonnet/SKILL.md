@@ -17,7 +17,7 @@ claude -p "Project context:
 - Branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'not a git repo')
 - Modified: $(git diff --name-only 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//')
 
-ARGUMENTS" --model "sonnet" --allowedTools "Read"
+ARGUMENTS" --model "sonnet" --effort "high" --allowedTools "Read"
 ```
 
 ## Rules
