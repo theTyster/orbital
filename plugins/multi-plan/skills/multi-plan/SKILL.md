@@ -43,7 +43,7 @@ Step 2: Review  (parallel, opus) — checks artifact↔requirement alignment
   └─ 2b: Iterate plan↔review until aligned (max 3 rounds)
 Step 3: HUMAN VETTING — mandatory pause
 Step 4: Implement (parallel, sonnet, approved only)
-Step 5: Commit    (parallel, haiku)
+Step 5: Commit    (parallel, sonnet)
 ```
 
 ---
@@ -175,7 +175,7 @@ Output a summary of changes.
 
 ---
 
-## Step 5: Commit (parallel, `model: "haiku"`)
+## Step 5: Commit (parallel, `model: "sonnet"`)
 
 ```
 You are the COMMIT agent for: "{ENHANCEMENT}"

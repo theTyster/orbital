@@ -44,7 +44,7 @@
     {
       "name": "multi-plan",
       "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles.",
-      "version": "2.3.2",
+      "version": "2.3.3",
       "source": "./plugins/multi-plan",
       "author": {
         "name": "ty",
@@ -60,7 +60,7 @@
     {
       "name": "utilities",
       "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
-      "version": "2.3.2",
+      "version": "2.3.3",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",
