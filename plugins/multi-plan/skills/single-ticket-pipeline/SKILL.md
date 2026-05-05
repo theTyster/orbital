@@ -159,6 +159,29 @@ When this skill itself spawns Agent calls (e.g., to inspect Prolog gates),
 pass `model: "sonnet"` and `effort: "medium"` explicitly per repository
 convention.
 
+## Context budget (hard stop at 120k tokens)
+
+Managing context is part of the orchestrator's job. Before invoking each
+stage skill, check the running context size. If it has crossed **120,000
+tokens**, do not start the next stage. Instead:
+
+1. Mark the current task as halted (TaskUpdate with a status note that the
+   budget was hit).
+2. Invoke `logic-focused:explain` immediately against whatever artifacts
+   exist on disk.
+3. Report to the user: the stage that was about to run, the budget breach,
+   and the path to `thoughts/explanation.md`.
+
+This is a **hard stop**, not a soft warning. Do not attempt to compress,
+summarize, or push past the threshold — the partial pipeline is more
+valuable when its narrative is captured cleanly than when it crashes
+mid-stage with a corrupted artifact chain. The downstream stages can be
+resumed in a fresh session against the same `thoughts/` directory.
+
+The 120k threshold is below the model's window deliberately, leaving
+headroom for `explain` to read the artifacts it needs and write its
+report.
+
 ## Failure handling
 
 - **Missing upstream artifact** → stop, run `explain`, report the gap.
