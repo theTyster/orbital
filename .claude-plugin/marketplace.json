@@ -60,7 +60,7 @@
     {
       "name": "utilities",
       "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
-      "version": "2.3.4",
+      "version": "2.3.5",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",

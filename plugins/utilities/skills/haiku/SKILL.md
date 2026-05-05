@@ -9,15 +9,20 @@ Spawn a new Claude Haiku session with the user's prompt, enriched with current p
 
 ## Instructions
 
-Run the user's ARGUMENTS as a prompt in a new Claude Haiku session. Prepend the project context above to the prompt so the new session has immediate environmental awareness.
+Before running the sub-session, gather the following context using your own tools:
+- Current working directory (use `pwd`)
+- Current git branch (use `git rev-parse --abbrev-ref HEAD`)
+- Modified files (use `git diff --name-only | head -10`)
+
+Then run the user's ARGUMENTS as a prompt in a new Claude Haiku session, prepending the gathered context so the new session has immediate environmental awareness:
 
 ```bash
 claude -p "Project context:
-- Dir: $(pwd)
-- Branch: $(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'not a git repo')
-- Modified: $(git diff --name-only 2>/dev/null | head -10 | tr '\n' ', ' | sed 's/, $//')
+- Dir: <dir>
+- Branch: <branch>
+- Modified: <modified-files>
 
-ARGUMENTS" --model "haiku" --effort "low" --allowedTools "Read"
+<ARGUMENTS>" --model "haiku" --effort "low" --allowedTools "Read"
 ```
 
 ## Rules
