@@ -43,8 +43,8 @@
     },
     {
       "name": "multi-plan",
-      "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles.",
-      "version": "2.3.3",
+      "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles. Includes single-ticket-pipeline for end-to-end logic-focused runs on one ticket.",
+      "version": "2.4.0",
       "source": "./plugins/multi-plan",
       "author": {
         "name": "ty",
