@@ -22,7 +22,7 @@ claude -p "Project context:
 - Branch: <branch>
 - Modified: <modified-files>
 
-<ARGUMENTS>" --model "opus" --effort "high" --allowedTools "Read"
+<ARGUMENTS>" --model "opus" --effort "medium" --allowedTools "Read"
 ```
 
 ## Rules

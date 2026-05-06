@@ -8,7 +8,7 @@ description: >
   parsing, and writing constraint rules that enforce invariants. The KB
   it produces is the foundation that other agents query and prove against.
 tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
-model: sonnet
+model: opus
 effort: high
 ---
 

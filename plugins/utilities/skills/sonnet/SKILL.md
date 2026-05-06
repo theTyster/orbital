@@ -22,7 +22,7 @@ claude -p "Project context:
 - Branch: <branch>
 - Modified: <modified-files>
 
-<ARGUMENTS>" --model "sonnet" --effort "high" --allowedTools "Read"
+<ARGUMENTS>" --model "sonnet" --effort "medium" --allowedTools "Read"
 ```
 
 ## Rules

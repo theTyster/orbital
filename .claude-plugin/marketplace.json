@@ -9,7 +9,7 @@
     {
       "name": "logic-focused",
       "description": "Formal logic reasoning pipeline: closed-world KB construction, proposition decomposition, model-based and Lean 4 proof verification, property instantiation as TDD tests, and proof-grounded specification realization.",
-      "version": "3.6.0",
+      "version": "3.6.1",
       "source": "./plugins/logic-focused",
       "author": {
         "name": "ty",
@@ -60,7 +60,7 @@
     {
       "name": "utilities",
       "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
-      "version": "2.3.5",
+      "version": "2.3.6",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",

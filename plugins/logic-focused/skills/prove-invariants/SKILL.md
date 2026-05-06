@@ -386,7 +386,7 @@ All artifacts are written to the `thoughts/` directory (create it if it doesn't 
 - **Inner corrections per property**: 5
 - **Outer iterations (fresh approach)**: 3
 - **Max properties per hypothesis**: no limit
-- **Prover model**: sonnet with high reasoning effort (for `lean-expert` sub-agent).
+- **Prover model**: opus with xhigh reasoning effort (for `lean-expert` sub-agent).
 
 ## Guidance
 
