@@ -9,7 +9,7 @@
     {
       "name": "logic-focused",
       "description": "Formal logic reasoning pipeline: closed-world KB construction, proposition decomposition, model-based and Lean 4 proof verification, property instantiation as TDD tests, and proof-grounded specification realization.",
-      "version": "3.7.1",
+      "version": "3.8.0",
       "source": "./plugins/logic-focused",
       "author": {
         "name": "ty",

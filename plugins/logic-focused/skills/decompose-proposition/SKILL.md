@@ -179,9 +179,11 @@ Each sub-hypothesis from step 2 lands in one of three states:
 
 A hypothesis with zero counterfactual requirements is a proved invariant. A hypothesis with counterfactual requirements is a roadmap for the change the proposition implies — and that roadmap is exactly what the downstream proof skill formalizes.
 
-**Phrasing formal properties for the prove backends.** How a property is stated determines whether the prove skill can actually verify it.
+**Phrasing formal properties for the prove backends.** How a property is stated determines whether the prove skill can actually verify it. **Default to quantified-invariant shape over enumerated conjunctions of specific facts** whenever the underlying claim has invariant shape. A property phrased as "every fact (a, b) satisfying P also satisfies Q" should appear in `formal_property/3` as `∀ a b, P a b → Q a b`, not as a list of explicit pair facts. The invariant form expresses the spec directly; the enumerated form is a list of test cases dressed up as a theorem and degrades to `decide`-over-list at the Lean stage. Lean closes the invariant form by `cases h <;> ...` over an inductive predicate — this is the canonical structural proof shape and is what `prove-invariants` is now built around.
 
-- *Clear* sub-hypothesis → state the property directly over the KB's predicates (e.g. `¬ depends_on_trans(auth_lib, cli_tool)`). The prove skill will verify it as an invariant.
+When in doubt, ask: would a reader who has never seen the file recognize what is being asserted from the theorem statement alone? If yes, the form is spec-shaped. If the statement is a long conjunction of named facts, refactor to invariant form before emitting.
+
+- *Clear* sub-hypothesis → state the property directly over the KB's predicates as a quantified invariant (e.g. `∀ x, depends_on_trans(auth_lib, x) → x ≠ cli_tool`, not the list of every (auth_lib, x) pair the KB happens to entail). The prove skill will verify it as an invariant.
 - *Conditional* sub-hypothesis → state the property over a *target relation* that excludes the counterfactual facts, and name each counterfactual as a companion necessity claim. Example:
 
   > **Property**: `cli_tool` has no transitive dependency on `logging` in `depends_on_target`, where `depends_on_target(X,Y) := depends_on(X,Y) ∧ ¬ cf(X,Y)` and `cf` is the set of counterfactual facts listed above.

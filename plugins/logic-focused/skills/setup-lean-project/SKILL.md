@@ -37,7 +37,8 @@ mkdir -p "$LEAN_PROJECT/Proofs"
 
 ## Step 2: Write Project Files
 
-**`lakefile.lean`** — package declaration with path require to shared Mathlib:
+**`lakefile.lean`** — package declaration with path requires to shared Mathlib
+and the plugin's Ontology scaffold:
 
 ```lean
 import Lake
@@ -52,7 +53,24 @@ package Proofs where
 lean_lib Proofs where
 
 require mathlib from "<MATHLIB_ROOT — expand to absolute path>"
+require Ontology from "<ONTOLOGY_ROOT — expand to absolute path of plugins/logic-focused/lean>"
 ```
+
+`<ONTOLOGY_ROOT>` is the absolute path to `plugins/logic-focused/lean/` inside
+the installed plugin (under Claude Code plugin runtime, this is
+`${CLAUDE_PLUGIN_ROOT}/lean` — `lake` does not expand environment variables,
+so substitute the absolute path at file-write time the same way
+`<MATHLIB_ROOT>` is substituted). The scaffold has no dependencies of its own
+beyond `Lean`, so the require is cheap; emitted proof files use
+`import Ontology.Prelude` to access the `exhaust` / `witnesses` macros, the
+`Ontology.Origin` / `Ontology.NegationProvenance` enums, and the
+`@[ontology …]` marker attribute.
+
+If the plugin path is unavailable or the require fails to resolve, the
+fallback is to omit the `require Ontology` line; emitted proofs then use the
+docstring form `/- provenance(absent | contradicts) -/` instead of the
+`@[ontology …]` attribute. Both forms carry the same information; the
+attribute is preferred when the scaffold is available.
 
 **`Proofs.lean`** — root module (empty is fine):
 
