@@ -13,6 +13,8 @@ Skills reference an agent by reading its `.md` file and incorporating the instru
 
 ## Agents
 
+> Every `.md` file in this directory (besides this README) must have a corresponding entry below, including the `**Used by**` mapping. New agents added without a README entry are considered undocumented and should be flagged in review.
+
 ### lean-expert
 
 Lean 4 formal proof specialist. Uses `lake build` as deductive reasoning steps rather than chain-of-thought. Incorporates adversarial verification patterns: interpretation checking, extracted-lemma counterexample search, and calibrated abstention.
@@ -36,6 +38,24 @@ Prolog query specialist. Discovers KB structure through `swipl` introspection al
 Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search. Reads `references/prolog-wiki/` directly for CLP and tabling recipes.
 
 **Used by**: model-obligations
+
+### realize-counterfactual-scanner
+
+Counterfactual locator and re-introduction watchdog. Queries `hypothesis.pl` for every claim with `claim_label(_, counterfactual)` and locates the file:line sources in the target codebase where each forbidden fact currently materialises (an import, a call site, a config entry). Two-mode operation: `initial` (Stage 0, builds the locator table the orchestrator hands to removal briefings) and `recheck` (Stage 3d, re-greps after a refactor to detect silently re-introduced counterfactuals under new names). Read-only against source; writes only into the realize-specification scratch directory.
+
+**Used by**: realize-specification
+
+### realize-suite-runner
+
+Test-suite runner. Runs the project's full test command, compares the result to a persisted baseline, and returns a small structured digest — `targeted: pass|fail`, regression list, new-pass list, a short failure excerpt — instead of the verbatim multi-megabyte test log. Two-mode operation: `baseline` (Stage 1, records the green/red sets before any unskip) and `verify` (Stages 2c, 2e, 3c, 3d — runs after a change and reports the delta). Verbatim logs are written to scratch for forensic reads, but only the digest is returned.
+
+**Used by**: realize-specification
+
+### realize-test-briefer
+
+Per-test briefing builder. Reads one skipped test plus the Prolog artifacts it cites (`lean_proof_results.pl`, `hypothesis.pl`, optionally `model_results.pl`, `existing-world.pl`, `target-world.pl`) and emits a self-contained briefing file ready for an implementation sub-agent. Routes the briefing to one of three shapes — addition, removal, behavioral — based on `test_category` and the cited claim's `claim_label`. Read-only against the codebase; writes only into the realize-specification scratch directory.
+
+**Used by**: realize-specification
 
 ## Plugin References
 
