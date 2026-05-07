@@ -167,7 +167,7 @@ Before writing any Prolog, understand the domain:
 
 ### 2. Build Incrementally
 
-Read 2-3 source files first to establish the predicate vocabulary. Then for each subsequent file:
+Discover sources first, then read the most relevant 2-3 in full to establish the predicate vocabulary. The discovery pattern is `Glob` to enumerate candidates by path shape (e.g. `**/*.controller.ts`, `migrations/*.sql`), then `Grep` to narrow by content signal (a symbol, table name, import). Reach for `Bash` with `find`/`rg` only when the dedicated tools cannot express the query. Then for each subsequent file:
 1. Read the file
 2. Extract facts, relationships, and constraints
 3. Append to the KB file
