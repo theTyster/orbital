@@ -75,35 +75,9 @@ The orchestrator never inlines the contents of these files into its own context.
 
 ### Stage 0 — Codebase survey + counterfactual locator
 
-Two read-only sub-agents run, in parallel where possible. Both write to the scratch directory.
+Two read-only sub-agents run in parallel — `Agent(Explore)` writes a structured `survey.md` (code layout, existing modules, exact project commands, adjacent constraints, test-runner notes, behavioral-contract infrastructure if any) and `Agent(realize-counterfactual-scanner)` in `initial` mode emits the `counterfactual_locator.json` / `.md` table.
 
-**Stage 0a — `Agent(Explore)`** with this brief:
-
-> Survey this codebase to prepare for a TDD implementation pass against a generated test file at {path}. Write your findings to `thoughts/.realize_scratch/survey.md` as a structured markdown document with these sections (use these exact headers — the briefer agent will pick slices by header):
->
-> 1. `## Code layout` — where implementation code should live relative to the test file; module/package conventions
-> 2. `## Existing modules referenced by tests` — stubs, types, public exports the tests touch
-> 3. `## Project commands` — exact invocations for tests, type check, lint, format, build (look in package.json scripts, Makefile, justfile, pyproject, Cargo.toml, etc.). Give exact commands, not descriptions.
-> 4. `## Adjacent constraints` — shared interfaces, DI registration, public exports the tests will constrain
-> 5. `## Test runner notes` — anything unusual: watch mode, test tags, required env vars
-> 6. `## Behavioral-contract infrastructure` — only if the test file contains `test_category(behavioral_claim)` tests. Identify hooks for observing side effects / state / timing: test doubles, integration harnesses, clock injection, retry mocks. The behavioral briefings will copy this slice.
->
-> Return only the path you wrote to and a one-paragraph summary. Do not edit any source.
-
-**Stage 0b — `Agent(realize-counterfactual-scanner)` in `initial` mode** with this brief:
-
-> Build the counterfactual locator table for this realize-specification run.
->
-> - mode: initial
-> - hypothesis_path: `thoughts/hypothesis.pl`
-> - target_codebase_dir: {dir}
-> - scratch_dir: `thoughts/.realize_scratch/`
->
-> Emit `counterfactual_locator.json` and `counterfactual_locator.md`. Return counts and path.
-
-If `hypothesis.pl` does not exist (a behavioral-only test file), skip 0b and note it in the run log.
-
-The orchestrator records only the paths and counts. The contents stay in the scratch dir.
+Verbatim sub-agent briefs and the survey-section header contract live in **`references/stage0-survey.md`**. Skip 0b if `hypothesis.pl` does not exist (a behavioral-only test file). The orchestrator records only the paths and counts; the contents stay in the scratch dir.
 
 ### Stage 1 — Baseline (`Agent(realize-suite-runner)` in `baseline` mode)
 
@@ -210,27 +184,9 @@ Log the refactor pass in `thoughts/implementation_log.md` as its own entry.
 
 ### Stage 4 — Loopback (when a test cannot be made green)
 
-If two implementation attempts on the same test fail, do not keep grinding. Delegate a diagnosis to `Agent(Explore)`:
+If two implementation attempts on the same test fail, do not keep grinding. Delegate a read-only diagnosis to `Agent(Explore)` using the seven-class failure taxonomy and routing rules in **`references/loopback-classifications.md`** — wrong test / wrong property / tests conflict / missing context / fragile counterfactual (CWA-absent) / inaccurate counterfactual list / behavioral test with no upstream property.
 
-> This test cannot be made to pass after two implementation attempts. Read `{briefing_path}` and the digests `{2c_digest_path}`, `{2e_iter1_digest_path}`, `{2e_iter2_digest_path}`. Classify the failure as one of:
-> - **Test is wrong** — the test's projection from the proof is incorrect (wrong assertion, wrong fixture, wrong shape)
-> - **Property is wrong** — the proof is internally valid but models something different from the real system
-> - **Tests conflict** — satisfying this test would violate a different proven property
-> - **Missing context** — the proof depends on a precondition not expressed in any test
-> - **Fragile counterfactual (CWA-absent)** *(only when `test_category(projection)` AND cited claim has `claim_label(_, counterfactual)` AND `negation_provenance(_, absent)`)* — the proof's negation depends on closed-world absence; the absent premise may be the cause of failure. The KB's completeness is suspect.
-> - **Counterfactual list inaccurate** — the enumerated counterfactual claims in `hypothesis.pl` do not match reality: either a named fact cannot be cleanly removed because another proven property depends on it, or removing the fact is not enough to satisfy the downstream invariant.
-> - **Behavioral test has no upstream property** — the failing test is `test_category(behavioral_claim)`. There is no proof to revise, no hypothesis to re-run. Recommendation: do NOT loop back; surface to the user.
->
-> Do not edit anything. Return the classification plus a recommendation of which pipeline stage to revisit (`decompose-proposition`, `prove-invariants` or `model-obligations`, or `instantiate-properties`).
-
-**Loopback routing (recommendations only — the human chooses):**
-- Persistent failure on a `projection` test whose cited claim has `claim_label(_, counterfactual)` and `negation_provenance(_, absent)` → recommend `decompose-proposition` (the fragile CWA premise may be the cause).
-- Persistent failure on any other `projection` test → recommend revisiting one of the prove skills (`prove-invariants` or `model-obligations`).
-- Persistent failure on a `behavioral_claim` test → recommend NO formal-pipeline revisit. Surface to the user.
-
-For `test_category(behavioral_claim)` classifications, the `implementation_blocked.md` output must explicitly say "no upstream pipeline stage revises this claim".
-
-Write the classification and recommended pipeline stage to `thoughts/implementation_blocked.md`. Halt. Leave the offending test unskipped with its failure intact. **This skill does not auto-restart any upstream stage** — the human reads the blocked report and decides what to re-run.
+Write the classification and recommended pipeline stage to `thoughts/implementation_blocked.md`, halt, leave the offending test unskipped with its failure intact. **This skill does not auto-restart any upstream stage** — the human decides what to re-run.
 
 ## Agent delegation reference
 
@@ -273,33 +229,18 @@ The orchestrator's own edits are limited to: toggling skip annotations in the te
 
 ## Guidance
 
-- **`lean_universal_neq_test_verified`:** **Projection tests witness a sample, not a proof. A green projection test does not re-verify ∀x.P(x).** The Lean theorem is the universal verification; the test exercises one fixture. Implement the property generally — do not let a passing fixture deceive you into believing the universal is established by the test.
-
-- **Behavioral_claim tests have no upstream proof. Treat their outcomes as `behavioral_witness` in the log, not as `property_verified`.**
-
-- **CWA-absent ≠ Lean-disproved.** A counterfactual claim with `negation_provenance(absent)` is fragile against KB completeness; treat such failures as candidates for `decompose-proposition` loopback.
-
-- **The suite-runner's digest is the judge.** Not the implementation agent's summary, not the orchestrator's reading of the diff. After every implementation attempt, run the verify-mode suite-runner. If the digest disagrees with the agent, trust the digest.
-
-- **Run the whole suite, not just the generated file.** Pre-existing tests are part of the specification. The suite-runner enforces this — `regressions` is computed against the baseline's `green` set, not just against the generated file's prior state.
-
-- **Tests and proofs outrank existing structure.** Briefings explicitly permit refactoring adjacent code. Capitulating to legacy shape defeats the point of the formal artifacts.
-
-- **Refactoring goes through Explore first.** Test-scoped edits during Stage 2, structure-scoped edits during Stage 3, each with its own Explore-then-edit split.
-
-- **Use domain names from the Prolog facts.** The briefer pulls them out and lists them under "Domain vocabulary." Future `explain` and `measure-entailment` runs depend on the code and the facts sharing vocabulary.
-
-- **Assumption stubs stay skipped.** Tests marked with `skip(reason="assumption not proven — verify manually")` are deliberate gaps in the formal coverage. The skill does not unskip them.
-
-- **Halt loudly, don't drift quietly.** If two implementation attempts fail on one test, the likely cause is upstream. The correct response is loopback, not a third attempt with looser assertions.
-
-- **Briefings are self-contained.** The briefer agent assembles them; the orchestrator does not. If a briefing is missing a section the implementation agent needs, fix it in the briefer's prompt or in `references/realize-briefing-rules.md`, not by patching one briefing.
-
-- **Removal briefings are deletion work.** LLM implementors strongly prefer adding code over removing it. The removal rules block in `references/realize-briefing-rules.md` is explicit; the briefer copies it verbatim. If an implementation agent returns having added code in response to a removal briefing, treat as a failed attempt regardless of whether the test passed.
-
-- **A silently re-introduced counterfactual is worse than a failing test.** Stage 3d exists for this. The counterfactual scanner's `recheck` mode greps the entire codebase, not just touched files, because re-introductions appear at new call sites that the touched-files set will not cover.
-
-- **Behavioral failures don't loop back.** The upstream pipeline stages never expressed a behavioral_claim, so re-running `decompose-proposition` or `model-obligations` / `prove-invariants` cannot produce a revised formal artifact. Persistent `test_category(behavioral_claim)` failures surface to the user.
+- **`lean_universal_neq_test_verified`** — projection tests witness a sample, not a proof. Implement the property generally; do not let a passing fixture deceive you into thinking the universal is established by the test.
+- **Behavioral_claim tests have no upstream proof** — log their outcomes as `behavioral_witness`, not `property_verified`. Persistent failures surface to the user; no formal-pipeline loopback.
+- **CWA-absent ≠ Lean-disproved** — counterfactual claims with `negation_provenance(absent)` are fragile against KB completeness; treat persistent failures as candidates for `decompose-proposition` loopback.
+- **The suite-runner's digest is the judge** — never the implementation agent's summary or the orchestrator's reading of the diff. After every implementation attempt, run verify-mode and trust the digest.
+- **Run the whole suite, not just the generated file** — pre-existing tests are part of the specification; `regressions` is computed against the baseline's full green set.
+- **Tests and proofs outrank existing structure** — briefings explicitly permit refactoring adjacent code. Refactoring goes through Explore first (test-scoped during Stage 2, structure-scoped during Stage 3).
+- **Use domain names from the Prolog facts** — `explain` and `measure-entailment` depend on the code and the facts sharing vocabulary.
+- **Assumption stubs stay skipped** — `skip(reason="assumption not proven — verify manually")` is a deliberate gap; the skill does not unskip them.
+- **Halt loudly, don't drift quietly** — two failed implementation attempts → loopback (Stage 4), not a third attempt with looser assertions.
+- **Briefings are self-contained** — the briefer agent assembles them; if one is missing a section, fix the briefer or `references/realize-briefing-rules.md`, not the briefing.
+- **Removal briefings are deletion work** — LLM implementors prefer adding code; an agent that adds code in response to a removal briefing is a failed attempt regardless of whether the test passed.
+- **A silently re-introduced counterfactual is worse than a failing test** — Stage 3d's `recheck` mode greps the entire codebase, not just touched files.
 
 ## Additional resources
 

@@ -283,35 +283,7 @@ Write to `thoughts/adherence_report.md`:
 
 If any row in the "blocking" column is non-zero, surface it in the next subsection before the structural scores. A reviewer should see broken obligations before they see Jaccard percentages.
 
-### Pattern 3 — counterfactual violations
-
-For each `result(counterfactual_violation, ImplResource, ClaimId, Fact, Provenance)`:
-
-- **{ClaimId}** — *"{natural-language claim from `claim/2`}"*
-  - Forbidden fact: `{Fact}`
-  - Provenance: `{absent | contradicts}`
-  - Still asserted in: `{ImplResource}` — locate the source line(s) that re-introduce it.
-
-### Prescriptive unfulfilled
-
-For each `result(prescriptive_unfulfilled, ImplResource, ClaimId, Fact)`:
-
-- **{ClaimId}** — *"{natural-language claim}"*
-  - Required fact: `{Fact}`
-  - Missing from: `{ImplResource}`
-
-### Prescriptive negation violations
-
-For each `result(prescriptive_negation_violation, ImplResource, ClaimId, Fact, Provenance)`:
-
-- **{ClaimId}** — *"{natural-language claim}"*
-  - Required-to-be-absent fact: `{Fact}`
-  - Provenance: `{absent | contradicts}`
-  - Still asserted in: `{ImplResource}`
-
-### Descriptive drift
-
-If existing-world.pl was supplied as a resource: list the gap from `descriptive_drift(impl, existing, Lost)`. Otherwise note "skipped — no existing-world resource."
+Verdict-row item formats — Pattern 3, prescriptive unfulfilled, prescriptive negation violations, descriptive drift — live in **`references/adherence-verdicts.md`**. Render each non-zero row using its template; render "skipped — no existing-world resource" for descriptive drift when existing-world.pl was not supplied.
 
 ## Resources
 | ID | Path | Claims |
@@ -372,14 +344,7 @@ Tell the user:
 
 ### Hand off for human review
 
-`thoughts/adherence_report.md` is a `reviewed_by(_, human_review)` artifact in the target KB — it is the terminal pipeline output a human reads to decide whether the implementation entails the original proposition. The "Headline Verdicts" section (§6 template above) is structured exactly so a reviewer sees, in order:
-
-1. **Pattern 3 violations** — counterfactual claims whose forbidden fact is still present in the implementation. These are *named obligation breaches*: the hypothesis declared a fact had to flip and it didn't. A non-zero count here often invalidates an otherwise high adherence score, which is why it appears above the structural numbers.
-2. **Prescriptive unfulfilled / negation violations** — required facts missing, or required-absent facts still present. Same structural shape as Pattern 3 on the prescriptive side.
-3. **Contradictions** — direct disagreements between resources detected by `find_contradictions/1`.
-4. **Descriptive drift** — only when existing-world.pl is loaded as a resource.
-
-A reviewer who reads only the top of the report should still know whether the implementation honored its formal obligations. If your run finds zero violations across all four categories, say so explicitly — the absence of bad news is itself a verdict.
+`thoughts/adherence_report.md` is a `reviewed_by(_, human_review)` artifact in the target KB — the terminal pipeline output a human reads to decide whether the implementation entails the original proposition. The Headline Verdicts ordering (Pattern 3 → prescriptive unfulfilled / negation violations → contradictions → descriptive drift) is documented in `references/adherence-verdicts.md`; if a run finds zero violations across all four categories, say so explicitly — absence of bad news is itself a verdict.
 
 ---
 
@@ -389,54 +354,4 @@ The plugin ships a SWI-Prolog wiki at `${CLAUDE_SKILL_DIR}/../../references/prol
 
 ## Prolog Reference
 
-### adherence.pl predicates
-
-Bundled at `${CLAUDE_SKILL_DIR}/prolog/adherence.pl`.
-
-#### Structural (resource-vs-resource)
-
-| Predicate | What it does |
-|-----------|-------------|
-| `all_resources(-Rs)` | List all distinct resource IDs in the facts file |
-| `total_claims(+R, -N)` | Count total claims for resource R |
-| `shared_claims(+R1, +R2, -Claims)` | Claims present in both R1 and R2 |
-| `gap_claims(+Prime, +Other, -Claims)` | Claims in Prime missing from Other |
-| `extension_claims(+Prime, +Other, -Claims)` | Claims in Other not in Prime |
-| `find_contradictions(-Pairs)` | Find pairs of conflicting claims across resources |
-| `adherence_score(+Other, +Prime, -Score)` | 0.0–1.0 prime-relative adherence |
-| `jaccard_score(+R1, +R2, -Score)` | 0.0–1.0 symmetric Jaccard similarity |
-| `adherence_report(+Prime)` | Print full prime-relative report to stdout |
-| `symmetric_report` | Print pairwise symmetric report to stdout |
-| `universal_claim(-Claim)` | Claims present across all resources |
-
-#### Label-aware (consume `thoughts/hypothesis.pl`)
-
-These predicates require `hypothesis.pl` to be `consult/1`'ed into the swipl session alongside `adherence_facts.pl`. They guard themselves with `hypothesis_loaded/0` and silently return `[]` (or print a skip message) when no hypothesis is loaded.
-
-| Predicate | What it does |
-|-----------|-------------|
-| `hypothesis_loaded` | Semidet guard — succeeds when hypothesis predicates are visible |
-| `counterfactual_violations(+Impl, -Vs)` | Pattern 3 detector — counterfactual claim whose forbidden fact is still in Impl |
-| `counterfactual_honored(+Impl, -Hs)` | Counterfactual claim whose forbidden fact is correctly absent |
-| `prescriptive_unfulfilled(+Impl, -Us)` | Prescriptive positive premise missing from Impl |
-| `prescriptive_fulfilled(+Impl, -Fs)` | Prescriptive positive premise present in Impl |
-| `prescriptive_negation_violations(+Impl, -Vs)` | Prescriptive negated premise still asserted in Impl |
-| `descriptive_drift(+Impl, +Existing, -Lost)` | Facts in existing-world that no longer appear in Impl |
-| `label_aware_report(+Impl)` | Print the Headline Verdicts block to stdout |
-| `label_aware_facts_out(+Impl, +Stream)` | Emit machine-readable result/N facts mirroring the report |
-
-### Ad-hoc query patterns
-
-```prolog
-% What does only resource A assert (not B or C)?
-findall(C, (asserts(a, C), \+ asserts(b, C), \+ asserts(c, C)), Unique)
-
-% How many claims does each resource make?
-forall(
-  (all_resources(Rs), member(R, Rs)),
-  (total_claims(R, N), format('~w: ~w claims~n', [R, N]))
-)
-
-% Find all values for a given predicate across resources
-findall(R-V, asserts(R, has_property(key_name, V)), Pairs)
-```
+The full `adherence.pl` predicate catalogue (structural and label-aware) plus ad-hoc query patterns lives in **`references/adherence-queries.md`**. The structural family (`all_resources/1`, `shared_claims/3`, `gap_claims/3`, `extension_claims/3`, `find_contradictions/1`, `adherence_score/3`, `jaccard_score/3`, `adherence_report/1`, `universal_claim/1`) operates resource-vs-resource. The label-aware family (`hypothesis_loaded/0`, `counterfactual_violations/2`, `counterfactual_honored/2`, `prescriptive_unfulfilled/2`, `prescriptive_fulfilled/2`, `prescriptive_negation_violations/2`, `descriptive_drift/3`, `label_aware_report/1`, `label_aware_facts_out/2`) consumes `thoughts/hypothesis.pl` and powers the Headline Verdicts.

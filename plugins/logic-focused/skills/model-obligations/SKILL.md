@@ -81,140 +81,17 @@ so the diff between worlds is auditable.
 
 ## Dual emission — `target-world.pl` and `target-world-shape.lean`
 
-`target-world.pl` continues to carry the flat ground facts (downstream Prolog
-consumers, adherence checking, and `instantiate-properties` query patterns all
-need them). In addition, this skill emits `thoughts/target-world-shape.lean` —
-the structural translation that `prove-invariants` consumes directly instead of
-transcribing facts into Lean `List` literals. The two outputs encode the same
-world; they differ in how the world is represented for each downstream tool.
+`target-world.pl` continues to carry the flat ground facts (downstream Prolog consumers, adherence checking, and `instantiate-properties` query patterns all need them). In addition, this skill emits `thoughts/target-world-shape.lean` — the structural translation that `prove-invariants` consumes directly instead of transcribing facts into Lean `List` literals. Both outputs encode the same world; they differ only in representation.
 
-The Lean shape file declares:
-
-- **One inductive enum type per closed Prolog domain.** Each distinct atom in
-  a closed argument position becomes a constructor. Domains tagged
-  `provenance(_, descriptive)` and `provenance(_, prescriptive)` whose values
-  are simple atoms with no path separators, file extensions, or hash-shaped
-  patterns, and whose distinct count is small (the rule of thumb is ≤ 20
-  values), are closed. Genuinely-open domains (file paths, free-form
-  identifiers, content pulled from external systems) stay as `String`.
-- **One inductive `Prop` per Prolog predicate, with one constructor per
-  ground fact.** Constructor names should describe the ground tuple in named
-  terms — `lob_shared`, `notification_pdf_renderer` — not positional.
-- **For each counterfactual claim, a parallel CF-augmented inductive
-  predicate** (`PCF1`, `PCF2`, …) that mirrors the target-world predicate
-  plus the counterfactually-removed constructor. The necessity lemma proves
-  the property fails in the CF-extended world by direct constructor citation.
-
-Worked example, lifted from the 2312-Extra rework
-(source: `~/Projects/deltadental/wt/BE/2312-extra/thoughts/lean/Proofs/InvoiceProperties.lean`):
-
-```lean
-import Ontology.Prelude
-
-set_option autoImplicit false
-
-namespace TargetWorld
-
-inductive ArtifactVariant where
-  | lob_bound | sendgrid_attachment | azure_stored
-  deriving DecidableEq, Repr
-
-inductive ArtifactContent where
-  | shared_invoice_body | address_overlay_zone_empty | audit_footer
-  deriving DecidableEq, Repr
-
-inductive ArtifactIncludes : ArtifactVariant → ArtifactContent → Prop where
-  | lob_shared      : ArtifactIncludes .lob_bound           .shared_invoice_body
-  | lob_address     : ArtifactIncludes .lob_bound           .address_overlay_zone_empty
-  | sendgrid_shared : ArtifactIncludes .sendgrid_attachment .shared_invoice_body
-  | azure_shared    : ArtifactIncludes .azure_stored        .shared_invoice_body
-  | azure_audit     : ArtifactIncludes .azure_stored        .audit_footer
-
--- Counterfactual augmentation: re-introduce a previously-removed pair.
-inductive ArtifactIncludesCF1 : ArtifactVariant → ArtifactContent → Prop where
-  | lob_shared          : ArtifactIncludesCF1 .lob_bound           .shared_invoice_body
-  | lob_address         : ArtifactIncludesCF1 .lob_bound           .address_overlay_zone_empty
-  | sendgrid_shared     : ArtifactIncludesCF1 .sendgrid_attachment .shared_invoice_body
-  | azure_shared        : ArtifactIncludesCF1 .azure_stored        .shared_invoice_body
-  | azure_audit         : ArtifactIncludesCF1 .azure_stored        .audit_footer
-  | sendgrid_audit_back : ArtifactIncludesCF1 .sendgrid_attachment .audit_footer
-
-end TargetWorld
-```
-
-The `prove-invariants` skill then states theorems in quantified-invariant form
-over these declarations — `∀ v, ArtifactIncludes v .audit_footer → v = .azure_stored`
-closes by `intro v h; cases h <;> rfl`. The kernel handles the index disagreement
-case-by-case rather than reducing to a `decide`-over-list call.
-
-### Domain-typing decisions are hand-curated per ticket
-
-The tiered classifier sketched in the structural-translation ticket
-(`ticket-structural-prolog-lean-translation.md` — Tier 1 / Tier 2 / Tier 3) is
-intentionally **on hold**. For v1, decide per-position case-by-case as
-target-world is constructed: lift Prolog atoms to inductive enum constructors
-when the domain is small and the values are simple atoms; leave the position
-as `String` when the domain is open. Bias toward false-open — a falsely-closed
-domain over-commits to KB completeness and makes Lean's `cases h` exhaust only
-the enumerated subset; a falsely-open domain degrades to `decide`-over-list,
-trips the lean-expert hard rule, and surfaces the misclassification recoverably.
-
-The classifier may land in a future iteration if the case-by-case decisions
-prove repetitive enough to mechanize. Do not implement it speculatively.
+The Lean shape file declares one inductive enum per closed Prolog domain, one inductive `Prop` per Prolog predicate (one constructor per surviving ground fact), and one parallel CF-augmented inductive predicate per counterfactual claim. Worked example, the 2312-Extra rework, the close-vs-open-domain heuristic, and the rationale for keeping the tiered classifier on hold for v1 all live in **`references/dual-emission-example.md`**.
 
 ## Constructing target-world: counterfactual + prescriptive encoding
 
-The mechanics from the old conditional-mode encoding remain, but reframed as
-"how target-world is built" rather than "two proof modes." Counterfactuals are
-applied via a target-relation filter; prescriptive obligations are asserted
-directly; per-property verdicts are derived by querying the target relation.
+The mechanics: counterfactuals are applied via a target-relation filter (`depends_on_target(X, Y) :- depends_on(X, Y), \+ cf_fact(X, Y)`); prescriptive obligations are asserted directly as new facts with `provenance(_, prescriptive)` tags; per-property verdicts come from querying the target relation.
 
-```prolog
-% From hypothesis.pl — counterfactual claims:
-%   :- claim_label(h_07, counterfactual).
-%   :- claim_premise(h_07, depends_on(cli_tool, logging)).
-%   :- claim_negation_provenance(h_07, depends_on(cli_tool, logging), absent).
-cf_fact(cli_tool, logging).
-cf_fact(cli_tool, formatter).
-cf_fact(formatter, logging).
+A property verdict is `consistent` only when (a) the target-relation check succeeds and (b) every counterfactual feeding into it is `load_bearing` — re-introducing the cf fact must re-violate at least one property; otherwise it's `extraneous` and gets recorded for loopback to `decompose-proposition`.
 
-% Target relation: existing-world's depends_on minus counterfactuals.
-depends_on_target(X, Y) :-
-    depends_on(X, Y),
-    \+ cf_fact(X, Y).
-
-% Prescriptive obligations from hypothesis.pl (claim_label/2 = prescriptive)
-% are asserted directly into target-world as new depends_on/2 facts with
-% provenance(_, prescriptive) tags — they extend the target relation.
-
-% Property verdict: does the property hold in the target relation?
-dep_t_reaches(A, B) :- depends_on_target(A, B).
-dep_t_reaches(A, B) :- depends_on_target(A, Mid), dep_t_reaches(Mid, B).
-
-:- (\+ dep_t_reaches(cli_tool, logging)
-    -> assertz(verdict(p_no_cli_to_logging, consistent))
-    ;  findall(P, dep_t_reaches(cli_tool, logging), Ps),
-       assertz(verdict(p_no_cli_to_logging, inconsistent)),
-       assertz(counterexample(p_no_cli_to_logging, Ps))).
-
-% Counterfactual minimality check — for each cf_fact F, re-introducing F to
-% the target relation must re-violate at least one property. If not, F is
-% extraneous and the hypothesis's counterfactual list is over-specified.
-depends_on_target_plus_cli_logging(X, Y) :- depends_on_target(X, Y).
-depends_on_target_plus_cli_logging(cli_tool, logging).
-dep_tpl_reaches(A, B) :- depends_on_target_plus_cli_logging(A, B).
-dep_tpl_reaches(A, B) :- depends_on_target_plus_cli_logging(A, Mid),
-                         dep_tpl_reaches(Mid, B).
-
-:- (dep_tpl_reaches(cli_tool, logging)
-    -> assertz(cf_status(depends_on(cli_tool, logging), load_bearing))
-    ;  assertz(cf_status(depends_on(cli_tool, logging), extraneous))).
-```
-
-A property verdict is `consistent` only when (a) the target-relation check
-succeeds and (b) every counterfactual feeding into that property is
-`load_bearing`. Any `extraneous` counterfactual gets recorded for a loop back
-to `decompose-proposition` to prune the claim list.
+Full Prolog encoding — cf-fact assertions, target-relation rule, transitive-closure helper, verdict directive, counterfactual minimality check — lives in **`references/target-world-encoding.md`**.
 
 ## Delegate to `prolog-prover`
 
@@ -256,61 +133,7 @@ the sub-agent.
 
 ## Methodology
 
-Read `references/prolog-proof-method.md` before writing any encodings. The key
-principles are summarized here but the reference has full detail with patterns.
-
-### One Encoding at a Time
-
-Write the helper rules, then test them before adding the verdict directive.
-Never write all parts before checking. Confirm the helper rules return expected
-intermediate results before asserting a verdict.
-
-### Verdict Strategies
-
-For each property shape, prefer a specific encoding strategy when querying
-target-world:
-
-| Property shape | Strategy |
-|---------------|----------|
-| "All X satisfy P" | `forall(X, P(X))` or `\+ (X, \+ P(X))` |
-| "No X satisfies P" | `\+ P(X)` or `findall(X, P(X), [])` |
-| "There exists X" | `P(X), cut` (find first), confirm with `findall` |
-| "A reaches B transitively" | Recursive `reaches/2` rule + query |
-| "A cannot reach B" | `\+ reaches(A, B)` |
-| "X is unique" | `findall(X, P(X), Xs), length(Xs, 1)` |
-| "Groups are disjoint" | `\+ (member(X, Group1), member(X, Group2))` |
-| "Count equals N" | `findall(_, P(_), Bag), length(Bag, N)` |
-
-### Counterexample Search is the Verdict
-
-Rather than just confirming a positive result, always search for counterexamples.
-A `consistent` verdict is earned when you have genuinely tried to falsify the
-property in target-world and failed:
-
-```prolog
-% Searching for counterexamples — if this returns [], the verdict is consistent
-findall(X, (category(X), \+ has_owner(X)), Unowned),
-(Unowned == [] -> assertz(verdict(p_all_categories_owned, consistent))
-                ; assertz(verdict(p_all_categories_owned, inconsistent)),
-                  assertz(counterexample(p_all_categories_owned, Unowned)))
-```
-
-### Namespace Isolation
-
-All helper predicates for a property should be prefixed or wrapped to avoid
-clobbering other properties' helpers. Use descriptive, property-scoped names:
-
-```prolog
-% Good — scoped to property
-auth_reaches(A, B) :- depends_on(A, B).
-auth_reaches(A, B) :- depends_on(A, Mid), auth_reaches(Mid, B).
-
-% Risky — generic name may conflict
-reaches(A, B) :- ...
-```
-
-If multiple properties need the same helper (e.g. `reaches/2`), define it once
-at the top of `target-world.pl` under a `% Shared helpers` section.
+Read **`references/prolog-proof-method.md`** before writing any encodings. The reference covers: one-encoding-at-a-time discipline (helper rules first, verdict directive last), the property-shape → encoding strategy table (`forall` / `findall` / recursive reaches / disjoint membership / cardinality patterns), counterexample-search-as-verdict (a `consistent` verdict is earned only after a genuine falsification attempt fails), and namespace isolation for helper predicates. Do not re-derive these from this file.
 
 ## Process
 

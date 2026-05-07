@@ -18,69 +18,15 @@ If a property is unprovable, loop back to `decompose-proposition` to refine.
 
 ## Boundary: prolog → lean (carrier: `thoughts/target-world.pl`)
 
-This skill sits at the `prolog → lean` boundary. The mediating artifact is `thoughts/target-world.pl`.
+This skill sits at the `prolog → lean` boundary. The boundary gains universal quantification (Lean can state and discharge `∀x. P(x)` directly) and loses CWA negation provenance (Lean's `¬P` collapses Prolog's `absent` / `contradicts` distinction).
 
-- **Gain crossing this boundary**: Universal properties Prolog cannot state. Prolog can only enumerate ground queries under closed-world negation; Lean can express and discharge `∀x. P(x)` directly.
-- **Loss crossing this boundary**: CWA negation provenance is stripped. Prolog distinguishes two kinds of falseness — `absent(F)` (F is not declared in the KB; false by closed-world default) and `contradicts(F, G)` (F is excluded because the KB asserts a conflicting fact G). Lean's `¬P` collapses both.
+The `provenance` annotation is the **only** mechanism that prevents that loss from being silent. Every theorem in `thoughts/lean/Proofs/*.lean` MUST carry a `provenance(absent | contradicts)` annotation, value read off the corresponding fact's ontology label in `target-world.pl` — do not infer it. Enforcement rule: `cwa_negation_neq_lean_proof` — treat dropping the annotation as a correctness bug, not a style issue.
 
-The `provenance` annotation is the **only** mechanism that prevents that loss from being silent. Every theorem in `thoughts/lean/Proofs/*.lean` MUST carry a `provenance` annotation drawn from the domain `[absent, contradicts]`:
-
-- `absent` — "False because the fact is not declared in the KB (CWA default). Fragile — depends on KB completeness; does not hold if KB is incomplete."
-- `contradicts` — "False because the KB contains an explicit conflicting fact. Structurally necessary — holds regardless of KB completeness."
-
-The annotation value is **read off the ontology label** attached to the corresponding fact in `target-world.pl`. Do not infer it.
-
-**Enforcement rule** — `cwa_negation_neq_lean_proof`: A fact that is false because absent from the KB is categorically different from a formally disproved fact. Treat dropping or eliding this annotation as a correctness bug, not a style issue.
-
-Reference: `../../references/ontology.md`.
+Full semantics of the two annotation values, the boundary's gain/loss table, and the cross-skill ontology label propagation rules live in **`../../references/ontology.md`**.
 
 ## Encoding shape — structural translation, not list transcription
 
-The Prolog → Lean translation has two layers that must be applied together. Skipping either degrades Lean to "type-checked Prolog" and forfeits the kernel guarantee.
-
-### Layer 1 — domain values become inductive enums; predicates become inductive `Prop`
-
-Every closed-domain Prolog atom lifts to a constructor of an inductive enum. Every Prolog predicate over closed domains lifts to an inductive `Prop` with one constructor per ground fact. Strings stay strings only when the domain is genuinely open (file paths, free-form identifiers, content the codebase pulls from external systems).
-
-```lean
--- Domain values lifted to enums
-inductive ArtifactVariant where
-  | lob_bound | sendgrid_attachment | azure_stored
-  deriving DecidableEq, Repr
-
-inductive ArtifactContent where
-  | shared_invoice_body | address_overlay_zone_empty | audit_footer
-  deriving DecidableEq, Repr
-
--- Predicate as inductive Prop, one constructor per ground fact
-inductive ArtifactIncludes : ArtifactVariant → ArtifactContent → Prop where
-  | lob_shared      : ArtifactIncludes .lob_bound           .shared_invoice_body
-  | lob_address     : ArtifactIncludes .lob_bound           .address_overlay_zone_empty
-  | sendgrid_shared : ArtifactIncludes .sendgrid_attachment .shared_invoice_body
-  | azure_shared    : ArtifactIncludes .azure_stored        .shared_invoice_body
-  | azure_audit     : ArtifactIncludes .azure_stored        .audit_footer
-```
-
-Why it works: `cases h` on an inductive predicate over inductive enum indices closes by *kernel-level constructor disjointness*. Lean reduces `.lob_bound ≟ .azure_stored` to "different constructors, contradiction" in one step. With `String` indices the same unification has no kernel rule, so `nomatch` and `rintro` fall back to propositional-equality machinery — and `decide`/`generalize` workarounds become tempting but forbidden (see hard rule below). Lifting closed domains to enums dissolves the dependent-elimination blocker rather than working around it.
-
-This recovers CWA-style reasoning *inside* OWA in a principled way: when a Lean type is a finite inductive enum, Lean *does* know its inhabitants exhaustively by construction. Encoding a closed Prolog domain as an inductive enum is how the closed-world assumption gets typed *into* the Lean encoding rather than informally assumed.
-
-For each counterfactual claim, declare a parallel inductive predicate (e.g., `InterfaceMethodCF4`, `ArtifactIncludesCF1`) that mirrors the target-world predicate plus the counterfactually-removed constructor. The necessity lemma proves the property holds in the CF-extended world by direct constructor citation. Constructor duplication between target-world and CF-augmented twins is acceptable for v1; with 4–5 counterfactuals on a single ticket this proliferates, and parameterization over an "extra facts" set is a future optimization.
-
-### Layer 2 — theorems are stated as quantified invariants, not enumerated conjunctions
-
-When the underlying claim has invariant shape — "every fact (a, b) with predicate P satisfies Q" — state the property as `∀ a b, P a b → Q a b`, not as a conjunction of specific pair facts. The invariant form expresses the underlying spec directly; the enumerated form is a list of test cases dressed up as a theorem.
-
-```lean
--- Validated form (intra-predicate invariant; fp_i03 in 2312-Extra):
-@[ontology .descriptive, .absent]
-theorem fp_i03 :
-    ∀ v : ArtifactVariant, ArtifactIncludes v .audit_footer → v = .azure_stored := by
-  intro v h
-  cases h <;> rfl
-```
-
-The four eliminated cases (`.lob_shared`, `.lob_address`, `.sendgrid_shared`, `.azure_shared`) close by index disagreement on the second argument; the surviving `.azure_audit` case discharges by `rfl`. The proof is two tactics over a five-constructor predicate.
+The Prolog → Lean translation has two layers, applied together: domain values become inductive enums, predicates become inductive `Prop`s with one constructor per ground fact (Layer 1); theorems are stated as quantified invariants closed by `cases h <;> ...`, not enumerated conjunctions (Layer 2). Skipping either degrades Lean to "type-checked Prolog" and forfeits the kernel guarantee.
 
 The validated structural shapes (2312-Extra, 2026-05-06):
 
@@ -90,35 +36,9 @@ The validated structural shapes (2312-Extra, 2026-05-06):
 | Cross-predicate disjointness | `∀ k v, SeededValue k v → ¬ IsExternalId v` | `intro k v h hext; cases h <;> cases hext` |
 | Intra-predicate invariant | `∀ v, ArtifactIncludes v .audit_footer → v = .azure_stored` | `intro v h; cases h <;> rfl` |
 
-The intra-predicate invariant case is load-bearing — it is the form most often needed for non-trivial structural claims, and it works.
+In any theorem whose hypotheses or goal mention a target-world predicate, `decide` / `native_decide` / `generalize` are **forbidden as the closing move** — halt and report rather than route around the encoding. Imports rely on the plugin's scaffold (`import Ontology.Prelude`) for the `exhaust` / `witnesses` macros and the `@[ontology .X, .Y]` marker attribute.
 
-Layer 2 is *enabled by* Layer 1: `cases h` over an invariant requires inductive-predicate hypotheses, which require the inductive-enum encoding. Skip Layer 1 and Layer 2 has no proof path.
-
-### Hard rule — forbidden tactics in target-world context
-
-In any theorem whose hypotheses or goal mention a predicate emitted from `target-world.pl`, the following tactics are **forbidden as the closing move**:
-
-- `decide`
-- `native_decide`
-- `generalize` (when used to abstract concrete-string indices in order to enable `cases`)
-
-If the proof requires one of these, **halt and report**: the upstream encoding is incorrect — the predicate's domain is being treated as open (strings, lists) when it should be lifted to an inductive enum (Layer 1). The remediation is to escalate back to `model-obligations` for re-encoding, not to find a different tactic. A trivial close on a structurally non-trivial claim is the same kind of debate foul as a fabricated counterexample: the proof exists but does not do the work the claim implies.
-
-Legitimate uses NOT covered by the rule: `decide` on natural-number arithmetic, on a `Decidable` instance proof, on small literal goals with no target-world predicate, or as an internal step (`cases h <;> decide`) where the residual sub-goal is genuinely decidable and not target-world list membership; `generalize` in standard Mathlib idioms where the abstraction is not a workaround for a missing inductive-enum encoding. Bias toward false-positive (over-flag) — a flagged legitimate use is recoverable; a missed forbidden use entrenches the anti-pattern.
-
-The full tactic vocabulary, hard-rule legitimate-use list, post-emit grep self-check, and worked examples live in `${CLAUDE_SKILL_DIR}/../../agents/lean-expert.md` (the agent the briefing in §Delegate below spawns). Read that file rather than re-deriving the rule.
-
-### Ontology scaffold import
-
-The plugin ships a Lean scaffold at `${CLAUDE_SKILL_DIR}/../../lean/Ontology/Prelude.lean` exposing two enums (`Ontology.Origin`, `Ontology.NegationProvenance`), two tactic macros (`exhaust` = `intro h; cases h`, `witnesses .c1, .c2, …` = `refine ⟨c1, c2, …⟩`), and the `@[ontology X, Y]` marker attribute for machine-extractable origin and provenance metadata. Import it from emitted proof files:
-
-```lean
-import Ontology.Prelude
-```
-
-The scaffold is purely additive — failing to use it produces the same proof as today; using it produces a more uniform proof. `exhaust` and `witnesses` are the canonical replacements for the forbidden tactics in target-world context. The `@[ontology .X, .Y]` attribute is the structured replacement for the `/- provenance(...) -/` docstring; the docstring form is preserved as a fallback for proofs where the attribute is inconvenient (the value is the same in either form).
-
-Wiring the user's `thoughts/lean/` project to see this import is part of `setup-lean-project`; if a build fails on `import Ontology.Prelude`, fall back to the docstring-only annotation form and surface a setup-needed note.
+Full Layer 1 / Layer 2 derivation, the hard rule's legitimate-use carve-outs, and the ontology scaffold details live in **`references/structural-encoding.md`**. The lean-expert agent (`agents/lean-expert.md` and `agents/references/lean-tactics.md`) carries the worked before/after pairs and post-emit grep self-check; do not re-derive them here.
 
 ## Cited reference resources
 
@@ -193,257 +113,55 @@ Counterfactual edges have already been excluded by the upstream skill, and presc
 
 ## Gating — route each property by ontology label
 
-Not every property earns a Lean proof. The Lean kernel earns its keep on
-claims requiring induction, infinite-domain quantification, or non-trivial
-rewriting; trivially-decidable properties (membership in a small concrete
-enum, KB readouts, vacuous absences) cost build time without producing
-information the Prolog model layer didn't already carry.
-
-Route each `formal_property/3` by its ontology label and negation provenance:
+Not every property earns a Lean proof. Route each `formal_property/3` by its ontology label and negation provenance:
 
 | Ontology label | Provenance | Action |
 |---|---|---|
-| `counterfactual` | `contradicts` | **Run Lean.** Necessity lemma proves the CF is load-bearing — tactical proof using a CF-augmented inductive predicate, not `decide`. |
-| `counterfactual` | `absent` | **Skip Lean.** Emit a `cwa_check` artifact in `lean_proof_results.pl`: confirm Prolog absence, record fact id. No theorem. |
-| `prescriptive` | (any) | **Run Lean iff structurally rich** — induction, quantification over an open domain, cross-predicate reasoning. **Skip if** the property reduces to literal-list membership over an inductive enum (then the constructor name *is* the proof; no theorem needed). |
+| `counterfactual` | `contradicts` | **Run Lean.** Necessity lemma proves the CF is load-bearing. |
+| `counterfactual` | `absent` | **Skip Lean.** Emit a `cwa_check` artifact in `lean_proof_results.pl`. |
+| `prescriptive` | (any) | **Run Lean iff structurally rich** — induction, quantification over an open domain, cross-predicate reasoning. Skip if the property reduces to literal-list membership over an inductive enum. |
 | `descriptive` | (any) | **Skip Lean.** Descriptive claims are KB readouts; the Prolog model already entails them. |
 
-The conservative starting heuristic: skip Lean iff *all* `formal_property`
-premises are `negation_provenance(absent)` AND the property body is
-finite-list membership. Anything else still runs Lean. Bias toward false-run
-during initial rollout — false-skip means losing a real proof; false-run
-means burning build time on a tautology. The cost is asymmetric.
+Bias toward false-run during initial rollout — false-skip means losing a real proof; false-run means burning build time on a tautology. The hard rule on forbidden tactics is the recoverable signal in the other direction: a property that can *only* close via `decide` halts the run rather than gating through.
 
-After the structural-translation rule landed, more properties become
-"structurally rich" and the gate naturally tightens. The hard rule on
-forbidden tactics provides a sharp signal in either direction: if a theorem
-can *only* close via `decide` / `native_decide` / `generalize`, that is not
-a Lean-tractable property at all — it is a property whose encoding upstream
-is wrong, and the right response is to escalate to `model-obligations` for
-re-encoding rather than to gate it through to Lean. The gate and the hard
-rule together close the loop: Lean either runs on a structurally-rich
-theorem and produces real evidence, or doesn't run because the property is
-trivially decidable, or halts because the encoding is broken. No middle
-ground where Lean fakes a proof.
+For each property gated out of Lean, emit `cwa_check(PropId, AbsentFactId, verified | violated)` plus `lean_skipped(PropId, Reason)` in `lean_proof_results.pl`. The `provenance_annotation/3` chain is still required so `instantiate-properties` keeps the ontology label intact.
 
-### `cwa_check` records replace skipped Lean proofs
-
-For each property gated out of Lean, emit a `cwa_check/3` record in
-`lean_proof_results.pl` instead of `theorem_verdict/2`:
-
-```prolog
-% cwa_check(PropId, AbsentFactId, verified | violated).
-% verified  → swipl-confirmed: \+ Fact succeeds in target-world.
-% violated  → swipl-confirmed: Fact still derivable; loopback to model-obligations.
-cwa_check(p_no_cli_to_logging, depends_on(cli_tool, logging), verified).
-
-% lean_skipped/2 — reason annotation co-emitted with each cwa_check.
-lean_skipped(p_no_cli_to_logging, trivially_decidable_over_kb_listing).
-
-% provenance_annotation/3 still required — same chain as a Lean theorem so
-% downstream instantiate-properties keeps its ontology label intact.
-provenance_annotation(p_no_cli_to_logging, depends_on(cli_tool, logging), absent).
-```
-
-Run the absence check by direct `swipl` query against `target-world.pl`:
-
-```bash
-swipl -g "consult('thoughts/target-world.pl'),
-          ( \+ depends_on(cli_tool, logging) -> Verdict = verified ; Verdict = violated ),
-          format('~w', [Verdict]), halt." 2>/dev/null
-```
-
-The TDD stage continues to receive every property — `instantiate-properties`
-emits the same number of tests with the same ontology labels. Only the
-*proof shape* differs: `cwa_check`-backed projections carry a
-`proof_strategy: prolog-cwa-check` annotation in their test comment block.
-
-### Skip rationale
-
-Skipping a Lean proof is recorded, not silent. Every `cwa_check` carries an
-explicit `lean_skipped(PropId, Reason)` fact. Reasons:
-
-- `trivially_decidable_over_kb_listing` — the property reduces to membership
-  in an inductive enum and the constructor name *is* the proof.
-- `descriptive_kb_readout` — the property restates an existing-world fact
-  the Prolog model already entails.
-- `cwa_absence_verified_directly` — the absence is the property; Prolog's
-  `\+` confirmation is the entire content.
-
-A reviewer reading `lean_proof_results.pl` should be able to tell at a
-glance which properties earned a kernel guarantee and which earned a
-Prolog-CWA confirmation, without having to cross-reference the Lean source.
+Full table commentary, the `cwa_check` worked example, the `swipl` absence-check command, and the `lean_skipped` reason taxonomy live in **`references/gating.md`**.
 
 ## Proof patterns
 
-The ontology label on each property in `target-world.pl` selects the proof pattern. Read every property's label *before* writing any Lean. Every pattern below uses the structural encoding from "Encoding shape" above — inductive enums for closed domains, inductive `Prop` predicates with one constructor per ground fact, theorems as quantified invariants closed by `cases` / `intro` / `exact` / `refine`.
+The ontology label on each property in `target-world.pl` selects the proof pattern; read every property's label *before* writing any Lean. Three patterns + one fallback:
 
-### Descriptive properties
+- **Descriptive** → single theorem, `∀ x … P x → Q x` closed by `cases h <;> tactic`.
+- **Counterfactual** → sufficiency theorem over the (already-pruned) target predicate, plus one necessity lemma per negated-premise fact citing the parallel CF-augmented predicate.
+- **Prescriptive** → conjunction of constructor witnesses via `witnesses .c1, .c2, …`.
+- **Genuinely open domains** (file paths, free-form identifiers) → ground-fact-list encoding remains valid, but `decide` over a `String`-indexed list is still forbidden; if no structural proof path exists, escalate the property to `model-obligations` as a `cwa_check`.
 
-The property is asserted directly about the world. Encode the predicate inductively, then prove the universal claim over its constructors.
+Full templates per pattern (file headers, inductive-predicate scaffolding, sufficiency / necessity decomposition, ontology-attribute placement) live in **`references/proof-patterns.md`**.
 
-```lean
-import Ontology.Prelude
-
-set_option autoImplicit false
-
--- Property: {natural language description}
--- Source: thoughts/target-world.pl
-
-{inductive enum domains and inductive Prop predicates,
- lifted from target-world.pl ground facts}
-
-@[ontology .descriptive, .absent]
-theorem {property_name} : ∀ {x …}, P x … → Q x … := by
-  intro x … h
-  cases h <;> {tactic that discharges the surviving sub-goals}
-```
-
-The descriptive class is where Layer 2's spec-shape pays off: the theorem reads as the underlying invariant, not as a list of pair facts.
-
-### Counterfactual properties
-
-The property holds *iff* certain facts are absent. `target-world.pl` already excludes those facts; the target predicate is the one you declare, with one constructor per surviving ground fact.
-
-Each counterfactual property has two proof obligations:
-
-1. **Sufficiency** — prove the property over the inductive predicate that mirrors the target-world world. The validated shape is `intro x …; cases h <;> cases hext` for cross-predicate disjointness, or `intro h; cases h` for a single-predicate empty-inductive negation.
-2. **Necessity** — for each negated premise, declare a parallel inductive predicate (`PCF1`, `PCF2`, …) that adds the counterfactually-removed constructor. The necessity lemma proves the property *fails* in the CF-augmented world by direct constructor citation. A necessity lemma whose witness reduces to `False` means the fact was never load-bearing — flag as extraneous and loop back.
-
-A counterfactual property is only proven when sufficiency closes *and* every necessity lemma closes.
-
-```lean
-import Ontology.Prelude
-
-set_option autoImplicit false
-
--- Property: {natural language description}
--- Source: thoughts/target-world.pl
-
-{inductive predicate over the target world}
-
-inductive {P}CF1 : … → … → Prop where
-  | … : {P}CF1 …                  -- mirror constructors
-  | cf1_witness : {P}CF1 a₀ b₀    -- counterfactually-removed fact, restored
-  …
-
-/- provenance(contradicts) -/
-@[ontology .counterfactual, .contradicts]
-theorem {property_name}_sufficient : ∀ x …, P x … → ¬ Q x … := by
-  intro x … h hQ
-  cases h <;> cases hQ
-
-/- provenance(contradicts) -/
-@[ontology .counterfactual, .contradicts]
-theorem {property_name}_needs_cf1 : ∃ x …, {P}CF1 x … ∧ Q x … := by
-  exact ⟨a₀, b₀, …, .cf1_witness, …⟩
-```
-
-Both the `/- provenance(...) -/` docstring AND the `@[ontology .X, .Y]` attribute are acceptable; the attribute is preferred when emitting fresh proofs because the post-emit scanner reads it without parsing comment syntax. The docstring form remains valid for backward compatibility and as a fallback when the scaffold import is unavailable.
-
-### Prescriptive properties
-
-The property describes an *obligation* that should hold. `target-world.pl` already contains the obligation as a fact; the inductive predicate has a constructor for it.
-
-```lean
-import Ontology.Prelude
-
-set_option autoImplicit false
-
--- Property: {natural language description}
--- Source: thoughts/target-world.pl (includes prescriptive obligation facts)
-
-{inductive predicate including the prescriptive obligation as a constructor}
-
-@[ontology .prescriptive, .absent]
-theorem {property_name} : P arg₁ arg₂ ∧ … := by
-  witnesses .{constructor₁}, .{constructor₂}, …
-```
-
-The `witnesses` macro from the ontology scaffold is the canonical form for prescriptive conjunctions of required facts. For mixed obligations (`witnesses .c1, .c2, ?_, ?_`), the unfilled holes become sub-goals that close with `exhaust` or with explicit constructor witnesses on CF-augmented predicates (the necessity-adjacent-to-prescriptive pattern from the 2312-Extra fp_i03 case).
-
-### Genuinely open domains
-
-Strings stay strings only when the domain is genuinely open — file paths, free-form identifiers, content the codebase pulls from external systems. For these, the ground-fact-list encoding remains valid, but theorems closing by `decide` over a `String`-indexed list are still forbidden in target-world context (hard rule above). If a property over a genuinely-open domain has no structural proof path, the property's encoding belongs in `model-obligations` as a `cwa_check` rather than a Lean theorem — escalate, don't `decide`.
-
-## Proof-as-specification frame
-
-The default purpose of a Lean proof in this pipeline is to serve as an **identifiable specification** — a readable formal artifact that other readers and downstream tools (`instantiate-properties`, the test generator, a human revisiting the file a year from now) can interpret directly as the underlying invariant. Concept-validation is sometimes the goal; often it is not. When choosing between two valid proof shapes, prefer the one that reads more like a spec:
-
-- The theorem statement reads as the underlying invariant — a single quantified claim, not an enumerated conjunction of pair facts.
-- Constructor names and witness chains describe the domain in named terms (`.lob_shared`, `.notification_pdf_renderer`) rather than positional tuples.
-- The tactic chain is short and structural; the proof term itself is small.
-- A reader who has never seen the file can recognize what is being asserted from the theorem statement alone, without running Lean.
-
-Concept-validation is the right choice when the underlying claim genuinely requires it — existence/impossibility checks (necessity lemmas with constructor witnesses), induction-heavy reasoning, or any property that does not compress into a structural one-liner. The frame is not "always produce spec-shaped proofs" — it is "default to spec-shape; choose concept-validation only when the underlying claim genuinely requires it." When in doubt, ask: would a non-Lean reader understand what is being asserted from the theorem statement alone?
+The proof-as-specification frame — defaulting to spec-shaped proofs over concept-validation when both are valid, with constructor names that read as the domain — lives in **`agents/lean-expert.md`** (the canonical home; this skill points there rather than duplicating).
 
 ## Delegate to `lean-expert`
 
-The primary way to execute this skill is to spawn the `logic-focused:lean-expert` sub-agent with the `Agent` tool. That agent is the Lean 4 proof engineer: it treats `lake build` as its reasoning tool rather than chain-of-thought, and applies adversarial verification patterns (interpretation checking, extracted-lemma counterexample search, calibrated abstention). Running Lean proofs through a sub-agent also isolates the noisy compiler output from your main context.
+The primary execution path is to spawn the `logic-focused:lean-expert` sub-agent with the `Agent` tool. That agent treats `lake build` as its reasoning tool and applies adversarial verification patterns; running proofs through it also isolates compiler output from the main context.
 
 Brief the sub-agent with:
-- The `thoughts/target-world.pl` path (the **sole** input — facts, ontology labels, and formal properties)
-- The Lean project root (`thoughts/lean`) and proofs directory (`thoughts/lean/Proofs`)
-- The shared Mathlib location (`~/.lean/mathlib4`)
-- The per-property correction budget (5 inner / 3 outer, see §4)
-- An instruction to emit `thoughts/lean_proof_results.pl` as **Prolog facts** (schema in §7) — not markdown
-- An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
-- The absolute path to the plugin's Mathlib wiki: `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/` — lean-expert reads this directly for lemma/theorem lookups
-- A pointer to the skill-local `${CLAUDE_SKILL_DIR}/references/lean-proof-method.md` methodology doc
-- An explicit instruction to first read every claim label and per-fact ontology label from `target-world.pl` to decide proof pattern (descriptive vs. counterfactual vs. prescriptive). For counterfactual claims, each property becomes a sufficiency theorem over the target relation (read off `target-world.pl`) plus one necessity lemma per negated-premise fact. The sub-agent must not collapse a counterfactual property into a direct statement over the original relation — that theorem is guaranteed false and erases the constructive content of the hypothesis.
-- Mandatory annotation rule: every theorem in `thoughts/lean/Proofs/*.lean` MUST carry a `provenance(absent)` or `provenance(contradicts)` docstring/comment block above the theorem statement. The value is read off the ontology label of the corresponding fact in `target-world.pl`. Annotation domain is exactly `[absent, contradicts]`. Do not omit it — Lean has no way to reconstruct this provenance later, and it is required by `requires_annotation('thoughts/lean/Proofs/*.lean', provenance)`.
 
-Do the work inline only when the user has explicitly asked you to prove it yourself in this turn. Proof size is not a reason — even a one-liner benefits from the specialist's `lake build` discipline and Mathlib familiarity, and inline execution floods the main context with compiler output. When in doubt, delegate. The rest of this file is both your guide for the inline case and the briefing material for the sub-agent.
+- `thoughts/target-world.pl` (sole input — facts, ontology labels, formal properties)
+- Lean project root (`thoughts/lean`), proofs directory (`thoughts/lean/Proofs`), Mathlib (`~/.lean/mathlib4`)
+- Mathlib wiki path: `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/`
+- Methodology pointer: `${CLAUDE_SKILL_DIR}/references/lean-proof-method.md`
+- Per-property correction budget: 5 inner / 3 outer (§4)
+- Output contract: `thoughts/lean_proof_results.pl` as Prolog facts (schema in §7), not markdown
+- Pattern-selection contract: read every claim label and per-fact ontology label from `target-world.pl` first; counterfactual properties become sufficiency theorem + one necessity lemma per negated-premise fact (do not collapse them)
+- Mandatory annotation: every theorem carries a `provenance(absent | contradicts)` docstring or `@[ontology .X, .Y]` attribute, value read off `target-world.pl` (`requires_annotation` enforced)
+- Halt-and-report contract on genuine unprovability rather than rewriting the property
+
+Do the work inline only when the user has explicitly asked. Proof size is not a reason to skip the specialist — even a one-liner benefits from the agent's `lake build` discipline and Mathlib familiarity. The rest of this file is both your inline guide and the briefing material for the sub-agent.
 
 ## Proof Methodology
 
-Read `references/lean-proof-method.md` before writing any proofs. The key principles are summarized here but the reference has full detail with examples.
-
-### One Step at a Time
-
-Write one tactic, check diagnostics (use `done` to see unsolved goals), repeat. Never write multiple tactics before checking. This is the single most important discipline — multi-tactic writes cause cascading errors that waste correction attempts.
-
-- `by sorry` is acceptable for placeholders you're not actively working on.
-- `done` is required when you expect there to be next steps in an active proof.
-
-### Error Priority
-
-Fix errors in this exact order — higher-priority errors make lower-priority ones unreliable:
-
-1. **Syntax errors** → 2. **Type errors** → 3. **Unsolved goals / tactic failures** → 4. **Linter warnings**
-
-"Unsolved goals" errors appear on `by` or `=>` lines, NOT where you add tactics. If there's an "unsolved goals" on line 59 but a tactic error on line 65 — fix line 65 FIRST.
-
-Stop writing tactics after any error.
-
-### Work on the Hardest Case First
-
-**Across theorems**: Go directly to the target theorem. Don't fill in `sorry`s in helper lemmas first — Lean treats `sorry` as an axiom, so dependent theorems still work. Move sorries earlier in the file by factoring into lemmas:
-
-```lean
--- Before:
-theorem main_theorem : A = C := by sorry
-
--- After:
-theorem lemma1 : A = B := by sorry
-theorem lemma2 : B = C := by sorry
-theorem main_theorem : A = C := by
-  rw [lemma1, lemma2]
-```
-
-**Within a proof**: When a proof has multiple cases, `sorry` the easy cases and work on the hardest one first. If the hard case fails, effort on easy cases is wasted.
-
-### Dependent Type Rewriting
-
-When you encounter "motive is not type correct" or similar errors during rewriting, the cause is usually rewriting a term that appears in dependent types. The fix is to generalize first, instantiate last:
-
-```lean
-suffices ∀ s, statement_about s by
-  have h_specific := the_equality_you_have
-  convert this ?_ <;> exact h_specific
-intro s
--- Now prove the general statement for arbitrary s
-```
+Read **`references/lean-proof-method.md`** before writing any proofs. The methodology covers: one tactic at a time + `done` checkpoints, error-priority order (syntax → type → unsolved goals → linter), hardest-case-first across theorems and within a single proof, and the dependent-type rewriting / `suffices` idiom for "motive is not type correct" errors. The reference has full detail with examples; do not re-derive the principles from this file.
 
 ## Mathlib Reference
 
@@ -465,59 +183,17 @@ Record the proof-pattern selection and the provenance map at the top of each `.l
 
 ### 2. Translate to Lean4
 
-**First, gate.** Apply the routing decision from "Gating — route each property by ontology label" above to every formal property. Properties routed to `cwa_check` skip the Lean translation entirely; only properties routed to "Run Lean" continue to the steps below. Record `cwa_check/3` and `lean_skipped/2` for the skipped set when emitting `lean_proof_results.pl` in step 7.
+**First, gate.** Apply the routing in `references/gating.md` to every formal property. Properties routed to `cwa_check` skip Lean translation entirely; record `cwa_check/3` and `lean_skipped/2` for the skipped set when emitting `lean_proof_results.pl` in step 7. Only properties routed to "Run Lean" continue.
 
-For each formal property routed to Lean, create a `.lean` file in `${LEAN_PROOFS}/` (i.e. `thoughts/lean/Proofs/`). Use the pattern matching the property's claim label:
+For each property routed to Lean, create a `.lean` file in `${LEAN_PROOFS}/` and use the pattern from `references/proof-patterns.md` matching the property's claim label. Read `thoughts/target-world-shape.lean` first — if `model-obligations` emitted it, the inductive enums and inductive `Prop` predicates are already declared; import them rather than re-deriving. If absent and the run has closed-domain predicates, loop back.
 
-- `descriptive` → single theorem over the facts in `target-world.pl` (rare under gating — usually skipped as a KB readout).
-- `counterfactual + contradicts` → sufficiency theorem over the (already-pruned) target relation in `target-world.pl`, plus one necessity lemma per negated-premise fact.
-- `prescriptive` → single theorem over the augmented facts (obligation already present in `target-world.pl`); only when the property is structurally rich.
+Every theorem carries either an `@[ontology .X, .Y]` attribute (preferred) or a `/- provenance(absent | contradicts) -/` docstring block. Values come from the ontology label and per-fact negation provenance in `target-world.pl` — do not derive them.
 
-For every theorem, place either an `@[ontology .X, .Y]` attribute (preferred when `import Ontology.Prelude` resolves) or a `/- provenance(absent | contradicts) -/` docstring block immediately above the theorem statement. The values come from the ontology label and per-fact negation provenance in `target-world.pl`; do not derive them.
-
-A necessity lemma that trivially cannot be closed is a signal: either the fact isn't load-bearing (flag as extraneous and loop back to `decompose-proposition`) or the target-relation encoding is wrong. Don't paper over it with `sorry` — abstain.
-
-If a proof requires `decide` / `native_decide` / `generalize` as the closing move on a target-world predicate, halt and report — the upstream encoding is wrong, not the tactic. The remediation is to escalate back to `model-obligations` for re-encoding (see Layer 1 of "Encoding shape" above and the lean-expert agent's hard-rule paragraph).
-
-**Translation guidelines:**
-- **Read `thoughts/target-world-shape.lean` first.** If `model-obligations` emitted it, the inductive enums and inductive `Prop` predicates are already declared — import them rather than re-deriving. If absent and the run has closed-domain predicates, write a note and loop back.
-- Map closed domains to `inductive ... where` enums (one constructor per atom); map open domains to `String`.
-- Express predicates as `inductive ... → ... → Prop where` with one constructor per ground fact; write theorems as quantified invariants closing by `cases h <;> ...`.
-- For prescriptive conjunctions, prefer the scaffold's `witnesses .c1, .c2, ...` macro over hand-rolled `refine ⟨...⟩`.
-- For empty-inductive negations, prefer `exhaust` over `intro h; cases h`.
-- Graph properties → use Mathlib's `SimpleGraph` or model with `Finset`
-- Set properties → use `Finset` or `Set`
-- Ordering properties → use `PartialOrder`, `LinearOrder`
-- Numeric properties → try `omega` first
-- Consult the wiki for appropriate lemmas before inventing custom definitions
+A necessity lemma that cannot be closed is a signal — flag the fact as extraneous and loop back to `decompose-proposition` rather than papering with `sorry`. If a proof requires `decide` / `native_decide` / `generalize` as the closing move on a target-world predicate, halt and report; the upstream encoding is wrong, not the tactic.
 
 ### 3. Verify Each Property
 
-Write one tactic at a time, building the proof incrementally:
-
-```bash
-cd thoughts/lean && lake build
-```
-
-After each build:
-- If it succeeds with no errors, add the next tactic
-- If it fails, stop and fix the error before writing any more tactics
-- Use `done` to check what goals remain
-
-**On success** (no `sorry` remaining): The property is machine-checked. Record `theorem_verdict(Id, proven)`.
-
-**On failure**: Self-correct following error priority order:
-1. Fix syntax errors first
-2. Fix type errors second
-3. Fix tactic failures / unsolved goals last
-4. Linter warnings are lowest priority
-
-**Tactic discovery** (in order of preference):
-1. Consult the bundled Mathlib wiki (`references/lean4-wiki/`) for a lemma matching your goal shape
-2. Use `exact?` to find an exact lemma match
-3. Use `apply?` to find applicable lemmas
-4. Use `simp?` to discover simplification lemmas
-5. Try `omega` for arithmetic goals, `decide` for decidable goals, `norm_num` for numeric goals
+Write one tactic at a time, running `cd thoughts/lean && lake build` between writes; stop on the first error and fix it before adding more tactics. On success with no `sorry` remaining, record `theorem_verdict(Id, proven)`. On failure, follow the error-priority order and tactic-discovery sequence in `references/lean-proof-method.md`.
 
 ### 4. Correction Budget
 
@@ -538,40 +214,18 @@ After getting a proof to work, clean it up immediately:
 
 ### 6. Handle Unprovable Properties
 
-If a property exhausts its correction budget:
+If a property exhausts its correction budget, diagnose the failure mode:
 
-**Diagnose the failure mode:**
+| Failure type | Action |
+|---|---|
+| Tactic failure | Try fundamentally different approach |
+| Type mismatch | Revise definitions |
+| Logical contradiction | **Loop back** to `decompose-proposition` |
+| Timeout | Decompose into sub-properties |
+| Necessity lemma unprovable (counterfactual) | **Loop back** — the negated fact is not load-bearing; prune the premise |
+| Sufficiency theorem unprovable (counterfactual) | **Loop back** — the negation premise list is incomplete; more facts must be named |
 
-| Failure type | Meaning | Action |
-|-------------|---------|--------|
-| Tactic failure | Proof strategy wrong, property may still hold | Try fundamentally different approach |
-| Type mismatch | Lean model doesn't match domain | Revise definitions |
-| Logical contradiction | Property may be false | **Loop back** |
-| Timeout | Property too complex for automation | Decompose into sub-properties |
-| Necessity lemma unprovable (counterfactual claim) | The negated fact is not load-bearing — the target property survives re-inclusion | **Loop back** to `decompose-proposition` to prune the negation premises |
-| Sufficiency theorem unprovable (counterfactual claim) | The negation premise list is incomplete — the target relation still admits a violation | **Loop back** to `decompose-proposition` with the remaining counterexample; more facts must be named |
-
-**Loop back to decompose-proposition:**
-
-When a property appears genuinely unprovable (logical contradiction or persistent type mismatches after modeling revisions), stop and tell the user to re-run `decompose-proposition`, providing this context:
-
-```
-The following property from target-world.pl could not be proven:
-
-Property: {id}
-Statement: {formal statement}
-Failure: {diagnostics summary}
-
-Possible causes:
-- The hypothesis may be too strong
-- The property may need additional assumptions
-- target-world.pl may be missing relevant facts (or carry the wrong ontology label)
-
-Please re-run decompose-proposition against the source KB to:
-1. Check if the property has counterexamples in target-world.pl
-2. Identify missing relationships that would make it provable
-3. Formulate a revised, weaker hypothesis if needed
-```
+When loopback is the action, stop and tell the user to re-run `decompose-proposition`, citing the property id, the formal statement, the diagnostic, and the possible-causes shortlist (hypothesis too strong; missing assumptions; `target-world.pl` carries the wrong ontology label or lacks relevant facts).
 
 ### 7. Produce Results
 
@@ -605,5 +259,5 @@ All artifacts are written to the `thoughts/` directory (create it if it doesn't 
 
 ## Guidance
 
-- **Negation provenance is the only thing carrying CWA semantics across this boundary.** Lean sees `¬P` regardless of whether P originated as `absent(F)` (closed-world default) or `contradicts(F, G)` (KB asserts a conflicting fact). The mandatory `provenance(absent|contradicts)` annotation in each `.lean` file plus the `provenance_annotation/3` facts in `lean_proof_results.pl` are the only mechanisms preserving the distinction. Per the `cwa_negation_neq_lean_proof` rule: a fact that is false because absent from the KB is categorically different from a formally disproved fact — treat dropping the annotation as a correctness bug, not a style issue.
-- **`target-world.pl` is the single source of truth for this skill.** Do not reach back to `hypothesis.pl` or `existing-world.pl` — counterfactual edges have already been excluded and prescriptive obligations have already been added by `model-obligations`. Any apparent need to re-read upstream artifacts means the upstream skill failed to materialize the world correctly; loop back rather than patch around it.
+- **`target-world.pl` is the single source of truth for this skill.** Do not reach back to `hypothesis.pl` or `existing-world.pl` — `model-obligations` has already excluded counterfactual edges and added prescriptive obligations. Any apparent need to re-read upstream artifacts means the upstream skill failed to materialize the world correctly; loop back rather than patch around it.
+- **Provenance annotations are non-optional** — see the boundary section above and `references/ontology.md` for the full enforcement rule.

@@ -206,12 +206,11 @@ Write to `thoughts/hypothesis.pl` (create `thoughts/` if needed). The file is a 
 
 ## References
 
-The plugin ships two wikis under `${CLAUDE_SKILL_DIR}/../../references/` — `prolog-wiki/` and `lean4-wiki/`. **Don't read either yourself.** Wiki content flows through the domain agents this skill already delegates to:
+- **`references/prolog-querying.md`** — `swipl -g` invocation patterns, the introspect module, ad-hoc query patterns, the coverage module. For spot-checks; the agent-of-questions sub-agent already uses these.
+- **`${CLAUDE_SKILL_DIR}/../../references/prolog-wiki/`** — Prolog extensions (tabling, DCGs, CLP). **Don't read directly.** Pass the absolute path to `agent-of-questions` when a query needs an advanced extension.
+- **`${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/`** — Mathlib theorem names and type signatures for the Lean sketches in formal properties. **Don't read directly.** Spawn `logic-focused:lean-expert` with a one-line description; it returns real Mathlib names. Using real names (not plausible guesses) in sketches gives `prove-invariants` a head start.
 
-- **Prolog extensions** (tabling, DCGs, CLP, etc.) for queries you're drafting: `agent-of-questions` has direct wiki access. When you spawn it (§3), include the absolute path `${CLAUDE_SKILL_DIR}/../../references/prolog-wiki/` in the briefing if the query needs an advanced extension.
-- **Accurate Mathlib theorem names and type signatures** for Lean sketches in the "Formal Properties" section: spawn `logic-focused:lean-expert` with a one-line description of the property and it will return real Mathlib names. Using real names (not plausible guesses) in sketches gives `prove-invariants` a head start. Include the absolute path `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/` in the briefing.
-
-Keeping the wiki content inside sub-agent contexts preserves your context window for the hypothesis itself.
+Keeping wiki content inside sub-agent contexts preserves your context window for the hypothesis itself.
 
 ## Output
 
@@ -236,83 +235,3 @@ In the new pipeline `model-obligations` runs *before* `prove-invariants`: the fi
 
 ---
 
-## Prolog Reference
-
-### Invoking SWI-Prolog
-
-Every query follows this pattern:
-
-```bash
-swipl -g "<goal>" -t halt <files_to_load...>
-```
-
-`-g` runs the goal, `-t halt` exits after. Files listed after flags are consulted automatically. Use `timeout 30` for safety on ad-hoc queries.
-
-### Loading facts and modules
-
-```bash
-PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
-
-# Load a facts file and run a goal
-swipl -g "<goal>" -t halt existing-world.pl
-
-# Load the introspect module + facts file
-swipl -g "use_module('${PROLOG}/introspect'), <goal>" -t halt existing-world.pl
-```
-
-### Introspect module
-
-Bundled at `${CLAUDE_SKILL_DIR}/../../prolog/introspect.pl`. Explores any facts file without knowing its schema in advance.
-
-| Predicate | What it does |
-|-----------|-------------|
-| `kb_summary` | List every predicate with its arity and clause count |
-| `kb_describe` | Print all facts, grouped by predicate |
-| `kb_describe(Name/Arity)` | Print facts for one predicate |
-| `kb_find(Atom)` | Find every fact that mentions Atom in any argument |
-| `kb_related(Atom)` | Find atoms that co-occur with Atom in the same fact |
-| `kb_graph` | Print all binary predicates as directed edges |
-| `kb_stats` | Per-predicate statistics: clause counts, unique values per arg |
-
-### Ad-hoc query patterns
-
-```prolog
-% Print all solutions
-forall(depends_on(X, Y), format('~w -> ~w~n', [X, Y]))
-
-% Collect into a list
-findall(X, depends_on(X, logging), Xs), format('Depend on logging: ~w~n', [Xs])
-
-% Count
-findall(_, depends_on(_, _), Bag), length(Bag, N), format('~w deps~n', [N])
-
-% Unique values (findall+sort — setof fails on no solutions)
-findall(X, depends_on(X, _), Xs), sort(Xs, Unique), format('~w~n', [Unique])
-
-% Transitive closure
-assert((path(A,B) :- depends_on(A,B))),
-assert((path(A,B) :- depends_on(A,Mid), path(Mid,B))),
-forall(path(cli_tool, X), format('cli_tool transitively reaches ~w~n', [X]))
-
-% Negation
-(\+ depends_on(logging, _) -> format('no deps~n') ; format('has deps~n'))
-```
-
-### Coverage module
-
-Bundled at `${CLAUDE_SKILL_DIR}/../../prolog/prolog_coverage_ai.pl`. Tracks which clauses are exercised during query execution.
-
-```bash
-PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
-swipl -g "
-  use_module('${PROLOG}/prolog_coverage_ai'),
-  use_module('${PROLOG}/introspect'),
-  coverage(( kb_summary, kb_graph )),
-  show_coverage([modules([user])])
-" -t halt existing-world.pl
-```
-
-- `coverage(Goal)` runs Goal while tracking clause entry/exit
-- Multiple `coverage/1` calls accumulate within one swipl session
-- `show_coverage([modules([user])])` prints a coverage table for user-module facts
-- Output shows `%Cov` per file

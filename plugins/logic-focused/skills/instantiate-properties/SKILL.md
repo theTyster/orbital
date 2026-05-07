@@ -28,17 +28,14 @@ Each test also carries diagnostic tags (`ontology_label`, `negation_provenance`,
 
 ## Input
 
-Structured artifacts are **Prolog facts files** (`.pl`) — query them by delegating to the `logic-focused:agent-of-questions` sub-agent (the Prolog query specialist), or with `swipl -g` for one-off spot checks. Never grep or Read the `.pl` files. The Lean source files are the exception: read them directly as text.
+Structured artifacts are **Prolog facts files** (`.pl`) — query them via `Agent(subagent_type="logic-focused:agent-of-questions")` or `swipl -g` for one-off spot checks. Never grep or Read the `.pl` files. The Lean source files are the exception: read them directly.
 
-- **Primary input**: `thoughts/lean/Proofs/*.lean` — the actual Lean theorem source. Each theorem's statement is the specification to instantiate.
-- **Required**: `thoughts/lean_proof_results.pl` from `prove-invariants`. Carries `theorem_verdict/2`, `proof_strategy/2`, `failure_mode/2`, `theorem_source/2`, `necessity_lemma_status/3`, and mandatory `provenance_annotation(TheoremId, FactId, absent | contradicts)` for any theorem with a negated premise. May also carry `cwa_check/3` and `lean_skipped/2` for properties gated out of Lean by `prove-invariants` (see `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/lean-proof-results.md`); treat a `cwa_check(Prop, _, verified)` exactly like `theorem_verdict(Prop, proven)` for projection emission, with `proof_strategy: prolog-cwa-check` in the test comment block instead of the Lean tactic chain.
-- **Optional**: `thoughts/hypothesis.pl` — provides `claim/2`, `claim_label/2` (descriptive/counterfactual/prescriptive), `claim_status/2`, `claim_premise/2`, `claim_negation_provenance/3` (per-claim, 3-arg form), `formal_property/3`, edge predicates, and the original proposition's scope.
-- **Optional**: `thoughts/model_results.pl` — Prolog model verification results that may supplement Lean proofs. A verified model fact can seed a `projection` test the same way a Lean universal can.
-- **Optional**: `thoughts/target-world.pl` — records fact removals corresponding to counterfactual claims (used to drive counterfactual `projection` tests).
-- **Optional**: Any other `.pl` files in `thoughts/` — Prolog KB facts expose dependency ordering, relationship constraints, and domain predicates that map to setup/teardown and edge case tests.
-- **Optional env**: `target_codebase_dir` — target codebase directory for language/framework detection. **Without it, pseudotest format is used; with it, emit real tests in the detected framework — do not fall back to pseudotests.**
+- **Primary**: `thoughts/lean/Proofs/*.lean` — Lean theorem source.
+- **Required**: `thoughts/lean_proof_results.pl` (from `prove-invariants`) — `theorem_verdict/2`, `proof_strategy/2`, `failure_mode/2`, `theorem_source/2`, `necessity_lemma_status/3`, `provenance_annotation/3` (mandatory for negated-premise theorems), and optional `cwa_check/3` + `lean_skipped/2` for gated-out properties. Treat `cwa_check(Prop, _, verified)` like `theorem_verdict(Prop, proven)`, with `proof_strategy: prolog-cwa-check` in the test comment.
+- **Optional**: `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl`, any other `.pl` in `thoughts/`. Wire format for each lives under `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/`.
+- **Optional env**: `target_codebase_dir` — without it pseudotest format is used; with it emit real framework tests (no pseudotest fallback).
 
-Read all available inputs before writing a single test. The richest test suites come from combining four sources: the Lean theorems themselves, proven-property verdicts (`lean_proof_results.pl`), hypotheses (`hypothesis.pl`), and supplementary Prolog model results (`model_results.pl`).
+Richest suites come from combining all four sources (Lean source, `lean_proof_results.pl`, `hypothesis.pl`, `model_results.pl`).
 
 ## Process
 
@@ -46,94 +43,30 @@ Read all available inputs before writing a single test. The richest test suites 
 
 ### 1. Read All Inputs
 
-**Delegate Prolog interrogation to the `logic-focused:agent-of-questions` sub-agent.** That agent is the Prolog query specialist — it discovers predicates and arities via `swipl` introspection (never by reading `.pl` files as text) and writes precise queries that surface exactly the facts this step needs. Invoke it with `Agent(subagent_type="logic-focused:agent-of-questions")` and hand it the list of `.pl` artifacts (`thoughts/lean_proof_results.pl`, `thoughts/target-world.pl`, `thoughts/hypothesis.pl`, `thoughts/model_results.pl`) along with the extraction checklist below. Have it return a structured summary you can map directly into the per-test comment blocks. Do NOT grep or Read the `.pl` files yourself — query them.
+**Delegate Prolog interrogation to the `logic-focused:agent-of-questions` sub-agent.** That agent is the Prolog query specialist — it discovers predicates and arities via `swipl` introspection (never by reading `.pl` files as text) and surfaces exactly the facts this step needs. Hand it the `.pl` artifacts (`lean_proof_results.pl`, `target-world.pl`, `hypothesis.pl`, `model_results.pl`) and the extraction checklist below; do NOT grep or Read the `.pl` files yourself.
 
-If you must run a one-off query inline (e.g., to spot-check the agent's output), use `swipl -g`:
+For a quick inline spot-check, `swipl -g "consult('FILE'), forall(P, format('...', [P])), halt."` works against any of `theorem_verdict/2`, `formal_property/3`, or `provenance_annotation/3`.
 
-- `swipl -g "consult('thoughts/lean_proof_results.pl'), forall(theorem_verdict(T,V), format('~w ~w~n',[T,V])), halt."`
-- `swipl -g "consult('thoughts/target-world.pl'), forall(formal_property(P,NL,Sketch), format('~w | ~w | ~w~n',[P,NL,Sketch])), halt."` — `formal_property/3` is propagated verbatim into `target-world.pl`; query it there alongside the per-fact provenance.
-- `swipl -g "consult('thoughts/lean_proof_results.pl'), forall(provenance_annotation(T,F,M), format('~w ~w ~w~n',[T,F,M])), halt."` — per-theorem negation-provenance echoes.
+Extract per verdict (full source-predicate table in **`references/tagging.md`**):
 
-Extract for each verdict:
+- Property name, Lean theorem statement (or Prolog query), and natural-language description
+- `proof_strategy/2` (surface in the test's `proof_strategy:` comment line)
+- **Proof mode** — `invariant` or `conditional`, **derived**: `conditional` iff `hypothesis.pl` carries any `claim_label(_, counterfactual)`; otherwise `invariant`. No `proof_mode` predicate exists in the schema.
+- **`ontology_label`** for the source claim (from `claim_label/2`) — flows onto every projection test that witnesses the claim
+- **`negation_provenance`** for any negated premise (`claim_negation_provenance/3` on the hypothesis side, `provenance_annotation/3` on the proof side; the two MUST agree, a divergence is a malformed run)
+- For `conditional`: counterfactual facts (cross-reference with `target-world.pl` removals), per-counterfactual NECESSARY/EXTRANEOUS status, overall SUFFICIENT/INSUFFICIENT status
 
-- Property name and its Lean theorem statement (or Prolog query)
-- The natural language description (from `formal_property/3` and any companion `claim/2` in `hypothesis.pl`)
-- The `proof_strategy/2` value (hints at what the implementation must do; surface in the test's `proof_strategy:` comment line)
-- Which claim it was derived from
-- **Proof mode** — `invariant` or `conditional`. **Derived**, not stored: `conditional` iff `hypothesis.pl` contains any `claim_label(_, counterfactual)`; otherwise `invariant`. Do not look for a `proof_mode` predicate — none exists in the schema.
-- **`ontology_label`** for the source claim — `descriptive | counterfactual | prescriptive` (from `claim_label/2` in `hypothesis.pl`). This label flows onto every projection test that witnesses the claim.
-- **`negation_provenance`** for any negated premise — `absent | contradicts`. Source on the hypothesis side: `claim_negation_provenance(ClaimId, Fact, Mode)` in `hypothesis.pl`. Source on the proof side: `provenance_annotation(TheoremId, FactId, Mode)` in `lean_proof_results.pl`. The two MUST agree; a divergence is a malformed run. Tests that depend on a negated premise inherit this provenance and must flag `absent` as fragile in their comment block.
-- If `conditional`, also extract:
-  - **Counterfactual facts** — the KB facts from `claim_label(_, counterfactual)` claims that had to be false for the property to hold (e.g., `cf_fact(cli_tool, logging)`). Cross-reference with `thoughts/target-world.pl` for the corresponding fact removals.
-  - **Per-counterfactual status** — each fact is labelled `NECESSARY` (removing it is load-bearing) or `EXTRANEOUS` (the property holds without requiring its removal).
-  - **Overall status** — `SUFFICIENT` (the counterfactual set proves the property) or `INSUFFICIENT` (the set was not enough).
+From `thoughts/hypothesis.pl` (when present): the original proposition, counterfactual question, sub-claim `claim_status` values, edge predicates, assumptions, and any counterevidence.
 
-If `thoughts/hypothesis.pl` exists, also extract (via the `agent-of-questions` sub-agent — or `swipl` directly when spot-checking — against `claim/2`, `claim_label/2`, `claim_status/2`, `claim_premise/2`, `claim_negation_provenance/3`, `formal_property/3`):
+From `thoughts/model_results.pl` (when present): verified model results — these can seed `projection` tests the same way Lean universals do.
 
-- The original proposition (context for naming tests meaningfully)
-- The **counterfactual question** — "What about the existing KB would need to be false for `{proposition}` to be true?" — surfaces the intent behind every counterfactual-removal test
-- Sub-claims and their `claim_status` (clear, conditional, open)
-- **Counterfactual claims** — each `claim_label(C, counterfactual)` corresponds to a fact that must be falsified. These become `projection` tests sourced from the counterfactual claim.
-- **Edge predicates** — boundary conditions identified during exploration. These become edge case tests.
-- **Assumptions** — properties taken as given during proof. These become test preconditions or fixture setup.
-- Counterevidence found during exploration — even refuted claims may need a "does NOT do X" test
-
-If `thoughts/target-world.pl` exists, read the recorded fact removals so each counterfactual `projection` test can assert the right absence.
-
-If `thoughts/model_results.pl` exists, treat verified model results as additional sources for `projection` tests (a Prolog model fact can be sampled the same way as a Lean universal).
-
-If other `.pl` files exist in `thoughts/`, scan them for:
-- Ordering relationships (e.g., `depends_on/2`, `before/2`, `requires/2`) → test ordering, setup/teardown, or integration sequence
-- Multiplicity constraints (e.g., `has_exactly_one/2`, `at_most/3`) → cardinality tests
-- Exclusion predicates (e.g., `mutually_exclusive/2`, `not_allowed/2`) → negative tests
-- Domain facts that make good test fixtures (concrete entities the tests can use as inputs)
+From other `.pl` files in `thoughts/`: ordering relationships, multiplicity constraints, exclusion predicates, and domain-fact fixtures map to ordering/cardinality/negative tests. See `references/structural-tests.md` for the full pattern catalogue.
 
 ### 2. Discover Test Patterns (Early step — do this first when target provided)
 
-**If a target codebase directory was provided**, use the Explore sub-agent to discover the testing landscape before mapping properties to tests. This ensures generated tests naturally conform to existing patterns without additional manual matching.
+When `target_codebase_dir` is set, spawn `Agent(Explore)` to map the codebase's test infrastructure: framework (Jest / pytest / RSpec / JUnit / Go / Mocha / Rust), file naming, test-function naming, assertion style, fixture patterns, nesting conventions (describe/it vs flat vs parameterized), custom utilities, and any project-specific idioms. The agent returns a summary you carry forward into Step 9.
 
-#### 2a. Invoke Explore Sub-Agent
-
-Send the following request to the Explore sub-agent (via `Agent(Explore)`):
-
-> Explore this codebase to understand its test infrastructure:
-> 1. Identify the test framework(s) in use (jest, pytest, RSpec, JUnit, Go `testing` package, etc.)
-> 2. Discover naming conventions: how are test files named? (e.g., `*.test.js`, `*_test.py`, `test*.rs`)
-> 3. Find examples of assertion styles and patterns (e.g., `expect()`, `assert_that()`, `assertEqual`, custom matchers)
-> 4. Identify fixture and setup patterns (beforeEach/beforeAll, setUp methods, fixture factories, test utilities)
-> 5. Map test organization: describe/it nesting, flat function-based tests, parameterized/table-driven tests
-> 6. Locate custom test helpers and utilities that should be reused in generated tests
-> 7. Note any non-standard testing patterns specific to this project
->
-> Provide a summary of findings for each category. Focus on patterns the generated tests should match.
-
-The Explore agent returns a summary report of the test landscape.
-
-#### 2b. Extract Testing Conventions from Explore Output
-
-From the Explore report, extract:
-- **Framework**: Jest, pytest, RSpec, JUnit, Go test, Mocha, etc.
-- **File naming**: e.g., `foo.test.ts`, `test_foo.py`, `foo_spec.rb`
-- **Test function naming**: e.g., `test "should do X"`, `def test_do_x`, `func TestDoX`
-- **Assertion style**: library and idiom (expect, assert, assert!, @Test decorator, etc.)
-- **Fixture patterns**: function, class method, factory, inline setup
-- **Nesting conventions**: describe/it blocks, flat functions, parameterized arrays
-- **Custom utilities**: helpers or test base classes to inherit from or import
-- **Non-standard patterns**: project-specific idioms to match
-
-**If no target directory was given, or Explore finds no test files**, skip to step 2c and use pseudotest format instead.
-
-#### 2c. Match Detected Idioms Exactly
-
-When a target framework is identified, match its idioms exactly in generated tests:
-- Use `describe`/`it` for Jest/RSpec/Mocha
-- Use `def test_` naming for pytest
-- Use `func Test` for Go
-- Use `@Test` annotations for JUnit/TestNG
-- Use `#[test]` for Rust
-- Replicate the project's nesting depth, assertion library, and fixture strategy
-
-The goal is tests the implementor can run immediately without adaptation. A test that looks foreign will be rewritten.
+Match the detected idioms exactly in generated tests. The goal is tests the implementor can run immediately without adaptation — foreign-looking tests get rewritten. If no target directory was given, or Explore found no test files, fall through to pseudotest format in Step 9.
 
 ### 3. Map Proven Properties to Tests
 
@@ -157,15 +90,9 @@ The fact-shape→assertion mapping (12+ patterns), framework-specific architectu
 
 ### 4. Derive Edge Case Tests from Hypothesis
 
-From `thoughts/hypothesis.pl`, extract every boundary condition or edge predicate identified during exploration:
+From `thoughts/hypothesis.pl`, surface every boundary condition or edge predicate from exploration: empty inputs, single elements, maximum cardinality, refuted sub-claims (assert the correct observed behavior — this locks in the understanding), and open assumptions (stub with a skip/pending annotation: `skip(reason="assumption not proven — verify manually")`).
 
-- **Empty inputs**: If the hypothesis explored "what happens at zero elements," write an empty-input test
-- **Single elements**: If the hypothesis identified base-case behavior, write a singleton test
-- **Maximum cardinality**: If the hypothesis identified upper bounds, write a test at that bound
-- **Refuted sub-claims**: If exploration found that a claim does NOT hold, write a test asserting the correct (observed) behavior — this locks in the understanding
-- **Open assumptions**: Write tests as `// TODO: assumption not proven — verify manually` stubs, or mark with a skip/pending annotation in the target framework
-
-Each edge case test must comment which sub-claim or edge predicate it encodes. Edge-case tests that descend from a proven claim are `projection`; edge-case tests for behavior the formal layer never expressed are `behavioral_claim` (see Step 5.5).
+Each edge case test must comment which sub-claim or edge predicate it encodes. Tests descended from a proven claim are `projection`; tests for behavior the formal layer never expressed are `behavioral_claim` (see Step 5.5).
 
 ### 5. Derive Structural Tests from Prolog KB
 
@@ -175,109 +102,69 @@ The structural-pattern→test-shape table (12+ patterns), `swipl` discovery quer
 
 ### 5.5. Identify Behavioral Additions
 
-- Some test needs cannot be projections of any proven property. Side effects, I/O sequencing, timing, concurrency, error-mode behaviour, and integration-level state transitions live in the TDD layer and nowhere else — this is the *gain* crossing the `lean → tdd` boundary.
-- If the implementor explicitly asked for behavioral tests, or if the target codebase clearly requires them (e.g., a server handler that must return 503 on backpressure), generate them — but tag each one `test_category: behavioral_claim` in its comment block and list them under a dedicated `## Behavioral Contracts` section at the bottom of the test file (above `COVERAGE GAPS`).
-- `behavioral_claim` tests have no upstream formal backing. A failing `behavioral_claim` test cannot loop back to `decompose-proposition` or `model-obligations` / `prove-invariants` — those nodes never expressed the claim. The classification matters for `realize-specification`'s loopback logic.
-- If no behavioral additions are needed, skip this step — but note in the suite header "no behavioral additions".
+Side effects, I/O sequencing, timing, concurrency, error-mode behaviour, and integration-level state transitions live in the TDD layer and nowhere else — this is the *gain* crossing the `lean → tdd` boundary. When the implementor asks for them or the target codebase clearly requires them (e.g., a handler returning 503 on backpressure), tag each `test_category: behavioral_claim` and place them under a dedicated `## Behavioral Contracts` section above `COVERAGE GAPS`.
+
+`behavioral_claim` tests have no upstream formal backing — a failing one cannot loop back to `decompose-proposition` or the prove skills (those nodes never expressed the claim). The classification matters for `realize-specification`'s loopback logic. If no behavioral additions are needed, note "no behavioral additions" in the suite header.
 
 ### 6. Assign Tests to Phases
 
-Organize tests into phases that reflect the logical dependency ordering from the proofs. A phase's tests should only depend on behavior proven in earlier phases:
+Organize tests into phases reflecting the logical dependency ordering — a phase's tests should depend only on behavior proven in earlier phases:
 
-- **Phase 0 — Removal** *(conditional mode only)*: Counterfactual-removal and reintroduction tests from Step 3.5. These are `projection` tests sourced from `claim_label(_, counterfactual)` in `hypothesis.pl` and corresponding fact removals in `target-world.pl`. They come first because every later phase's property is stated against the target relation `R_target := R ∧ ¬cf`. Implementing Phase 1 before Phase 0 produces code that satisfies an invariant *while* the forbidden dependency still exists — passing tests for the wrong reason. Phase 0 forces the deletion/removal work to happen before any new behaviour is written.
-- **Phase 1 — Foundations**: Tests for properties with no dependencies. These test base types, pure functions, stateless transformations.
-- **Phase 2 — Compositions**: Tests for properties that compose Phase 1 behaviors. These may require Phase 1 to pass before they are meaningful.
-- **Phase N — Integration**: Tests for end-to-end properties that span the full system.
-- **Phase B — Behavioral Contracts**: `behavioral_claim` tests from Step 5.5. This phase runs AFTER all projection phases. Behavioral phase tests may remain red longer because they have no proof to lean on; the implementor decides when they pass.
+- **Phase 0 — Removal** *(conditional mode only)*: counterfactual-removal and reintroduction tests from Step 3.5. Comes first so the forbidden-dependency deletion happens before any new behaviour is written; otherwise Phase 1 tests can pass for the wrong reason while the forbidden dependency still exists.
+- **Phase 1 — Foundations**: properties with no dependencies (base types, pure functions, stateless transformations).
+- **Phase 2 — Compositions**: properties composing Phase 1 behaviors.
+- **Phase N — Integration**: end-to-end properties spanning the system.
+- **Phase B — Behavioral Contracts**: `behavioral_claim` tests from Step 5.5. Last; may stay red longer since there is no proof to lean on.
 
-Within each phase, order tests from simplest (empty/trivial cases) to most complex (boundary/stress cases). An implementor should be able to work top-to-bottom through the file.
+Within each phase, order from simplest (empty/trivial) to most complex (boundary/stress). The implementor works top-to-bottom.
 
 ### 7. Identify Coverage Gaps and Loopback Signals
 
-Two distinct outputs come from this step. Keep them separate — they have different audiences.
+Two distinct outputs, kept separate (different audiences):
 
-**(7a) Coverage Gaps** — advisories for the implementor reading the test file. These do NOT loop back to upstream skills:
+**(7a) Coverage Gaps** — advisories for the implementor; do NOT loop back. Render as a `COVERAGE GAPS` comment block at the end of the test file. Cover: proven properties with pure existential statements (manual-verification items), properties about infinite structures (suggest a PBT library), properties depending on unprovable assumptions (TODO stubs), every projection test descended from a `negation_provenance: absent` premise (CWA-fragile), unsampled-domain slices per `∀`-quantified property (the universality loss made explicit), and every `behavioral_claim` test (claims asserted without formal support).
 
-- Proven properties with pure existential statements ("there exists X") that are hard to assert deterministically without knowing the witness — flag as manual verification items.
-- Properties about infinite structures (termination, totality) that require property-based testing tooling — flag and suggest a PBT library (Hypothesis, fast-check, QuickCheck) if appropriate.
-- Properties that depend on unprovable assumptions (from Step 1) — stub the test with a clear TODO.
-- **`negation_provenance: absent` premises**: CWA-default negations are fragile. Flag every projection test descended from a `claim_negation_provenance(_, _, absent)` (or its `provenance_annotation/3` echo) so the implementor knows the proof rests on a closed-world assumption.
-- **Unsampled domain slices**: for each `∀`-quantified property, list values of the quantified variable NOT covered by any projection test. This is the shape of the universality loss at the `lean → tdd` boundary — surface it explicitly rather than pretending the suite re-verifies the proof.
-- **Unbacked behavioral contracts**: list every `behavioral_claim` test so the reader can see which claims the suite asserts without formal support.
+**(7b) Loopback Signals** — actionable corrections to upstream skills. Render as a separate `LOOPBACK SIGNALS` comment block ABOVE the gaps block, and surface as top-level items in the report. Triggers and targets:
 
-Render these in a `COVERAGE GAPS` comment block at the end of the test file.
-
-**(7b) Loopback Signals** — actionable corrections to upstream skills. These DO loop back:
-
-- **EXTRANEOUS counterfactuals** (from `necessity_lemma_status(_, _, extraneous)` in `lean_proof_results.pl`): the proof flagged the fact as non-load-bearing. Recommendation: loop back to `decompose-proposition` to prune the over-specified counterfactual. The removal test is still emitted, but the hypothesis was imprecise.
-- **INSUFFICIENT proof status**: if the conditional proof was `INSUFFICIENT`, the counterfactual set did not close the gap. Recommendation: loop back to `decompose-proposition` — additional counterfactual requirements needed.
-- **`conditional` mode with no enumerable counterfactual facts**: a property left in conditional mode but missing `cf_fact/N` entries cannot become a removal test. Recommendation: loop back to `decompose-proposition` to enumerate the counterfactuals or downgrade the property to `invariant` mode.
-- **Hypothesis vs. proof provenance disagreement**: any `claim_negation_provenance(_, F, Mode₁)` whose corresponding `provenance_annotation(_, FactId, Mode₂)` disagrees on `Mode` is a malformed run. Recommendation: loop back to `prove-invariants` to reconcile.
-
-Render these in a separate `LOOPBACK SIGNALS` comment block above the COVERAGE GAPS block. Loopback signals also surface in the report (Step 9 output) as a top-level item, not buried in a gap count.
+- `necessity_lemma_status(_, _, extraneous)` → `decompose-proposition` to prune the over-specified counterfactual.
+- INSUFFICIENT conditional proof → `decompose-proposition` for additional counterfactual requirements.
+- `conditional` mode missing `cf_fact/N` entries → `decompose-proposition` to enumerate, or downgrade the property to `invariant`.
+- `claim_negation_provenance` / `provenance_annotation` mode disagreement → `prove-invariants` to reconcile.
 
 ### 8. Mark Every Generated Test as Skipped
 
-**All tests start skipped — no exceptions.** Apply a skip/pending annotation to every test in the file using the target framework's idiom. The implementation skill (`realize-specification`) un-skips them one at a time. This ensures the newly-added suite does not turn CI red on merge — the tests are a specification, not a regression check on existing behavior.
-
-The implementor's workflow is: pick the next skipped test top-to-bottom, remove the skip annotation, run the suite, watch it fail, implement until it passes, commit, repeat. The skip state is the TDD progress ledger.
-
-Open-assumption stubs (from Step 4) stay skipped with their own reason — `skip(reason="assumption not proven — verify manually")` — so the implementor can distinguish "not yet implemented" from "needs manual verification."
+**All tests start skipped — no exceptions.** Apply the target framework's skip/pending annotation to every test; `realize-specification` un-skips them one at a time. The skip state is the TDD progress ledger; the suite must not turn CI red on merge. Open-assumption stubs from Step 4 stay skipped with their own reason — `skip(reason="assumption not proven — verify manually")` — to distinguish "not yet implemented" from "needs manual verification".
 
 ### 9. Write the Test File
 
-Write to `thoughts/tests/{filename}`. **Emit real framework tests whenever `target_codebase_dir` is set** — pseudotest format is a fallback for when no target codebase is provided (or when Step 2 found no detectable test infrastructure). Filename conventions and the full output structure are defined in `references/test-templates.md` — consult it before writing. Create `thoughts/tests/` if it doesn't exist.
+Write to `thoughts/tests/{filename}`. **Emit real framework tests whenever `target_codebase_dir` is set**; pseudotest format is the fallback for unset target or no detectable test infrastructure.
 
 ## Output Format
 
-The full test-file template — header block, per-test comment-block schema, phase ordering, framework-specific skip idioms, the `LOOPBACK SIGNALS` block, the `COVERAGE GAPS` block, filename conventions, and the pseudotest fallback — lives in `references/test-templates.md`. Load it before writing the file. The reference is the source of truth for output structure; do not improvise comment-block fields or phase headers from memory.
+The full test-file template (header block, per-test comment-block schema, phase ordering, framework-specific skip idioms, `LOOPBACK SIGNALS` and `COVERAGE GAPS` blocks, filename conventions, pseudotest fallback) lives in **`references/test-templates.md`**. Load it before writing.
 
-Three contracts the templates enforce that bear repeating here:
+Three contracts the templates enforce:
 
-- Every test starts skipped, in the framework's idiom (`test.skip`, `@pytest.mark.skip`, `t.Skip`, `#[ignore]`, etc.). The skip state is the TDD progress ledger consumed by `realize-specification`.
-- `LOOPBACK SIGNALS` (Step 7b output) and `COVERAGE GAPS` (Step 7a output) render as **two separate blocks**, in that order, at the end of the file. They have different audiences — never collapse them.
-- `behavioral_claim` tests live in Phase B, always last, and omit `proof_strategy`, `ontology_label`, `sampled_from`, `fixture_set`, `unsampled_domain` from their comment block (those fields imply proof ancestry which `behavioral_claim` lacks).
+- Every test starts skipped in the framework's idiom (`test.skip`, `@pytest.mark.skip`, `t.Skip`, `#[ignore]`, …).
+- `LOOPBACK SIGNALS` and `COVERAGE GAPS` render as two separate blocks in that order at the end of the file — never collapse them.
+- `behavioral_claim` tests live in Phase B last and omit `proof_strategy`, `ontology_label`, `sampled_from`, `fixture_set`, `unsampled_domain` (those fields imply proof ancestry the category lacks).
 
 ## Output
 
-All artifacts are written to `thoughts/tests/` (create the directory if it doesn't exist).
+One test file at `thoughts/tests/{filename}` (create the directory if it doesn't exist; language-appropriate filename per `references/test-templates.md`).
 
-One test file: `thoughts/tests/{filename}` (language-appropriate name).
+Report breakdown:
 
-Report:
-- File path
-- Number of tests generated (total)
-- Proven properties covered (e.g., 5/6)
-- Edge case tests generated from hypothesis
-- Structural tests generated from Prolog KB
-- **Counterfactual-removal tests** generated from `claim_label(_, counterfactual)` claims (conditional mode only) — counted under `projection`
-- **Reintroduction tests** generated for NECESSARY counterfactuals (conditional mode only) — counted under `projection`
-- Coverage gaps (proven properties that couldn't be translated, with reasons) — from Step 7a
-- **Loopback signals** — distinct from coverage gaps; each entry names the upstream skill (`decompose-proposition` or `prove-invariants`) and the trigger (EXTRANEOUS counterfactuals, INSUFFICIENT proof, conditional-without-cf, provenance disagreement). From Step 7b.
-- **test_category breakdown**: N projection, M behavioral_claim (these are the only two values)
-- **ontology_label breakdown** (diagnostic, **over projection tests only** — `behavioral_claim` tests carry no `ontology_label`): how many projections inherited `descriptive`, `counterfactual`, `prescriptive`
-- **negation_provenance breakdown** (diagnostic, where applicable): how many tests rest on `absent` (CWA, fragile) vs `contradicts` (explicit, structural)
-- Unsampled-domain count per property (from Step 7a)
+- File path; total tests generated; proven properties covered (e.g., 5/6); edge-case and structural counts; counterfactual-removal and reintroduction counts (conditional mode, both under `projection`)
+- **Coverage gaps** (Step 7a) and — separately — **loopback signals** (Step 7b, naming the upstream skill and trigger)
+- **`test_category` breakdown**: N projection, M behavioral_claim
+- **`ontology_label` breakdown** over projection tests only (behavioral_claim carries no ontology_label)
+- **`negation_provenance` breakdown** where applicable (`absent` = CWA-fragile vs `contradicts` = structural)
+- Unsampled-domain count per property
 
 ## Guidance
 
-The full principles — rule, failure mode, and how-to-apply for each — live in **`references/guidance.md`**. The 13 principles, in short:
-
-1. **Tests ARE the plan** — no separate implementation plan document.
-2. **Projection = witness, not re-proof** — universality stays in the proof; "sampled and passed" not "property verified".
-3. **`behavioral_claim` has no proof ancestry** — visibly separated; failures do not loop back.
-4. **Failing is correct, but skip by default** — every test fails on a blank implementation; trivially-true assertions are silent spec rot.
-5. **Name tests after properties, not code** — names survive refactoring.
-6. **Edge predicates are not optional** — proofs are on models; edges are where models diverge.
-7. **Assumptions become TODOs** — open assumptions are stubs, never omissions.
-8. **Prolog facts are free fixtures** — real domain names beat `foo`/`bar`.
-9. **Flag gaps loudly** — never silently drop formal guarantees.
-10. **Match the existing test style exactly** — foreign-looking tests get rewritten.
-11. **Don't over-specify implementation** — assert the contract, not the strategy.
-12. **Counterfactual-removal tests are first-class** — the counter-pressure to "only reason about what exists".
-13. **Reintroduction tests lock in load-bearing reasoning** — the only mechanism preventing silent regression on NECESSARY counterfactuals.
-
-Consult `references/guidance.md` when any of these meets resistance from the current task — that file documents the failure mode each principle defends against and the named enforcement rules (`behavioral_claim_neq_proven_property`, `cwa_negation_neq_lean_proof`, `lean_universal_neq_test_verified`).
+The 13 principles — each with its rule, failure mode, and how-to-apply — and the named enforcement rules (`behavioral_claim_neq_proven_property`, `cwa_negation_neq_lean_proof`, `lean_universal_neq_test_verified`) live in **`references/guidance.md`**. Load it whenever a principle decision arises; do not re-derive from this file.
 
 ## Additional Resources
 
