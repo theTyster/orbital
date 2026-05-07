@@ -1,6 +1,6 @@
 {
-  "name": "logic-focused-plugins",
-  "description": "Logic-focused skills for Claude Code: formal reasoning pipeline, proof verification, architectural analysis, parallel orchestration, and developer utilities.",
+  "name": "orbital-shift",
+  "description": "Orbital-shift: a marketplace of intent-shaped Claude Code plugins. Skills are arranged in orbits around a shared core — formal-reasoning pipeline, architectural analysis, parallel orchestration, and developer utilities — each plugin answering one question about what invoking it does for you.",
   "owner": {
     "name": "ty",
     "email": "noreply@mail.thetyster.dev"
@@ -9,7 +9,7 @@
     {
       "name": "logic-focused",
       "description": "Formal logic reasoning pipeline: closed-world KB construction, proposition decomposition, model-based and Lean 4 proof verification, property instantiation as TDD tests, and proof-grounded specification realization.",
-      "version": "3.10.0",
+      "version": "3.11.0",
       "source": "./plugins/logic-focused",
       "author": {
         "name": "ty",
@@ -22,12 +22,12 @@
           "logic"
         ]
       },
-      "homepage": "https://github.com/theTyster/logic-focused-claude"
+      "homepage": "https://github.com/theTyster/orbital-shift"
     },
     {
       "name": "c4-prolog",
       "description": "C4 architectural modeling and Prolog-based codebase analysis with atomized phase skills.",
-      "version": "2.6.0",
+      "version": "2.7.0",
       "source": "./plugins/c4-prolog",
       "author": {
         "name": "ty",
@@ -39,12 +39,12 @@
           "analysis"
         ]
       },
-      "homepage": "https://github.com/theTyster/logic-focused-claude"
+      "homepage": "https://github.com/theTyster/orbital-shift"
     },
     {
       "name": "multi-plan",
       "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles. Includes single-ticket-pipeline for end-to-end logic-focused runs on one ticket.",
-      "version": "2.4.0",
+      "version": "2.5.0",
       "source": "./plugins/multi-plan",
       "author": {
         "name": "ty",
@@ -55,12 +55,12 @@
           "planning"
         ]
       },
-      "homepage": "https://github.com/theTyster/logic-focused-claude"
+      "homepage": "https://github.com/theTyster/orbital-shift"
     },
     {
       "name": "utilities",
       "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
-      "version": "2.3.6",
+      "version": "2.4.0",
       "source": "./plugins/utilities",
       "author": {
         "name": "ty",
@@ -71,7 +71,7 @@
           "utilities"
         ]
       },
-      "homepage": "https://github.com/theTyster/logic-focused-claude"
+      "homepage": "https://github.com/theTyster/orbital-shift"
     }
   ]
 }

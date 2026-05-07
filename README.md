@@ -1,6 +1,8 @@
-# logic-focused-claude
+# orbital-shift
 
-Logic-focused skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): a formal reasoning pipeline from logic translation through proof verification to test generation and implementation review, plus architectural analysis, parallel orchestration, and developer utilities.
+Intent-shaped skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): a formal reasoning pipeline from logic translation through proof verification to test generation and implementation review, plus architectural analysis, parallel orchestration, and developer utilities.
+
+> Formerly `logic-focused-claude`. See [MIGRATION.md](MIGRATION.md) if you have an existing install under the old name.
 
 ## Plugins
 
@@ -56,7 +58,7 @@ Standalone developer utilities.
 ## Installation
 
 ```bash
-claude /install-plugin https://github.com/theTyster/logic-focused-claude
+claude /install-plugin https://github.com/theTyster/orbital-shift
 ```
 
 ## Versioning
