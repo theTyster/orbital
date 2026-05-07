@@ -37,11 +37,11 @@ C4 architectural modeling and Prolog-based codebase analysis.
 - **c4-condense-patterns** — Transform Prolog analysis into an implementation plan
 - **c4-analyze** — Orchestrate the full pipeline (find > define > condense)
 
-### multi-plan
+### orchestrate
 
-Parallel worktree orchestration with review cycles.
+End-to-end orchestration of the logic-focused pipeline.
 
-- **multi-plan** — Orchestrate multiple enhancements in parallel through a plan > review > human-vetting > implement > commit pipeline
+- **pipeline** — Run a single ticket through the full pipeline (close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification) and finish with `explain`. Renamed from `single-ticket-pipeline`. The previous `multi-plan` parallel orchestrator has been retired; its design is preserved at `thoughts/archive/multi-plan-skill-design.md`.
 
 ### utilities
 
@@ -53,7 +53,7 @@ Standalone developer utilities.
 ## Prerequisites
 
 - **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-invariants and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
-- **SWI-Prolog** (`swipl`): Required for close-world, decompose-proposition, and multi-plan.
+- **SWI-Prolog** (`swipl`): Required for close-world, decompose-proposition, and the `orchestrate:pipeline` skill.
 
 ## Installation
 

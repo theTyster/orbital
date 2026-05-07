@@ -1,5 +1,5 @@
 ---
-name: single-ticket-pipeline
+name: pipeline
 description: >
   Run a single ticket through the entire logic-focused pipeline end-to-end —
   "run the full pipeline on this ticket", "drive this ticket through close-world to explain",
@@ -17,7 +17,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill, Agent, TaskCreate, Ta
 argument-hint: "[ticket: a single sentence or paragraph describing the change, invariant, or proposition to drive end-to-end] [optional: target codebase directory, defaults to cwd]"
 ---
 
-# single-ticket-pipeline
+# pipeline
 
 Run **one ticket** through the full logic-focused pipeline and finish with a
 plain-language explanation. The orchestrator is thin: each stage is delegated
@@ -26,8 +26,9 @@ orchestrator's job is to sequence stages, hand the right paths forward, gate
 on artifact existence, and stop early on hard failures with a partial
 `explain` instead of crashing.
 
-> **Scope.** Exactly one ticket. For parallel multi-enhancement work use
-> `multi-plan` instead — this skill is the single-track counterpart.
+> **Scope.** Exactly one ticket. The parallel multi-enhancement orchestrator
+> previously named `multi-plan` has been retired; this is now the canonical
+> orchestration skill in this plugin.
 
 ## Required inputs
 
@@ -194,7 +195,7 @@ report.
 
 ## What this skill is not
 
-- Not a multi-ticket fan-out — that is `multi-plan`.
+- Not a multi-ticket fan-out — the parallel multi-enhancement orchestrator (`multi-plan`) has been retired; revive it from `thoughts/archive/multi-plan-skill-design.md` if needed.
 - Not a prover — proving is `prove-invariants`.
 - Not a refactor planner — refactoring lives inside `realize-specification`.
 - Not a substitute for human review of `thoughts/explanation.md`.

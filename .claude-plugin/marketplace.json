@@ -42,17 +42,17 @@
       "homepage": "https://github.com/theTyster/orbital-shift"
     },
     {
-      "name": "multi-plan",
-      "description": "Parallel worktree orchestration with plan, review, human-vetting, implement, and commit cycles. Includes single-ticket-pipeline for end-to-end logic-focused runs on one ticket.",
-      "version": "2.5.0",
-      "source": "./plugins/multi-plan",
+      "name": "orchestrate",
+      "description": "End-to-end orchestration of the logic-focused pipeline. Runs a single ticket through close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification, finishing with explain. Renamed from `multi-plan`; the parallel multi-enhancement skill has been retired in favor of the single-ticket flow.",
+      "version": "3.0.0",
+      "source": "./plugins/orchestrate",
       "author": {
         "name": "ty",
         "email": "noreply@mail.thetyster.dev",
         "keywords": [
           "orchestration",
-          "worktree",
-          "planning"
+          "pipeline",
+          "logic-focused"
         ]
       },
       "homepage": "https://github.com/theTyster/orbital-shift"

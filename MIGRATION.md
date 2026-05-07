@@ -2,7 +2,7 @@
 
 The marketplace formerly known as `logic-focused-claude` has been renamed to **`orbital-shift`**.
 
-The four plugins inside the marketplace (`logic-focused`, `c4-prolog`, `multi-plan`, `utilities`) keep their names in this rename — only the marketplace identity (repo URL + `marketplace.json` `name`) changes. A separate restructure-by-intent change will rename and split plugins later; that change will ship its own migration steps.
+In this same change, the `multi-plan` plugin has been renamed to `orchestrate`, the `multi-plan` skill inside it has been retired (design preserved at `thoughts/archive/multi-plan-skill-design.md` for future revival), and the `single-ticket-pipeline` skill has been renamed to `pipeline`. The other three plugins (`logic-focused`, `c4-prolog`, `utilities`) keep their names in this rename — a separate restructure-by-intent change will rename and split them later; that change will ship its own migration steps.
 
 ## If you have an existing install
 
@@ -15,6 +15,10 @@ claude /uninstall-plugin multi-plan
 claude /uninstall-plugin utilities
 
 claude /install-plugin https://github.com/theTyster/orbital-shift
+
+# After install, the new plugin set is:
+#   logic-focused, c4-prolog, orchestrate, utilities
+# The single-ticket-pipeline skill is now called `pipeline` and lives in `orchestrate`.
 ```
 
 ## If you have a local clone
