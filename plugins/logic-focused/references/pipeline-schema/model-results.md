@@ -22,7 +22,7 @@ Verdict semantics:
 | `inconsistent` | Target-world contains a counterexample. | Loop back to `decompose-proposition` with the counterexample. |
 | `gap` | Target-world lacks facts to decide the property. | Loop back to `decompose-proposition` to add a prescriptive obligation or enrich existing-world. |
 
-A `consistent` verdict is structural consistency in target-world only; it is *not* a universal proof (`lean_universal_neq_test_verified`). CWA-absent counterfactuals do not constitute a Lean disproof (`cwa_negation_neq_lean_proof`). See `../epistemic-types.md`.
+A `consistent` verdict is structural consistency in target-world only; it is *not* a universal proof (`lean_universal_neq_test_verified`). CWA-absent counterfactuals do not constitute a Lean disproof (`cwa_negation_neq_lean_proof`). See `../ontology.md`.
 
 ## Evidence for inconsistent and gap verdicts
 

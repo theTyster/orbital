@@ -29,7 +29,7 @@ negation_provenance(legacy(deploy), contradicts).
 
 **Arity differs by artifact.** In `hypothesis.pl` the per-claim record is `claim_negation_provenance/3`; in `target-world.pl` the per-fact record is `negation_provenance/2`. `model-obligations` performs the translation: for each `claim_negation_provenance(ClaimId, Fact, Mode)` in hypothesis, emit `negation_provenance(Fact, Mode)` in target-world.
 
-The counterfactually-removed fact itself is *omitted* from target-world (CWA-absent); only the `negation_provenance/2` marker survives. `prove-invariants` reads the marker to decide how to lift the negation into Lean — see `../epistemic-types.md` for why `absent` and `contradicts` carry different logical strength.
+The counterfactually-removed fact itself is *omitted* from target-world (CWA-absent); only the `negation_provenance/2` marker survives. `prove-invariants` reads the marker to decide how to lift the negation into Lean — see `../ontology.md` for why `absent` and `contradicts` carry different logical strength.
 
 ## Counterfactual scaffolding
 

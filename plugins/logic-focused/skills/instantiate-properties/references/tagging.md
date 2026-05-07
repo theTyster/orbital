@@ -21,7 +21,7 @@ In addition to `test_category`, a test may carry any combination of the followin
 
 | Field | Role |
 |---|---|
-| `epistemic_label` | What kind of claim the test descends from (`descriptive` / `counterfactual` / `prescriptive`). |
+| `ontology_label` | What kind of claim the test descends from (`descriptive` / `counterfactual` / `prescriptive`). |
 | `negation_provenance` | Why a negated premise is false (`absent` / `contradicts`). Only present when the source claim has a negated premise. |
 | `proof_strategy` | Freeform string describing how Lean proved the parent theorem. Tells the implementor *how* the property was established. |
 | `proof_mode` | Derived: `invariant` (every claim is descriptive) vs `conditional` (at least one counterfactual claim exists). |
@@ -62,7 +62,7 @@ Every tag has exactly one source predicate (or a fully specified derivation rule
 | Tag on test | Domain | Source predicate | Artifact |
 |---|---|---|---|
 | `test_category` | `projection` \| `behavioral_claim` | derived — see Section 2 decision tree | — |
-| `epistemic_label` | `descriptive` \| `counterfactual` \| `prescriptive` | `claim_label(ClaimId, Label)` | `hypothesis.pl` |
+| `ontology_label` | `descriptive` \| `counterfactual` \| `prescriptive` | `claim_label(ClaimId, Label)` | `hypothesis.pl` |
 | `negation_provenance` (claim side) | `absent` \| `contradicts` | `claim_negation_provenance(ClaimId, Fact, Mode)` | `hypothesis.pl` |
 | `negation_provenance` (theorem side echo) | `absent` \| `contradicts` | `provenance_annotation(TheoremId, FactId, Mode)` | `lean_proof_results.pl` |
 | `proof_strategy` | NL string | `proof_strategy(TheoremId, Strategy)` | `lean_proof_results.pl` |
@@ -84,7 +84,7 @@ Every tag has exactly one source predicate (or a fully specified derivation rule
 Resolve each tag with an actual `swipl` query, not by reading prose:
 
 ```bash
-# epistemic_label for a claim
+# ontology_label for a claim
 swipl -g "consult('thoughts/hypothesis.pl'), claim_label(c_001, L), write(L), halt."
 
 # negation provenance — both sides, check agreement
@@ -111,7 +111,7 @@ A `projection` test must carry every tag below. Missing any of them makes the te
 - `sampled_from:` — NL description from the source `formal_property/3` (or the source claim if sampling a counterfactual).
 - `fixture_set:` — the specific values chosen for the quantified variable.
 - `unsampled_domain:` — values of the quantified variable NOT covered; also aggregated into the COVERAGE GAPS block.
-- `epistemic_label:` — `descriptive` \| `counterfactual` \| `prescriptive`, read from `claim_label/2`.
+- `ontology_label:` — `descriptive` \| `counterfactual` \| `prescriptive`, read from `claim_label/2`.
 - `proof_strategy:` — the `proof_strategy/2` string from `lean_proof_results.pl`, when a Lean theorem is the parent. If the parent is a Prolog model fact rather than a Lean theorem, omit this field or set it to `"prolog-model"` with the verification query noted in the comment.
 - `proof_mode:` — `invariant` \| `conditional`, derived from `hypothesis.pl`.
 - `negation_provenance:` — **required iff** the source claim has a negated premise (every counterfactual claim; prescriptive claims with a `¬…` premise). Values `absent` or `contradicts`. Absent-provenance projections are fragile — the comment must flag this explicitly so a future reader knows the proof rests on CWA completeness.
@@ -127,7 +127,7 @@ A `behavioral_claim` test has **no proof ancestry**. It must:
 It must **omit** the following fields — they imply formal ancestry that does not exist:
 
 - `proof_strategy` — no parent theorem.
-- `epistemic_label` — no parent `claim/2`.
+- `ontology_label` — no parent `claim/2`.
 - `sampled_from` — no parent `formal_property/3`.
 - `fixture_set` — nothing is being sampled; the test's inputs are simply inputs.
 - `unsampled_domain` — no quantified domain to partition.
@@ -149,7 +149,7 @@ All three rules are invariants of the pipeline. The tag vector on each test is w
 
 ## 6. Cross-References
 
-- **`../../../references/epistemic-types.md`** — canonical semantics of `epistemic_label`, `negation_provenance`, and `test_category`. The three-node ontology (Prolog / Lean / TDD), the gain/loss accounting at each boundary, and the three enforcement rules. Read this to understand *why* the tags exist.
+- **`../../../references/ontology.md`** — canonical semantics of `ontology_label`, `negation_provenance`, and `test_category`. The three-node ontology (Prolog / Lean / TDD), the gain/loss accounting at each boundary, and the three enforcement rules. Read this to understand *why* the tags exist.
 - **`../../../references/pipeline-schema/`** — wire format of every `.pl` artifact in the pipeline. The `README.md` in that directory maps each artifact to its producer and consumer.
 - **`../../../references/pipeline-schema/hypothesis.md`** — schema for `thoughts/hypothesis.pl`. Source of truth for `claim/2`, `claim_label/2`, `claim_status/2`, `claim_premise/2`, `claim_negation_provenance/3` (note arity 3), and `formal_property/3`.
 - **`../../../references/pipeline-schema/target-world.md`** — schema for `thoughts/target-world.pl`. Source of truth for `formal_property/3` propagation, `cf_fact/N`, `negation_provenance/2` (note arity 2 — different from hypothesis), and target-relation helpers.

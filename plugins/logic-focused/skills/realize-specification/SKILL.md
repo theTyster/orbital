@@ -1,7 +1,7 @@
 ---
 name: realize-specification
 description: >
-  Use this skill whenever the user wants to implement code from proven formal properties — "drive the TDD suite to green", "implement the skipped tests", "implement from proof", or "make these tests pass". Unskips one test at a time and orchestrates sub-agents to realize the specification, routing each test by its `test_category` (projection vs behavioral_claim) and the `epistemic_label` of its cited claim in `hypothesis.pl`.
+  Use this skill whenever the user wants to implement code from proven formal properties — "drive the TDD suite to green", "implement the skipped tests", "implement from proof", or "make these tests pass". Unskips one test at a time and orchestrates sub-agents to realize the specification, routing each test by its `test_category` (projection vs behavioral_claim) and the ontology label (`claim_label/2`) of its cited claim in `hypothesis.pl`.
 user-invocable: true
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, Agent
 argument-hint: "[test file path] [target codebase directory — REQUIRED] (optionally reads thoughts/hypothesis.pl, thoughts/lean_proof_results.pl)"
@@ -21,13 +21,13 @@ The tests and proofs are the specification. Refactoring existing code to satisfy
 
 ## Inputs
 
-- **Required**: `thoughts/tests/{file}` — the skipped TDD suite from `instantiate-properties`. Each test carries `test_category(projection | behavioral_claim)` plus carried-forward `epistemic_label` and (for projections) `negation_provenance` annotations.
+- **Required**: `thoughts/tests/{file}` — the skipped TDD suite from `instantiate-properties`. Each test carries `test_category(projection | behavioral_claim)` plus a carried-forward ontology label and (for projections) negation-provenance annotation.
 - **Required environment**: `target_codebase_dir` — the directory whose source files will be modified. There is no default; if the caller did not provide it, halt and ask.
 - **Optional**: `thoughts/hypothesis.pl` — Prolog facts for claims, with `claim/2`, `claim_label(_, descriptive | counterfactual | prescriptive)`, `negation_provenance(_, absent | contradicts)`, sub-hypothesis decomposition, and edge predicates.
 - **Optional**: `thoughts/lean_proof_results.pl` (or `thoughts/model_results.pl`) — `theorem_verdict/2` and accompanying facts.
 - **Optional**: `thoughts/*.pl` — domain vocabulary or model results that the test file or hypothesis cite.
 
-The test file's tags use **`test_category(projection | behavioral_claim)`** — exactly two values. Reference: `../../references/epistemic-types.md`.
+The test file's tags use **`test_category(projection | behavioral_claim)`** — exactly two values. Reference: `../../references/ontology.md`.
 
 If no language was detected when tests were generated (pseudotest format), halt and ask the user which language to implement in. Do not guess.
 
@@ -307,4 +307,4 @@ The orchestrator's own edits are limited to: toggling skip annotations in the te
 - **`../../agents/realize-suite-runner.md`** — test-suite runner with baseline-delta digests
 - **`../../agents/realize-counterfactual-scanner.md`** — counterfactual locator + re-introduction watchdog
 - **`../../references/realize-briefing-rules.md`** — canonical addition / removal / behavioral rule blocks copied into every briefing
-- **`../../references/epistemic-types.md`** — definitions of `claim_label` and `negation_provenance`
+- **`../../references/ontology.md`** — definitions of `claim_label` and `negation_provenance`

@@ -24,7 +24,7 @@ Turn each universal Lean property into a `projection` test that samples the proo
 
 Quick rule for assignment: if the test descends from a Lean theorem, a `formal_property/3` in `lean_proof_results.pl`/`model_results.pl`, or a verified `model_results.pl` fact → `projection`. If it asserts I/O, state, concurrency, timing, HTTP status, logging, or any other runtime-observable behaviour Lean cannot state → `behavioral_claim`.
 
-Each test also carries diagnostic tags (`epistemic_label`, `negation_provenance`, `proof_strategy`, `proof_mode`, `sampled_from`, `fixture_set`, `unsampled_domain`) inherited from the source claim where applicable. **For the full taxonomy, decision tree, and canonical tag→source-predicate table, consult `references/tagging.md`.** That file is the contract; this section is the summary.
+Each test also carries diagnostic tags (`ontology_label`, `negation_provenance`, `proof_strategy`, `proof_mode`, `sampled_from`, `fixture_set`, `unsampled_domain`) inherited from the source claim where applicable. **For the full taxonomy, decision tree, and canonical tag→source-predicate table, consult `references/tagging.md`.** That file is the contract; this section is the summary.
 
 ## Input
 
@@ -61,7 +61,7 @@ Extract for each verdict:
 - The `proof_strategy/2` value (hints at what the implementation must do; surface in the test's `proof_strategy:` comment line)
 - Which claim it was derived from
 - **Proof mode** — `invariant` or `conditional`. **Derived**, not stored: `conditional` iff `hypothesis.pl` contains any `claim_label(_, counterfactual)`; otherwise `invariant`. Do not look for a `proof_mode` predicate — none exists in the schema.
-- **`epistemic_label`** for the source claim — `descriptive | counterfactual | prescriptive` (from `claim_label/2` in `hypothesis.pl`). This label flows onto every projection test that witnesses the claim.
+- **`ontology_label`** for the source claim — `descriptive | counterfactual | prescriptive` (from `claim_label/2` in `hypothesis.pl`). This label flows onto every projection test that witnesses the claim.
 - **`negation_provenance`** for any negated premise — `absent | contradicts`. Source on the hypothesis side: `claim_negation_provenance(ClaimId, Fact, Mode)` in `hypothesis.pl`. Source on the proof side: `provenance_annotation(TheoremId, FactId, Mode)` in `lean_proof_results.pl`. The two MUST agree; a divergence is a malformed run. Tests that depend on a negated premise inherit this provenance and must flag `absent` as fragile in their comment block.
 - If `conditional`, also extract:
   - **Counterfactual facts** — the KB facts from `claim_label(_, counterfactual)` claims that had to be false for the property to hold (e.g., `cf_fact(cli_tool, logging)`). Cross-reference with `thoughts/target-world.pl` for the corresponding fact removals.
@@ -141,14 +141,14 @@ For each proven property, produce at least one `projection` test. The translatio
 
 Two contracts that bind every projection test, regardless of shape:
 
-- **Record the sample.** Every projection test's comment block must carry `sampled_from:`, `fixture_set:`, and `unsampled_domain:` — these capture the universality loss explicitly. Combined with `test_category`, `epistemic_label`, `negation_provenance` (if applicable), and `proof_strategy`, they form the full tag block. See `references/tagging.md` for the field list and source predicates.
+- **Record the sample.** Every projection test's comment block must carry `sampled_from:`, `fixture_set:`, and `unsampled_domain:` — these capture the universality loss explicitly. Combined with `test_category`, `ontology_label`, `negation_provenance` (if applicable), and `proof_strategy`, they form the full tag block. See `references/tagging.md` for the field list and source predicates.
 - **Name tests after properties, not code.** `test_auth_token_invalid_after_expiry` over `test_tokenService_checkExpiry`. Property names survive refactoring.
 
 ### 3.5. Translate Counterfactual Claims into Removal-Projection Tests
 
 **Applies only when at least one `claim_label(_, counterfactual)` exists in `hypothesis.pl` (conditional mode).** For every counterfactual claim and its corresponding fact removal in `target-world.pl`, emit:
 
-- A **removal test** (architectural / lint-style) asserting the fact no longer holds in the implementation — `test_category: projection`, `epistemic_label: counterfactual`.
+- A **removal test** (architectural / lint-style) asserting the fact no longer holds in the implementation — `test_category: projection`, `ontology_label: counterfactual`.
 - A **reintroduction test** asserting the invariant breaks if the fact is put back — only for counterfactuals labelled NECESSARY by `necessity_lemma_status(_, _, proven)` in `lean_proof_results.pl`.
 
 EXTRANEOUS counterfactuals (`necessity_lemma_status(_, _, extraneous)`) emit the removal test only and surface a LOOPBACK SIGNAL to `decompose-proposition`. INSUFFICIENT proofs surface a LOOPBACK SIGNAL to enumerate more counterfactuals.
@@ -236,7 +236,7 @@ Three contracts the templates enforce that bear repeating here:
 
 - Every test starts skipped, in the framework's idiom (`test.skip`, `@pytest.mark.skip`, `t.Skip`, `#[ignore]`, etc.). The skip state is the TDD progress ledger consumed by `realize-specification`.
 - `LOOPBACK SIGNALS` (Step 7b output) and `COVERAGE GAPS` (Step 7a output) render as **two separate blocks**, in that order, at the end of the file. They have different audiences — never collapse them.
-- `behavioral_claim` tests live in Phase B, always last, and omit `proof_strategy`, `epistemic_label`, `sampled_from`, `fixture_set`, `unsampled_domain` from their comment block (those fields imply proof ancestry which `behavioral_claim` lacks).
+- `behavioral_claim` tests live in Phase B, always last, and omit `proof_strategy`, `ontology_label`, `sampled_from`, `fixture_set`, `unsampled_domain` from their comment block (those fields imply proof ancestry which `behavioral_claim` lacks).
 
 ## Output
 
@@ -255,7 +255,7 @@ Report:
 - Coverage gaps (proven properties that couldn't be translated, with reasons) — from Step 7a
 - **Loopback signals** — distinct from coverage gaps; each entry names the upstream skill (`decompose-proposition` or `prove-invariants`) and the trigger (EXTRANEOUS counterfactuals, INSUFFICIENT proof, conditional-without-cf, provenance disagreement). From Step 7b.
 - **test_category breakdown**: N projection, M behavioral_claim (these are the only two values)
-- **epistemic_label breakdown** (diagnostic, **over projection tests only** — `behavioral_claim` tests carry no `epistemic_label`): how many projections inherited `descriptive`, `counterfactual`, `prescriptive`
+- **ontology_label breakdown** (diagnostic, **over projection tests only** — `behavioral_claim` tests carry no `ontology_label`): how many projections inherited `descriptive`, `counterfactual`, `prescriptive`
 - **negation_provenance breakdown** (diagnostic, where applicable): how many tests rest on `absent` (CWA, fragile) vs `contradicts` (explicit, structural)
 - Unsampled-domain count per property (from Step 7a)
 
@@ -289,5 +289,5 @@ Consult `references/guidance.md` when any of these meets resistance from the cur
 | `references/counterfactual-tests.md` | Step 3.5 — only in conditional mode. Fact-shape table, NECESSARY/EXTRANEOUS handling, architecture-test framework picks, worked walkthrough. |
 | `references/structural-tests.md` | Step 5 — when the run has Prolog KB files beyond `lean_proof_results.pl`. Structural-pattern→test-shape table, swipl discovery queries. |
 | `references/guidance.md` | Whenever a principle decision arises. 13 principles with failure-mode rationale and concrete examples. |
-| `../../references/epistemic-types.md` | Tag *semantics* — what each tag means at a boundary. |
+| `../../references/ontology.md` | Ontology label *semantics* — what each label means at a boundary. |
 | `../../references/pipeline-schema/` | Wire format of every `.pl` artifact. The wiki wins when a skill's local doc disagrees. |

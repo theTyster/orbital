@@ -2,7 +2,7 @@
 
 Canonical Prolog predicate schema for artifacts that cross skill boundaries in the logic-focused pipeline. One file per artifact. When a skill's local documentation disagrees with a file in this wiki, **the wiki wins** and the skill is out of date.
 
-Companion: `../epistemic-types.md` defines the *semantics* of the tags (`epistemic_label`, `negation_provenance`, etc.); this wiki defines the *syntax* — which predicate, which arity, which argument order — that carries those tags across boundaries.
+Companion: `../ontology.md` defines the *semantics* of the ontology labels (`claim_label`, `negation_provenance`, etc.); this wiki defines the *syntax* — which predicate, which arity, which argument order — that carries those labels across boundaries.
 
 ## Artifact flow
 

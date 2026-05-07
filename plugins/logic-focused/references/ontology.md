@@ -1,8 +1,10 @@
-# Epistemic Types for the Logic-Focused Pipeline
+# The Ontology
 
-This document is the canonical reference for the *typed artifact system* used across the logic-focused pipeline. Every claim that flows from one skill to another carries tags that record its origin, the strength of its negations, and what was preserved or lost when it crossed a boundary. Boundary skills MUST preserve these tags — treating a CWA-absent fact as a Lean-disproved fact, or a Lean-universal property as a test-verified one, is a category error the tag system exists to prevent.
+This document is the canonical reference for the *ontology-typed artifact system* used across the logic-focused pipeline. Every claim that flows from one skill to another carries ontology labels that record its origin, the strength of its negations, and what was preserved or lost when it crossed a boundary. Boundary skills MUST preserve these labels — treating a CWA-absent fact as a Lean-disproved fact, or a Lean-universal property as a test-verified one, is a category error the ontology exists to prevent.
 
-## The three-node ontology
+The ontology is the *shared glue* the pipeline's design assumes: independent analysis lenses (Prolog, Lean, TDD) can triangulate without biasing each other only because each claim is typed consistently as it crosses boundaries. This file is the single source of truth for the label values; both the Prolog side (`decompose-proposition` writing `claim_label/2` and `claim_negation_provenance/3`) and the Lean side (the ontology scaffold's `Origin` and `NegationProvenance` enum constructors) reference these definitions. New label values go through this file before anywhere else uses them.
+
+## The three-node architecture
 
 The pipeline has three reasoning systems. Each is strong in a different dimension. Each weakness becomes the motivation for the next node.
 
@@ -16,16 +18,16 @@ The skills that cross between these nodes are the **edges of the ontology**. An 
 
 1. **What survived the crossing** (preserved strength)
 2. **What was weakened** (downgraded but still present)
-3. **What was lost entirely** (provenance stripped, distinction flattened)
+3. **What was lost entirely** (label stripped, distinction flattened)
 4. **What new claims the destination introduces** (claims with no upstream backing)
 
-## The tag system: two orthogonal dimensions plus one test classification
+## The label system: two orthogonal dimensions plus one test classification
 
 The pipeline uses two orthogonal claim-level dimensions and one test-level classification. They are *independent* — a single claim can carry one value from each. Dropping any dimension at a boundary is the failure mode this document is designed to prevent.
 
-### Dimension 1 — `epistemic_label` on every claim
+### Dimension 1 — claim origin (`ontology_label`)
 
-Every `claim/2` in `thoughts/hypothesis.pl` carries exactly one `epistemic_label`. The label says *what kind of claim it is* — what world the claim is about.
+Every `claim/2` in `thoughts/hypothesis.pl` carries exactly one origin label. The Prolog predicate is `claim_label/2`; in prose, refer to its value as the claim's *ontology label*. The label says *what kind of claim it is* — what world the claim is about.
 
 | Label | Meaning | World semantics |
 |---|---|---|
@@ -38,9 +40,9 @@ Downstream consumption:
 - `prove-invariants` reads the label to decide which claims become formal theorems and how to phrase them.
 - `instantiate-properties` reads the label when sampling a property: counterfactual claims project to absence-style tests; prescriptive claims project to presence-style tests; descriptive claims project to invariant tests.
 
-### Dimension 2 — `negation_provenance` on every negated premise
+### Dimension 2 — negation provenance
 
-Whenever a claim's body involves a *negation* — every `counterfactual` claim plus any `prescriptive` claim with a `¬…` premise — that negation carries exactly one `negation_provenance` tag. The provenance says *why the fact is false*.
+Whenever a claim's body involves a *negation* — every `counterfactual` claim plus any `prescriptive` claim with a `¬…` premise — that negation carries exactly one negation-provenance label. The Prolog predicate is `claim_negation_provenance/3` (and the Lean docstring marker is `provenance_annotation/3`). The label says *why the fact is false*.
 
 | Provenance | Meaning | Strength |
 |---|---|---|
@@ -49,7 +51,7 @@ Whenever a claim's body involves a *negation* — every `counterfactual` claim p
 
 The two values are the entire domain. There is no third option.
 
-The tag is most load-bearing at the `prolog → lean` boundary: when a negated premise enters Lean, Lean treats `¬P` as logical falsity regardless of provenance. Without the tag travelling with the premise, an `absent`-provenance negation silently becomes "mathematically proven false." Every Lean theorem with a negated premise must record the provenance in a docstring/comment block above the theorem.
+The label is most load-bearing at the `prolog → lean` boundary: when a negated premise enters Lean, Lean treats `¬P` as logical falsity regardless of provenance. Without the label travelling with the premise, an `absent`-provenance negation silently becomes "mathematically proven false." Every Lean theorem with a negated premise must record the provenance in a docstring/comment block above the theorem.
 
 ### Test-level classification — `test_category`
 
@@ -62,9 +64,24 @@ Every test emitted by `instantiate-properties` carries exactly one `test_categor
 
 `projection` covers everything that traces back to a proven property — including absence tests for counterfactual claims and guard tests for load-bearing necessity lemmas. `behavioral_claim` covers anything the formal layer never expressed.
 
+## Predicate name vs prose vocabulary
+
+The label *values* are stable across the pipeline (`descriptive | counterfactual | prescriptive`, `absent | contradicts`, `projection | behavioral_claim`). The *names* used to refer to those values diverge by carrier:
+
+| Carrier | Origin label name | Negation provenance label name |
+|---|---|---|
+| Prolog (`hypothesis.pl`) | `claim_label/2` | `claim_negation_provenance/3` |
+| Prolog (`target-world.pl`) | per-fact `provenance/2` | per-fact `negation_provenance/2` |
+| Lean (`Proofs/*.lean`) | `@[ontology .X, .Y]` attribute (or `/- provenance(X) -/` docstring) | same attribute / docstring |
+| Lean (`lean_proof_results.pl` echo) | `provenance_annotation/3` | `provenance_annotation/3` |
+| Test files (`thoughts/tests/*`) | `ontology_label:` comment field | `negation_provenance:` comment field |
+| Prose (this doc, SKILL.md, etc.) | "ontology label" / "ontology kind" | "ontology label" |
+
+Predicate names are part of the on-disk artifact contract; renaming them ripples into every prior pipeline run and breaks reproducibility. The prose name is "ontology"; the syntactic predicates stay.
+
 ## The three enforcement rules
 
-These rules are invariants of the pipeline. Skills surface them in their guidance; tags exist to prevent silent violations.
+These rules are invariants of the pipeline. Skills surface them in their guidance; ontology labels exist to prevent silent violations.
 
 1. **`cwa_negation_neq_lean_proof`** — A fact that is false because absent from the KB is categorically different from a formally disproved fact. Every Lean theorem with a `negation_provenance(absent)` premise carries that provenance forward; Lean cannot reconstruct it.
 
@@ -74,17 +91,17 @@ These rules are invariants of the pipeline. Skills surface them in their guidanc
 
 ## Boundary crossings
 
-Two formal boundaries carry typed artifacts between nodes.
+Two formal boundaries carry ontology-typed artifacts between nodes.
 
 ### `prolog → lean` boundary
 Carrier: `thoughts/target-world.pl`.
 - **Gain**: universal properties Prolog cannot state (∀x.P(x)).
-- **Loss**: CWA negation provenance is stripped unless preserved. The two types of falseness are conflated: `absent(F)` vs `contradicts(F, G)`. The mechanism that prevents the loss from being silent is the `negation_provenance` annotation on every Lean theorem with a negated premise.
+- **Loss**: CWA negation provenance is stripped unless preserved. The two types of falseness are conflated: `absent(F)` vs `contradicts(F, G)`. The mechanism that prevents the loss from being silent is the negation-provenance annotation on every Lean theorem with a negated premise.
 
 ### `lean → tdd` boundary
 Carrier: `thoughts/lean_proof_results.pl`.
 - **Gain**: behavioral claims Lean cannot express — I/O, side effects, state mutation, concurrency, timing. These appear as `test_category(behavioral_claim)` tests.
-- **Loss**: modality is discarded; universality is lost. A Lean proof of ∀x.P(x) becomes P(specific_fixture) when projected to a test. A green test does not re-verify the full proof strength. The mechanism that surfaces this loss is the `test_category` tag plus the per-test `unsampled_domain` annotation.
+- **Loss**: modality is discarded; universality is lost. A Lean proof of ∀x.P(x) becomes P(specific_fixture) when projected to a test. A green test does not re-verify the full proof strength. The mechanism that surfaces this loss is the `test_category` label plus the per-test `unsampled_domain` annotation.
 
 ## Edge semantics, skill by skill
 
@@ -97,41 +114,41 @@ Each boundary-crossing skill carries explicit loss/gain obligations.
 
 ### `decompose-proposition` — existing-world.pl + proposition → hypothesis.pl
 - **Preserved**: A logical interpretation, positive and negative, of the KB.
-- **Introduced**: claim decomposition. Every claim is tagged with an `epistemic_label`; every negated premise additionally with a `negation_provenance`.
+- **Introduced**: claim decomposition. Every claim is tagged with an ontology label; every negated premise additionally with a negation-provenance label.
 
 ### `model-obligations` — hypothesis.pl + existing-world.pl → target-world.pl + model_results.pl
 - **Preserved**: CWA provenance is native; it travels through `negation_provenance` annotations on every removed-or-contradicted fact in target-world.pl.
 - **Introduced**: per-property `verdict(PropertyId, consistent | inconsistent | gap)` records in `model_results.pl`.
 
 ### `prove-invariants` — hypothesis.pl + target-world.pl → lean_proof_results.pl
-- **Preserved**: logical structure of each property (∀, ∃, →, ¬). The `negation_provenance` of every negated premise is preserved as a docstring/comment block above its theorem.
+- **Preserved**: logical structure of each property (∀, ∃, →, ¬). The negation provenance of every negated premise is preserved as a docstring/comment block above its theorem.
 - **Lost (if not actively preserved)**: CWA provenance. Lean cannot distinguish a theorem with a genuinely false premise from one with a CWA-absent premise. The skill MUST record the `provenance(absent | contradicts)` annotation on every relevant theorem.
 - **Introduced**: universal quantification over arbitrary types — real new strength when the type is larger than the KB's enumeration. Per-theorem `theorem_verdict(TheoremId, proven | unprovable)` facts in `lean_proof_results.pl`.
 
 ### `instantiate-properties` — lean_proof_results.pl + (optional) hypothesis.pl + target-world.pl + model_results.pl + .lean files → test suite
-- **Preserved**: per-test reference to the source property; per-test `epistemic_label` and (if applicable) `negation_provenance` carried from the source claim.
+- **Preserved**: per-test reference to the source property; per-test ontology label and (if applicable) negation provenance carried from the source claim.
 - **Weakened — the sampling downgrade**: universality is lost. Each `projection` test records the quantified domain it samples and the values of that domain it does NOT cover.
 - **Lost**: the ability to re-verify the full strength of the proof.
 - **Introduced**: `behavioral_claim` tests. They have no upstream backing; they appear in their own phase and cannot loop back to upstream stages.
 
 ### `realize-specification` — test suite + (optional) lean_proof_results.pl + hypothesis.pl + target-world.pl + model_results.pl → source code + implementation_log.md
-- **Preserved**: the test-to-property link via the implementation log. Each entry records the cited claim's `epistemic_label` and (if applicable) `negation_provenance`.
-- **Routing**: the orchestrator chooses its briefing shape from `test_category` and the cited claim's `epistemic_label`. A `projection` test whose claim is `counterfactual` triggers a *removal* briefing (delete the fact's source location); a `projection` test whose claim is `descriptive` or `prescriptive` triggers an *addition* briefing; a `behavioral_claim` test triggers a *behavioral* briefing.
+- **Preserved**: the test-to-property link via the implementation log. Each entry records the cited claim's ontology label and (if applicable) negation provenance.
+- **Routing**: the orchestrator chooses its briefing shape from `test_category` and the cited claim's ontology label. A `projection` test whose claim is `counterfactual` triggers a *removal* briefing (delete the fact's source location); a `projection` test whose claim is `descriptive` or `prescriptive` triggers an *addition* briefing; a `behavioral_claim` test triggers a *behavioral* briefing.
 - **Loopback constraint**: `behavioral_claim` failures do NOT loop back into the formal pipeline. There is no upstream property to revise.
 
 ### `measure-entailment` — implemented codebase + implementation_log.md + hypothesis.pl → adherence_facts.pl + adherence_report.md
-- **Obligation**: score how much the implemented system entails the original proposition. Per-claim breakdown surfaces how each `epistemic_label` was realized: counterfactual claims should have absent fact-sources; prescriptive claims should have provable evidence; descriptive claims should remain entailed.
+- **Obligation**: score how much the implemented system entails the original proposition. Per-claim breakdown surfaces how each ontology label was realized: counterfactual claims should have absent fact-sources; prescriptive claims should have provable evidence; descriptive claims should remain entailed.
 
-## How skills should emit and consume tags
+## How skills should emit and consume labels
 
-- **Emit**: every artifact a skill writes (hypothesis.pl, model_results.pl, lean_proof_results.pl, .lean source, test file, implementation log, adherence report) must tag each claim with the appropriate dimension(s). For Prolog facts, use the dimension's predicate name (`claim_label/2`, `negation_provenance/2`, `test_category/2`); for non-Prolog artifacts, use a comment block, a docstring, or a YAML field — but the vocabulary is this document's.
-- **Consume**: when a skill reads a prior artifact, it propagates tags forward. Never emit a downstream claim with a stronger tag than its weakest upstream input. Adding strength mid-pipeline is how `negation_provenance(absent)` premises silently become "mathematically proven."
+- **Emit**: every artifact a skill writes (hypothesis.pl, model_results.pl, lean_proof_results.pl, .lean source, test file, implementation log, adherence report) must label each claim with the appropriate dimension(s). For Prolog facts, use the dimension's predicate name (`claim_label/2`, `claim_negation_provenance/3`, `test_category/2`); for non-Prolog artifacts, use a comment block, a docstring, or a YAML field — but the vocabulary is this document's.
+- **Consume**: when a skill reads a prior artifact, it propagates labels forward. Never emit a downstream claim with a stronger label than its weakest upstream input. Adding strength mid-pipeline is how `negation_provenance(absent)` premises silently become "mathematically proven."
 - **Never flatten**: when translating a claim into a different artifact's format (e.g., a Lean theorem becoming a test), the dimensions must travel with it. A `projection` test that samples a Lean theorem with a `negation_provenance(absent)` premise is still constrained by the fragile-CWA caveat — record it.
 
 ## Failure modes this system is designed to catch
 
-- **CWA-as-truth**: Treating `\+ depends_on(A, B)` as a proof that A does not depend on B. It is a proof that the KB does not *say* A depends on B. The `negation_provenance(absent)` tag exists to keep this audible.
+- **CWA-as-truth**: Treating `\+ depends_on(A, B)` as a proof that A does not depend on B. It is a proof that the KB does not *say* A depends on B. The `negation_provenance(absent)` label exists to keep this audible.
 - **Universal-as-tested**: Treating a green test suite as re-verifying the upstream proof. Green means "the implementation passed the sampled witnesses." The proof is still the authority on universality; the suite is a tripwire. (`lean_universal_neq_test_verified`)
 - **Behavioral-as-formal**: Treating a `behavioral_claim` test as though it were backed by a proof. A green behavioral test means the fixture passed on this run. It does not mean the behaviour is guaranteed for other inputs, other timings, or other environments. (`behavioral_claim_neq_proven_property`)
 - **Loopback-to-wrong-stage**: Failing a `behavioral_claim` test and looping back to `decompose-proposition`. The decompose-proposition/prove stages never expressed a behavioral claim — there is nothing to revise upstream. The fix lives in the TDD layer or in a manual decision.
-- **Silent dimension drop across a boundary**: Stripping `negation_provenance` when translating into Lean, or `epistemic_label` when translating into the test file, or `test_category` when entering implementation. Each strip is a category error that compounds downstream.
+- **Silent dimension drop across a boundary**: Stripping negation provenance when translating into Lean, or the ontology label when translating into the test file, or `test_category` when entering implementation. Each strip is a category error that compounds downstream.

@@ -79,7 +79,7 @@ itself into the suite — future contributors cannot silently un-delete the
 fact without a visible failure.
 
 Both tests are classified `test_category: projection` and
-`epistemic_label: counterfactual`. They project a counterfactual claim at
+`ontology_label: counterfactual`. They project a counterfactual claim at
 a specific fixture; they are not `behavioral_claim` tests.
 
 ---
@@ -102,7 +102,7 @@ test depends on proven necessity.
 Tags:
 
 - `test_category: projection`
-- `epistemic_label: counterfactual`
+- `ontology_label: counterfactual`
 - `negation_provenance: absent | contradicts` (inherited from
   `claim_negation_provenance/3` or its `provenance_annotation/3` echo)
 
@@ -382,7 +382,7 @@ necessity_lemma_status(t_no_cli_to_logging, f_cli_logging, proven).
 
 ```python
 # test_category: projection
-# epistemic_label: counterfactual
+# ontology_label: counterfactual
 # negation_provenance: absent  — CWA-default; guards silent reintroduction.
 # sampled_from: p_001 (cli_tool has no transitive path to logging in the
 #   target relation)
@@ -407,7 +407,7 @@ def test_cli_tool_does_not_import_logging():
 
 ```python
 # test_category: projection
-# epistemic_label: counterfactual
+# ontology_label: counterfactual
 # negation_provenance: absent  — CWA-default; the reintroduction assertion
 #   rests on the NECESSARY lemma, not on CWA alone.
 # sampled_from: necessity_lemma_status(t_no_cli_to_logging, f_cli_logging,
@@ -446,7 +446,7 @@ def test_reintroducing_cli_to_logging_breaks_no_transitive_path():
 - [`../../../references/pipeline-schema/lean-proof-results.md`](../../../references/pipeline-schema/lean-proof-results.md)
   — `theorem_verdict/2`, `proof_strategy/2`,
   `provenance_annotation/3`, `necessity_lemma_status/3`.
-- [`../../../references/epistemic-types.md`](../../../references/epistemic-types.md)
+- [`../../../references/ontology.md`](../../../references/ontology.md)
   — semantics of `descriptive`, `counterfactual`, `prescriptive`;
   `absent` vs `contradicts`; the
   `cwa_negation_neq_lean_proof` distinction.

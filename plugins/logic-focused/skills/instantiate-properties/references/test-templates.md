@@ -39,14 +39,14 @@ Every test — projection or behavioral — opens with a comment block carrying 
 // Proven in: {theorem_source/2 path}
 // proof_strategy: {proof_strategy/2 value}      // omit for behavioral_claim
 // test_category: projection | behavioral_claim
-// epistemic_label: descriptive | counterfactual | prescriptive   // omit for behavioral_claim
+// ontology_label: descriptive | counterfactual | prescriptive   // omit for behavioral_claim
 // negation_provenance: absent | contradicts                       // omit if no negated premise
 // sampled_from: {quantified domain}                               // projection only
 // fixture_set: {concrete values}                                  // projection only
 // unsampled_domain: {what this test does NOT cover}               // projection only
 ```
 
-`behavioral_claim` tests omit `proof_strategy`, `epistemic_label`, `sampled_from`, `fixture_set`, and `unsampled_domain` — they have no proof ancestry.
+`behavioral_claim` tests omit `proof_strategy`, `ontology_label`, `sampled_from`, `fixture_set`, and `unsampled_domain` — they have no proof ancestry.
 
 ## Language-specific shape (TypeScript / Jest example)
 
@@ -71,7 +71,7 @@ test.skip("{property_name}: {human description}", () => {
   // Proven in: {.lean file}
   // proof_strategy: {strategy}
   // test_category: projection
-  // epistemic_label: {label}
+  // ontology_label: {label}
   // negation_provenance: {mode}                 // omit if N/A
   // sampled_from: {domain}
   // fixture_set: {values}
@@ -135,7 +135,7 @@ Property: {full statement from formal_property/3}
 Proven in: {.lean file}
 proof_strategy: {strategy}
 test_category: projection
-epistemic_label: {label}
+ontology_label: {label}
 negation_provenance: {mode}                           # omit if N/A
 sampled_from: {domain}
 fixture_set: {values}

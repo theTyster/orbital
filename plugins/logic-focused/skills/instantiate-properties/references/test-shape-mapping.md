@@ -1,6 +1,6 @@
 # test-shape-mapping
 
-Reference for translating the *shape* of a proven property into the *shape* of a concrete projection test. Sibling references: `tagging.md` (per-test comment-block fields), `counterfactual-tests.md` (removal / reintroduction handling). Up-tree: `../../../references/epistemic-types.md` for the semantics of the universality-loss tags.
+Reference for translating the *shape* of a proven property into the *shape* of a concrete projection test. Sibling references: `tagging.md` (per-test comment-block fields), `counterfactual-tests.md` (removal / reintroduction handling). Up-tree: `../../../references/ontology.md` for the semantics of the universality-loss tags.
 
 ## 1. Overview
 
@@ -116,7 +116,7 @@ test_each_user_has_at_most_one_active_session [PARAMETERIZED]
 
   # comment block
   test_category: projection
-  epistemic_label: descriptive
+  ontology_label: descriptive
   proof_strategy: "case-split on session list, simp with filter_length_le"
   sampled_from: "all users in the directory"
   fixture_set: [alice_admin, bob_guest, carol_disabled, dana_with_no_sessions]
@@ -142,7 +142,7 @@ test_auth_token_invalid_after_expiry [CONDITIONAL]
   expect: validate(token) == reject_expired    # assert B: validation rejects
 
   test_category: projection
-  epistemic_label: descriptive
+  ontology_label: descriptive
   sampled_from: "all tokens t with expired(t) holding"
   fixture_set: ["token issued now-1s"]
   unsampled_domain: "tokens expired by clock skew rather than absolute time;
@@ -170,7 +170,7 @@ test_feasible_schedule_exists [WITNESS — manual / PBT]
         to search the ordering space.
 
   test_category: projection
-  epistemic_label: descriptive
+  ontology_label: descriptive
   proof_strategy: "non-constructive existence via pigeonhole"
   sampled_from: "the space of job orderings"
   fixture_set: []
@@ -202,7 +202,7 @@ test_normalize_path_is_idempotent [IDEMPOTENCY]
     assert once == twice
 
   test_category: projection
-  epistemic_label: descriptive
+  ontology_label: descriptive
   sampled_from: "all path strings p"
   fixture_set: ["/a/b/../c", "//a//b", "./a/./b", "", "/"]
   unsampled_domain: "paths exceeding PATH_MAX; paths with non-UTF-8 byte sequences;
@@ -234,7 +234,7 @@ test_no_cli_tool_depends_on_logging [REMOVAL — architectural]
   scan(import_graph(cli_tool)).does_not_contain(logging)
 
   test_category: projection
-  epistemic_label: counterfactual
+  ontology_label: counterfactual
   negation_provenance: absent     # FRAGILE — CWA default
   ...
 
@@ -243,7 +243,7 @@ test_reintroducing_cli_to_logging_dependency_breaks_layering [REINTRODUCTION]
   expect: layering check fails
 
   test_category: projection
-  epistemic_label: counterfactual
+  ontology_label: counterfactual
   negation_provenance: absent
 ```
 
@@ -262,7 +262,7 @@ Avoid each of the following. Most produce tests that compile and even pass, but 
 
 ## 7. Cross-references
 
-- `tagging.md` (sibling) — full schema for the per-test comment block, including the fields referenced in Sections 4 and 5 above (`test_category`, `epistemic_label`, `negation_provenance`, `proof_strategy`, `sampled_from`, `fixture_set`, `unsampled_domain`).
+- `tagging.md` (sibling) — full schema for the per-test comment block, including the fields referenced in Sections 4 and 5 above (`test_category`, `ontology_label`, `negation_provenance`, `proof_strategy`, `sampled_from`, `fixture_set`, `unsampled_domain`).
 - `counterfactual-tests.md` (sibling) — special handling for `claim_label(_, counterfactual)` claims: removal tests, reintroduction tests, and the EXTRANEOUS / NECESSARY split fed by `necessity_lemma_status/3`.
-- `../../../references/epistemic-types.md` — semantics of `descriptive | counterfactual | prescriptive` and `absent | contradicts`, including why CWA-absent and explicit-contradicts negations carry different logical strength and therefore different test fragility.
+- `../../../references/ontology.md` — semantics of `descriptive | counterfactual | prescriptive` and `absent | contradicts`, including why CWA-absent and explicit-contradicts negations carry different logical strength and therefore different test fragility.
 - `../../../references/pipeline-schema/hypothesis.md`, `target-world.md`, `lean-proof-results.md` — the wire format of the upstream artifacts cited throughout this reference.

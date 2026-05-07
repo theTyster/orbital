@@ -2,11 +2,11 @@
 
 ## Introduction
 
-This file is the long-form companion to the SKILL.md `Guidance` summary. SKILL.md keeps a short, scannable list of principle headings; the depth, justification, and concrete worked examples for each principle live here. Consult this file the first time a new contributor or model picks up `instantiate-properties`, whenever a principle needs to be defended in a code review, and whenever a generated test suite seems to violate one of the named enforcement rules in `../../../references/epistemic-types.md`.
+This file is the long-form companion to the SKILL.md `Guidance` summary. SKILL.md keeps a short, scannable list of principle headings; the depth, justification, and concrete worked examples for each principle live here. Consult this file the first time a new contributor or model picks up `instantiate-properties`, whenever a principle needs to be defended in a code review, and whenever a generated test suite seems to violate one of the named enforcement rules in `../../../references/ontology.md`.
 
 The meta-principle that ties every entry below together: **each guideline is a defense against a specific failure mode the pipeline has seen in practice.** None of these rules are stylistic. Each one corresponds to a way the `lean → tdd` boundary has been mis-crossed before — universality silently flattened into a passing test, a counterfactual quietly dropped from a hypothesis, a behavioral contract masquerading as a proven invariant, a CWA-default negation hardened into a load-bearing claim. The rules read as imperative defaults; the rationale sections explain what goes wrong without them.
 
-When a generated suite triggers a review comment, the fastest path to resolution is to identify which principle was violated and follow the corresponding "How to apply" check. The cross-cutting failure-mode index at the bottom maps each enforcement rule from the epistemic-types reference to the principles that defend it.
+When a generated suite triggers a review comment, the fastest path to resolution is to identify which principle was violated and follow the corresponding "How to apply" check. The cross-cutting failure-mode index at the bottom maps each enforcement rule from the ontology reference to the principles that defend it.
 
 ## Tests ARE the plan
 
@@ -34,7 +34,7 @@ When a generated suite triggers a review comment, the fastest path to resolution
 
 **Why.** This is the `behavioral_claim_neq_proven_property` enforcement rule. Behavioral claims (I/O, side effects, state, concurrency, timing, HTTP status codes, logging) cannot be expressed in Lean and never appeared in `lean_proof_results.pl`, `model_results.pl`, or `hypothesis.pl`. If a `behavioral_claim` failure is mistakenly routed back to `decompose-proposition` or `prove-invariants`, those skills have nothing to act on — there is no proposition to re-decompose, no theorem to re-prove. The result is a wasted loop and, worse, an erosion of the property/contract distinction: contributors begin to assume every red test means a proof was wrong, and the strength of the formal layer dilutes.
 
-**How to apply.** Place `behavioral_claim` tests in Phase B at the very bottom of the file, after every projection phase. Omit the proof-ancestry comment fields (`proof_strategy`, `epistemic_label`, `sampled_from`, `fixture_set`, `unsampled_domain`) — including them implies an ancestry that does not exist. In the report, the `test_category` breakdown surfaces the behavioral count separately from projection counts, and the `epistemic_label` breakdown is computed over projections only.
+**How to apply.** Place `behavioral_claim` tests in Phase B at the very bottom of the file, after every projection phase. Omit the proof-ancestry comment fields (`proof_strategy`, `ontology_label`, `sampled_from`, `fixture_set`, `unsampled_domain`) — including them implies an ancestry that does not exist. In the report, the `test_category` breakdown surfaces the behavioral count separately from projection counts, and the `ontology_label` breakdown is computed over projections only.
 
 **Concrete example.** A test asserting that `POST /login` returns HTTP 503 under backpressure is a `behavioral_claim`. If it fails, the implementor must decide: is 503 the right code (perhaps 429 was intended)? Is the backpressure detector miswired? Either resolution is local to the TDD layer; no Lean theorem can settle it.
 
@@ -124,7 +124,7 @@ When a generated suite triggers a review comment, the fastest path to resolution
 
 **Why.** This is the structural counter-pressure to the "only reason about what exists" bias. LLM-driven implementors — and human ones, for that matter — habitually reason additively: "to make the property hold, what code do I need to add?" Counterfactuals invert the question: "to make the property hold, what code must NOT be there?" Without an enforced removal test, the implementation can satisfy every positive projection test while still containing the forbidden dependency, and the property holds for the wrong reason. The skipped removal test is the mechanical guarantee that the deletion work happens before the addition work — which is why these tests live in Phase 0, before Foundations.
 
-**How to apply.** For each counterfactual fact in `target-world.pl`, emit a removal test of the appropriate shape (import absence, call absence, route absence, config absence). Tag with `test_category: projection`, `epistemic_label: counterfactual`, and the `negation_provenance` mode. If `Mode = absent`, the comment block must flag the test as fragile (CWA default). If `Mode = contradicts`, the test is structurally necessary — say so.
+**How to apply.** For each counterfactual fact in `target-world.pl`, emit a removal test of the appropriate shape (import absence, call absence, route absence, config absence). Tag with `test_category: projection`, `ontology_label: counterfactual`, and the `negation_provenance` mode. If `Mode = absent`, the comment block must flag the test as fragile (CWA default). If `Mode = contradicts`, the test is structurally necessary — say so.
 
 **Concrete example.** A counterfactual `cf_fact(cli_tool, logging)` produces `test_cli_tool_does_not_import_logging` — an architectural test that scans `cli_tool`'s source and asserts zero import statements referencing `logging`. Tagged `projection`, `counterfactual`, and (if relevant) `negation_provenance: contradicts` because the project explicitly forbids this dependency.
 
@@ -140,7 +140,7 @@ When a generated suite triggers a review comment, the fastest path to resolution
 
 ## Cross-cutting failure-mode index
 
-The named enforcement rules in `../../../references/epistemic-types.md` are each defended by one or more principles above:
+The named enforcement rules in `../../../references/ontology.md` are each defended by one or more principles above:
 
 | Enforcement rule | Principles that defend it |
 |---|---|
@@ -153,8 +153,8 @@ When a review flags one of these rule names, find the corresponding principle ro
 
 ## Cross-references
 
-- `tagging.md` — exact tag-emission contract for `test_category`, `epistemic_label`, `negation_provenance`, and the proof-ancestry fields
+- `tagging.md` — exact tag-emission contract for `test_category`, `ontology_label`, `negation_provenance`, and the proof-ancestry fields
 - `test-shape-mapping.md` — the property-shape to test-shape table that drives Step 3
 - `counterfactual-tests.md` — full removal/reintroduction test patterns including the CWA fragility annotation
 - `structural-tests.md` — Prolog KB to structural-test translation patterns
-- `../../../references/epistemic-types.md` — tag semantics and the named enforcement rules indexed above
+- `../../../references/ontology.md` — tag semantics and the named enforcement rules indexed above

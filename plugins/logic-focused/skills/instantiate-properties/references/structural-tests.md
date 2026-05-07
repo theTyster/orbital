@@ -4,7 +4,7 @@ Reference for Step 5 of `instantiate-properties` — turning structural patterns
 
 Related reading:
 
-- `tagging.md` — every structural test still carries the full `test_category` / `epistemic_label` / `negation_provenance` tag block.
+- `tagging.md` — every structural test still carries the full `test_category` / `ontology_label` / `negation_provenance` tag block.
 - `test-shape-mapping.md` — mappings keyed on property shape rather than KB structure.
 - `counterfactual-tests.md` — counterfactual-removal patterns live there; this file does not duplicate them.
 - `../../../references/pipeline-schema/` — the canonical wire format for every `.pl` artifact referenced below.
@@ -138,8 +138,8 @@ Boundary conditions are recorded in `hypothesis.pl` during exploration. They ent
 
 Tag inheritance follows the claim the edge descends from:
 
-- Descends from a claim in `hypothesis.pl` that was subsequently proven (or whose `formal_property/3` was proven in `lean_proof_results.pl`) → `test_category: projection`, `epistemic_label` inherited from `claim_label/2`.
-- Describes boundary behaviour that no claim captured → `test_category: behavioral_claim`, no `epistemic_label`.
+- Descends from a claim in `hypothesis.pl` that was subsequently proven (or whose `formal_property/3` was proven in `lean_proof_results.pl`) → `test_category: projection`, `ontology_label` inherited from `claim_label/2`.
+- Describes boundary behaviour that no claim captured → `test_category: behavioral_claim`, no `ontology_label`.
 
 ## 6. Coverage and ordering
 
@@ -170,7 +170,7 @@ Emitted test (pseudotest form):
 ```
 ### TEST: test_api_call_surface_exercises_audit_and_db_in_order   [skipped]
 test_category: projection
-epistemic_label: descriptive
+ontology_label: descriptive
 sampled_from: depends_on-chain rooted at api
 fixture_set: [db, audit, api]
 unsampled_domain: other roots (e.g. cli_tool) not exercised here
@@ -201,7 +201,7 @@ Emitted test:
 ```
 ### TEST: test_creating_second_active_session_invalidates_first   [skipped]
 test_category: projection
-epistemic_label: descriptive
+ontology_label: descriptive
 sampled_from: has_exactly_one(user, active_session)
 fixture_set: user u_001
 unsampled_domain: multi-user contention; session eviction under load
@@ -230,7 +230,7 @@ Emitted test:
 ```
 ### TEST: test_activating_read_only_and_write_only_simultaneously_raises   [skipped]
 test_category: projection
-epistemic_label: descriptive
+ontology_label: descriptive
 sampled_from: mutually_exclusive(read_only, write_only)
 fixture_set: modes [read_only, write_only]
 unsampled_domain: other mode pairings; transitional states
@@ -249,7 +249,7 @@ The second assertion — that the original mode is retained — is not strictly 
 
 ## 8. Cross-references
 
-- `tagging.md` — every structural test still carries the full tag block (`test_category`, `epistemic_label` when inherited, `negation_provenance` when applicable). Do not omit tags for structural tests just because their source is the KB rather than a theorem.
+- `tagging.md` — every structural test still carries the full tag block (`test_category`, `ontology_label` when inherited, `negation_provenance` when applicable). Do not omit tags for structural tests just because their source is the KB rather than a theorem.
 - `test-shape-mapping.md` — mappings keyed on property shape (`forall`, `implies`, `equivalent`, etc.) rather than on KB structure. Use that reference when the test source is a `formal_property/3`; use this one when the source is a relational pattern.
 - `counterfactual-tests.md` — counterfactual-removal patterns (`claim_label(_, counterfactual)` plus the corresponding `negation_provenance/2` in `target-world.pl`) are documented there and live in Phase 0, not here.
 - `../../../references/pipeline-schema/` — canonical wire format for `hypothesis.pl`, `target-world.pl`, `model_results.pl`, and `lean_proof_results.pl`. When any predicate name or arity in this file disagrees with the schema wiki, the wiki wins and this file is out of date.

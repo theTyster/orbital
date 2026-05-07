@@ -12,7 +12,7 @@ argument-hint: "[thoughts/target-world.pl path]"
 
 Logical operation: **prove-invariants** — machine-checked proof of universal properties (∀x.P(x)) against the open-world Prolog model in `thoughts/target-world.pl`.
 
-The **only** input artifact is `thoughts/target-world.pl`. The upstream `model-obligations` skill has already constructed it: existing-world facts ∪ counterfactual negations ∪ prescriptive obligations, with each fact carrying a provenance tag. Lean does not read `hypothesis.pl`, `existing-world.pl`, or any other intermediate — `target-world.pl` is the sole carrier across the prolog → lean boundary.
+The **only** input artifact is `thoughts/target-world.pl`. The upstream `model-obligations` skill has already constructed it: existing-world facts ∪ counterfactual negations ∪ prescriptive obligations, with each fact carrying a ontology label. Lean does not read `hypothesis.pl`, `existing-world.pl`, or any other intermediate — `target-world.pl` is the sole carrier across the prolog → lean boundary.
 
 If a property is unprovable, loop back to `decompose-proposition` to refine.
 
@@ -28,11 +28,11 @@ The `provenance` annotation is the **only** mechanism that prevents that loss fr
 - `absent` — "False because the fact is not declared in the KB (CWA default). Fragile — depends on KB completeness; does not hold if KB is incomplete."
 - `contradicts` — "False because the KB contains an explicit conflicting fact. Structurally necessary — holds regardless of KB completeness."
 
-The annotation value is **read off the provenance tag** attached to the corresponding fact in `target-world.pl`. Do not infer it.
+The annotation value is **read off the ontology label** attached to the corresponding fact in `target-world.pl`. Do not infer it.
 
 **Enforcement rule** — `cwa_negation_neq_lean_proof`: A fact that is false because absent from the KB is categorically different from a formally disproved fact. Treat dropping or eliding this annotation as a correctness bug, not a style issue.
 
-Reference: `../../references/epistemic-types.md`.
+Reference: `../../references/ontology.md`.
 
 ## Cited reference resources
 
@@ -58,14 +58,14 @@ The pipeline predecessor of this skill is `model-obligations` (which produces `t
    LEAN_PROOFS="${LEAN_PROJECT}/Proofs"
    ```
    If `${LEAN_PROJECT}/.lake/build/` does not exist, invoke the `setup-lean-project` skill to create and build it before continuing.
-4. **Required input** — `thoughts/target-world.pl` from the `model-obligations` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact provenance tags. If absent, stop and tell the user to run `model-obligations` first.
+4. **Required input** — `thoughts/target-world.pl` from the `model-obligations` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact ontology labels. If absent, stop and tell the user to run `model-obligations` first.
 
 ## Reading the input
 
 `thoughts/target-world.pl` is the sole input. Load it with `swipl` (or read it directly) and enumerate:
 
 - The ground facts of the world (these are what Lean proves universals over).
-- The per-fact provenance tags: `provenance(Fact, descriptive|prescriptive)` for asserted facts, and `negation_provenance(Fact, absent|contradicts)` for counterfactually-removed facts. Domain of the negation tag: `[absent, contradicts]`.
+- The per-fact ontology labels: `provenance(Fact, descriptive|prescriptive)` for asserted facts, and `negation_provenance(Fact, absent|contradicts)` for counterfactually-removed facts. Domain of the negation tag: `[absent, contradicts]`.
 - The formal properties to discharge — enumerate `formal_property/3` facts directly from `target-world.pl` (propagated there verbatim by `model-obligations`). Each `formal_property(Id, NLDescription, LeanSketch)` gives the property identifier, natural-language statement, and a Lean sketch to start from. Claim labels (`descriptive | counterfactual | prescriptive`) and negated-premise provenance are read off the corresponding `cf_fact/N` and `negation_provenance/2` facts in the same file.
 
 The canonical wire format for `target-world.pl` lives in `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/target-world.md` (and `lean-proof-results.md` in the same directory for the output file this skill emits). Use them as the authoritative source when enumerating predicates.
@@ -92,7 +92,7 @@ set_option autoImplicit false
 {Lean definitions modeling the domain, populated from target-world.pl ground facts}
 
 /-
-provenance(absent | contradicts)   -- value read from target-world.pl provenance tag
+provenance(absent | contradicts)   -- value read from target-world.pl ontology label
 -/
 theorem {property_name} : {formal statement} := by
   sorry -- start with sorry, then prove one tactic at a time
@@ -117,7 +117,7 @@ set_option autoImplicit false
 -- Property: {natural language description}
 -- Claim label: counterfactual
 -- Source: thoughts/target-world.pl
--- Negated premises: see provenance tags in target-world.pl
+-- Negated premises: see ontology labels in target-world.pl
 
 {domain definitions}
 
@@ -147,7 +147,7 @@ theorem {property_name}_needs_{cf_id} :
   sorry
 ```
 
-The `provenance(...)` block is **mandatory** above every theorem. Annotation domain is exactly `[absent, contradicts]`. Read the value off the corresponding fact's provenance tag in `target-world.pl` — do not infer it.
+The `provenance(...)` block is **mandatory** above every theorem. Annotation domain is exactly `[absent, contradicts]`. Read the value off the corresponding fact's ontology label in `target-world.pl` — do not infer it.
 
 ### Prescriptive properties
 
@@ -161,7 +161,7 @@ The property describes an *obligation* that should hold. The upstream Prolog ste
 {domain definitions sourced from target-world.pl, including obligation facts}
 
 /-
-provenance(absent | contradicts)   -- value read from target-world.pl provenance tag
+provenance(absent | contradicts)   -- value read from target-world.pl ontology label
 -/
 theorem {property_name} : {formal statement} := by
   sorry
@@ -174,7 +174,7 @@ For relations that already come from Mathlib (e.g. `SimpleGraph`, `Finset`-backe
 The primary way to execute this skill is to spawn the `logic-focused:lean-expert` sub-agent with the `Agent` tool. That agent is the Lean 4 proof engineer: it treats `lake build` as its reasoning tool rather than chain-of-thought, and applies adversarial verification patterns (interpretation checking, extracted-lemma counterexample search, calibrated abstention). Running Lean proofs through a sub-agent also isolates the noisy compiler output from your main context.
 
 Brief the sub-agent with:
-- The `thoughts/target-world.pl` path (the **sole** input — facts, provenance tags, and formal properties)
+- The `thoughts/target-world.pl` path (the **sole** input — facts, ontology labels, and formal properties)
 - The Lean project root (`thoughts/lean`) and proofs directory (`thoughts/lean/Proofs`)
 - The shared Mathlib location (`~/.lean/mathlib4`)
 - The per-property correction budget (5 inner / 3 outer, see §4)
@@ -182,8 +182,8 @@ Brief the sub-agent with:
 - An instruction that on genuine unprovability it must stop and report the failure mode rather than rewrite the property to make it go through
 - The absolute path to the plugin's Mathlib wiki: `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/` — lean-expert reads this directly for lemma/theorem lookups
 - A pointer to the skill-local `${CLAUDE_SKILL_DIR}/references/lean-proof-method.md` methodology doc
-- An explicit instruction to first read every claim label and per-fact provenance tag from `target-world.pl` to decide proof pattern (descriptive vs. counterfactual vs. prescriptive). For counterfactual claims, each property becomes a sufficiency theorem over the target relation (read off `target-world.pl`) plus one necessity lemma per negated-premise fact. The sub-agent must not collapse a counterfactual property into a direct statement over the original relation — that theorem is guaranteed false and erases the constructive content of the hypothesis.
-- Mandatory annotation rule: every theorem in `thoughts/lean/Proofs/*.lean` MUST carry a `provenance(absent)` or `provenance(contradicts)` docstring/comment block above the theorem statement. The value is read off the provenance tag of the corresponding fact in `target-world.pl`. Annotation domain is exactly `[absent, contradicts]`. Do not omit it — Lean has no way to reconstruct this provenance later, and it is required by `requires_annotation('thoughts/lean/Proofs/*.lean', provenance)`.
+- An explicit instruction to first read every claim label and per-fact ontology label from `target-world.pl` to decide proof pattern (descriptive vs. counterfactual vs. prescriptive). For counterfactual claims, each property becomes a sufficiency theorem over the target relation (read off `target-world.pl`) plus one necessity lemma per negated-premise fact. The sub-agent must not collapse a counterfactual property into a direct statement over the original relation — that theorem is guaranteed false and erases the constructive content of the hypothesis.
+- Mandatory annotation rule: every theorem in `thoughts/lean/Proofs/*.lean` MUST carry a `provenance(absent)` or `provenance(contradicts)` docstring/comment block above the theorem statement. The value is read off the ontology label of the corresponding fact in `target-world.pl`. Annotation domain is exactly `[absent, contradicts]`. Do not omit it — Lean has no way to reconstruct this provenance later, and it is required by `requires_annotation('thoughts/lean/Proofs/*.lean', provenance)`.
 
 Do the work inline only when the user has explicitly asked you to prove it yourself in this turn. Proof size is not a reason — even a one-liner benefits from the specialist's `lake build` discipline and Mathlib familiarity, and inline execution floods the main context with compiler output. When in doubt, delegate. The rest of this file is both your guide for the inline case and the briefing material for the sub-agent.
 
@@ -249,9 +249,9 @@ This keeps heavy lemma content out of the main context window and preserves the 
 
 Load `thoughts/target-world.pl`. Enumerate:
 
-- Every formal property (natural-language statement, claim label, and per-premise provenance tags).
+- Every formal property (natural-language statement, claim label, and per-premise ontology labels).
 - The ground facts the property must hold over.
-- Each negated premise's provenance value (`absent` or `contradicts`) — sourced from the corresponding fact's provenance tag in `target-world.pl`.
+- Each negated premise's provenance value (`absent` or `contradicts`) — sourced from the corresponding fact's ontology label in `target-world.pl`.
 
 Record the proof-pattern selection and the provenance map at the top of each `.lean` file as comments. Treat any negated premise as a *contract* requiring a `provenance(absent|contradicts)` annotation on the theorem that consumes it.
 
@@ -263,7 +263,7 @@ For each formal property, create a `.lean` file in `${LEAN_PROOFS}/` (i.e. `thou
 - `counterfactual` → sufficiency theorem over the (already-pruned) target relation in `target-world.pl`, plus one necessity lemma per negated-premise fact.
 - `prescriptive` → single theorem over the augmented facts (obligation already present in `target-world.pl`).
 
-For every theorem, place the `provenance(absent)` or `provenance(contradicts)` block immediately above the theorem statement. The value comes from the provenance tag in `target-world.pl`; do not derive it.
+For every theorem, place the `provenance(absent)` or `provenance(contradicts)` block immediately above the theorem statement. The value comes from the ontology label in `target-world.pl`; do not derive it.
 
 A necessity lemma that trivially cannot be closed is a signal: either the fact isn't load-bearing (flag as extraneous and loop back to `decompose-proposition`) or the target-relation encoding is wrong. Don't paper over it with `sorry` — abstain.
 
@@ -350,7 +350,7 @@ Failure: {diagnostics summary}
 Possible causes:
 - The hypothesis may be too strong
 - The property may need additional assumptions
-- target-world.pl may be missing relevant facts (or carry the wrong provenance tag)
+- target-world.pl may be missing relevant facts (or carry the wrong ontology label)
 
 Please re-run decompose-proposition against the source KB to:
 1. Check if the property has counterexamples in target-world.pl

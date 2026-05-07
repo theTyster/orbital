@@ -11,7 +11,7 @@ argument-hint: "[existing-world.pl path] [proposition or question to explore]"
 
 # decompose-proposition
 
-**Logical operation:** *decompose-proposition* — split a proposition into claims each labeled with its `epistemic_label` (descriptive / counterfactual / prescriptive) and backed by Prolog evidence.
+**Logical operation:** *decompose-proposition* — split a proposition into claims each labeled with its *ontology label* (descriptive / counterfactual / prescriptive) and backed by Prolog evidence.
 
 Take a proposition — a planned change, an architectural claim, a design question — and systematically explore what would have to be different in the existing-world KB for the proposition to hold. The end product is `thoughts/hypothesis.pl`, a Prolog facts file that names specific, labelled, falsifiable claims ready for model construction (`model-obligations`) and machine-checked proof (`prove-invariants`).
 
@@ -23,14 +23,14 @@ A hypothesis that merely restates facts the KB already entails proves nothing in
 
 ## Two orthogonal dimensions
 
-Every claim carries two independent tags — an epistemic label (`descriptive` / `counterfactual` / `prescriptive`) and, for any negated premise, a negation provenance (`absent` / `contradicts`). Downstream skills depend on both. Semantics live in `${CLAUDE_SKILL_DIR}/../../references/epistemic-types.md`; syntactic schema lives in `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/hypothesis.md`. Read both before emitting claims.
+Every claim carries two independent ontology labels — a claim-origin label (`descriptive` / `counterfactual` / `prescriptive`) and, for any negated premise, a negation-provenance label (`absent` / `contradicts`). Downstream skills depend on both. Semantics live in `${CLAUDE_SKILL_DIR}/../../references/ontology.md`; syntactic schema lives in `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/hypothesis.md`. Read both before emitting claims.
 
 The reasoning follows a simple arc: **proposition → labeled decomposition → evidence → hypothesis.pl**.
 Prolog is the evidence-gathering tool, not the focus.
 
 ## Loopback role
 
-This skill is re-invoked whenever a downstream prove step fails. If `model-obligations` reports `inconsistent` or `gap` verdicts in `model_results.pl`, or `prove-invariants` reports `unprovable` theorems in `lean_proof_results.pl`, the pipeline returns here to refine `hypothesis.pl` — typically by resharpening a claim, adjusting an epistemic label, adding missing counterfactual requirements, or breaking a formal property into provable sub-properties. The loopback is **human-gated**: neither prove skill re-invokes `decompose-proposition` automatically. A user (or the previous prove-skill's report) must explicitly request a refinement pass, pointing at the specific unresolved property. On re-invocation, consult the previous `hypothesis.pl` plus any `model_results.pl` / `lean_proof_results.pl` verdicts and *amend* the hypothesis file — do not regenerate from scratch unless the proposition itself changed.
+This skill is re-invoked whenever a downstream prove step fails. If `model-obligations` reports `inconsistent` or `gap` verdicts in `model_results.pl`, or `prove-invariants` reports `unprovable` theorems in `lean_proof_results.pl`, the pipeline returns here to refine `hypothesis.pl` — typically by resharpening a claim, adjusting an ontology label, adding missing counterfactual requirements, or breaking a formal property into provable sub-properties. The loopback is **human-gated**: neither prove skill re-invokes `decompose-proposition` automatically. A user (or the previous prove-skill's report) must explicitly request a refinement pass, pointing at the specific unresolved property. On re-invocation, consult the previous `hypothesis.pl` plus any `model_results.pl` / `lean_proof_results.pl` verdicts and *amend* the hypothesis file — do not regenerate from scratch unless the proposition itself changed.
 
 ## Current Environment
 
@@ -102,8 +102,8 @@ Brief the sub-agent with:
 - The existing-world file path
 - Each sub-hypothesis from step 2, phrased as a counterfactual question: "Enumerate every KB fact that would contradict `{sub-hypothesis}`. The absence of such facts is itself a result — report 'no counterfactuals found after exhaustive search' rather than going silent."
 - An instruction to return, for each sub-hypothesis: the queries it ran, the raw results, and **the specific KB facts (if any) that must be false for the sub-hypothesis to hold**
-- For each claim reported, assign an `epistemic_label`: `descriptive` if the claim restates what the existing world already entails; `counterfactual` if the claim asserts that an existing fact must become false; `prescriptive` if the claim asserts that a new fact (not yet in the KB) must become true in target-world.
-- For every *negated* premise (counterfactual claims and any claim with a negative assertion in its body), also assign a `negation_provenance`: `absent` if the negation comes from closed-world absence (`\+ fact` succeeds under CWA); `contradicts` if the KB or an integrity constraint explicitly derives the negation. The two dimensions are orthogonal — one tags the claim, one tags each negation it depends on.
+- For each claim reported, assign an ontology label via `claim_label/2`: `descriptive` if the claim restates what the existing world already entails; `counterfactual` if the claim asserts that an existing fact must become false; `prescriptive` if the claim asserts that a new fact (not yet in the KB) must become true in target-world.
+- For every *negated* premise (counterfactual claims and any claim with a negative assertion in its body), also record a negation-provenance label via `claim_negation_provenance/3`: `absent` if the negation comes from closed-world absence (`\+ fact` succeeds under CWA); `contradicts` if the KB or an integrity constraint explicitly derives the negation. The two dimensions are orthogonal — one labels the claim, one labels each negation it depends on.
 - An instruction that contradiction-hunting is the priority; confirming queries are secondary. The hypothesis file's value comes from the concrete list of counterfactual claims plus new prescriptive obligations, not from restating what the KB already entails.
 
 If the KB is clearly missing facts the hypothesis depends on, spawn `logic-focused:agent-of-truth` to extend the KB before continuing — don't try to patch facts by hand.
@@ -129,8 +129,8 @@ Run targeted queries. For each one, record:
 - What a counterfactual fact would look like (the shape of a contradicting result)
 - What the KB actually returned
 - The concrete list of KB facts (if any) that must be falsified for the sub-hypothesis to hold
-- The **epistemic label** of each claim: `descriptive` (what the existing world already entails), `counterfactual` (an existing fact that must become false), or `prescriptive` (a new fact that must become provable in target-world).
-- For every *negated* premise, the **negation_provenance**: `absent` (CWA default — the KB does not derive the fact) or `contradicts` (the KB explicitly derives the negation from negative facts or integrity constraints). The `absent` case is fragile — it holds only as strongly as the KB is complete; the `contradicts` case is structurally necessary. Downstream `prove-invariants` uses this tag to annotate theorems at the CWA→OWA boundary; dropping it silently upgrades CWA-absence into logical falsity.
+- The **ontology label** of each claim: `descriptive` (what the existing world already entails), `counterfactual` (an existing fact that must become false), or `prescriptive` (a new fact that must become provable in target-world).
+- For every *negated* premise, the **negation provenance**: `absent` (CWA default — the KB does not derive the fact) or `contradicts` (the KB explicitly derives the negation from negative facts or integrity constraints). The `absent` case is fragile — it holds only as strongly as the KB is complete; the `contradicts` case is structurally necessary. Downstream `prove-invariants` uses this label to annotate theorems at the CWA→OWA boundary; dropping it silently upgrades CWA-absence into logical falsity.
 
 Prioritize contradiction-hunting. A sub-hypothesis that survives exhaustive attempts to falsify it is a strong invariant. A sub-hypothesis with a concrete list of contradicting facts is a roadmap — state both outcomes explicitly.
 
@@ -174,7 +174,7 @@ From the evidence, formulate the hypothesis. It must be:
 Each sub-hypothesis from step 2 lands in one of three states:
 
 - **Clear** — no contradicting KB facts found after exhaustive search → becomes a formal property asserting the universal negation (e.g., `∀ x, ¬ depends_on_trans(auth_lib, x) ∧ x = cli_tool`). This is a strong invariant of the current KB. Label the claim `descriptive`.
-- **Conditional** — contradicting KB facts found → these become **counterfactual claims** (KB facts that must become false in target-world) plus optional **prescriptive claims** (new facts that must become provable in target-world). Each claim carries its `epistemic_label` and, if it involves a negation, its `negation_provenance` (`absent` or `contradicts`). The prove skills use both: `model-obligations` reads the label to decide whether a claim enters target-world as a removal or as a new assertion; `prove-invariants` reads the provenance to calibrate how fragile the corresponding theorem is at the CWA→OWA boundary.
+- **Conditional** — contradicting KB facts found → these become **counterfactual claims** (KB facts that must become false in target-world) plus optional **prescriptive claims** (new facts that must become provable in target-world). Each claim carries its ontology label and, if it involves a negation, its negation-provenance label (`absent` or `contradicts`). The prove skills use both: `model-obligations` reads the label to decide whether a claim enters target-world as a removal or as a new assertion; `prove-invariants` reads the provenance to calibrate how fragile the corresponding theorem is at the CWA→OWA boundary.
 - **Open** — insufficient evidence → flag as an assumption and note what additional facts would resolve it.
 
 A hypothesis with zero counterfactual requirements is a proved invariant. A hypothesis with counterfactual requirements is a roadmap for the change the proposition implies — and that roadmap is exactly what the downstream proof skill formalizes.
@@ -218,9 +218,9 @@ Write `thoughts/hypothesis.pl` — a Prolog facts file structured for both `mode
 Report to the user:
 - The original proposition (one line)
 - The counterfactual question
-- Claim breakdown by `epistemic_label`: N descriptive / M counterfactual / K prescriptive
+- Claim breakdown by ontology label (`claim_label/2`): N descriptive / M counterfactual / K prescriptive
 - Claim status breakdown: N clear / M conditional / K open
-- `negation_provenance` breakdown across all negated premises: N absent / M contradicts — the `absent` subset is what `prove-invariants` will annotate as CWA-fragile at the Prolog→Lean boundary
+- Negation-provenance breakdown across all negated premises: N absent / M contradicts — the `absent` subset is what `prove-invariants` will annotate as CWA-fragile at the Prolog→Lean boundary
 - Number of formal properties identified
 - Coverage percentage
 - Open questions / assumptions

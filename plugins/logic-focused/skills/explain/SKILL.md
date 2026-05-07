@@ -17,7 +17,7 @@ The output is a plain-language report at `thoughts/explanation.md`, written for 
 
 The output scales to whatever artifacts are present. One artifact gets a focused explanation. Many get a connected narrative.
 
-**The epistemic-strength obligation.** Every claim in the upstream artifacts carries an epistemic label (see `../../references/epistemic-types.md`). The reader of this explanation cannot see those labels, so the prose must translate them into calibrated language: "proven for all inputs" (a `prescriptive` Lean theorem) is stronger than "checked exhaustively in our model" (a `descriptive` Prolog model claim), which is stronger than "the fixture passed in our test suite" (`test_category(projection)`), which is stronger than "we asserted behaviourally without formal proof" (`test_category(behavioral_claim)`), which is stronger than "the knowledge base did not contradict it" (`negation_provenance(absent)` under closed-world). Flattening these into the undifferentiated word "proven" is the failure mode this skill exists to prevent.
+**The ontology-strength obligation.** Every claim in the upstream artifacts carries an ontology label (see `../../references/ontology.md`). The reader of this explanation cannot see those labels, so the prose must translate them into calibrated language: "proven for all inputs" (a `prescriptive` Lean theorem) is stronger than "checked exhaustively in our model" (a `descriptive` Prolog model claim), which is stronger than "the fixture passed in our test suite" (`test_category(projection)`), which is stronger than "we asserted behaviourally without formal proof" (`test_category(behavioral_claim)`), which is stronger than "the knowledge base did not contradict it" (`negation_provenance(absent)` under closed-world). Flattening these into the undifferentiated word "proven" is the failure mode this skill exists to prevent.
 
 ---
 
@@ -84,23 +84,23 @@ The entire point of this skill is that the reader should never need to open a `.
 **Tests** are acceptance criteria. When explaining tests:
 - Frame as: "We wrote checks that will fail if the implementation doesn't satisfy the properties we proved. An implementor works through these one by one"
 
-### Translating epistemic labels
+### Translating ontology labels
 
-The upstream artifacts label every claim with an epistemic origin via `epistemic_label/1`, `negation_provenance/1`, and `test_category/1`. These labels never appear in the plain-language output, but the calibrated phrase they translate into does. Use this reference while writing prose — pick the phrase that matches the label, then weave it into a sentence. Do not paste the label into the narrative; the reader is an outsider.
+The upstream artifacts label every claim with an ontology label via `claim_label/2`, `claim_negation_provenance/3`, and `test_category/2`. These labels never appear in the plain-language output, but the calibrated phrase they translate into does. Use this reference while writing prose — pick the phrase that matches the label, then weave it into a sentence. Do not paste the label into the narrative; the reader is an outsider.
 
-**`epistemic_label(prescriptive)` from a Lean theorem with no closed-world premises** → "proven mathematically for all possible inputs — the strongest guarantee this pipeline produces."
+**`claim_label(_, prescriptive)` from a Lean theorem with no closed-world premises** → "proven mathematically for all possible inputs — the strongest guarantee this pipeline produces."
 
-**`epistemic_label(prescriptive)` proven under a stated hypothesis** → "proven mathematically, assuming [stated hypothesis]. Strong — but only as strong as that hypothesis."
+**`claim_label(_, prescriptive)` proven under a stated hypothesis** → "proven mathematically, assuming [stated hypothesis]. Strong — but only as strong as that hypothesis."
 
-**`epistemic_label(prescriptive)` whose proof rests on a closed-world premise (a `negation_provenance(absent)` fact lifted into Lean)** → "proven mathematically, but one or more premises came from 'the knowledge base did not mention this' — so the guarantee is only as strong as the completeness of what we modeled. Call out the specific closed-world premise if it matters to the reader."
+**`claim_label(_, prescriptive)` whose proof rests on a closed-world premise (a `negation_provenance(absent)` fact lifted into Lean)** → "proven mathematically, but one or more premises came from 'the knowledge base did not mention this' — so the guarantee is only as strong as the completeness of what we modeled. Call out the specific closed-world premise if it matters to the reader."
 
-**`epistemic_label(descriptive)` from a Prolog model verification** → "verified exhaustively within the model we built — no counterexample exists in our knowledge base."
+**`claim_label(_, descriptive)` from a Prolog model verification** → "verified exhaustively within the model we built — no counterexample exists in our knowledge base."
 
 **`negation_provenance(contradicts)`** → "the model explicitly rules it out — there is a fact that contradicts the claim."
 
 **`negation_provenance(absent)`** → "the model did not derive this; treated as absent under closed-world assumption. Weaker than a contradiction — if the model is incomplete, the absence may be wrong."
 
-**`epistemic_label(counterfactual)`** → "explored as a hypothetical alternative world — useful for reasoning about possible futures, but not a claim about what is true today."
+**`claim_label(_, counterfactual)`** → "explored as a hypothetical alternative world — useful for reasoning about possible futures, but not a claim about what is true today."
 
 **`test_category(projection)`** → "the implementation passed a test case that samples the proven property at specific inputs. The universal guarantee lives in the proof, not the test — the test is a tripwire."
 
@@ -179,8 +179,8 @@ For a partial pipeline, only include the sections that have artifacts.}
 {A summary of the current state, broken down by the strength of the claim.
 Sort every finding into one of these five buckets — do not collapse them:}
 
-- What has been **proven universally** (`epistemic_label(prescriptive)` Lean theorems with no closed-world premises)
-- What has been **model-verified** (`epistemic_label(descriptive)` from Prolog — exhaustive within our model)
+- What has been **proven universally** (`claim_label(_, prescriptive)` Lean theorems with no closed-world premises)
+- What has been **model-verified** (`claim_label(_, descriptive)` from Prolog — exhaustive within our model)
 - What has been **sampled and passed** (`test_category(projection)` — test cases witness the property; proof is still authority on universality)
 - What has been **asserted behaviourally** (`test_category(behavioral_claim)` — no formal backing)
 - What has been **assumed** (`negation_provenance(absent)` or otherwise unverified — treated as true but not verified; may be wrong if the model is incomplete)
@@ -235,4 +235,4 @@ After writing, tell the user:
 
 **Don't pad.** If only one artifact exists, the explanation might be a single page. That's fine. Don't inflate the narrative to seem more thorough than the work actually was.
 
-**Never flatten strength into "proven."** Every claim in the artifacts has an epistemic label. If the explanation uses the same word ("proven", "verified", "confirmed") for a prescriptive Lean theorem and a `test_category(behavioral_claim)` fixture, it has silently erased the distinction the whole pipeline exists to produce. Calibrate every confidence word.
+**Never flatten strength into "proven."** Every claim in the artifacts has an ontology label. If the explanation uses the same word ("proven", "verified", "confirmed") for a prescriptive Lean theorem and a `test_category(behavioral_claim)` fixture, it has silently erased the distinction the whole pipeline exists to produce. Calibrate every confidence word.

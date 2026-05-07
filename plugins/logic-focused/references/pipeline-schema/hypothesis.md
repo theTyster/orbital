@@ -26,7 +26,7 @@ claim_label(c_001, counterfactual).
 claim_status(c_001, conditional).
 ```
 
-`claim_label/2` is the `epistemic_label` dimension — exactly one of `descriptive`, `counterfactual`, `prescriptive`. Every claim must have one. See `../epistemic-types.md` for semantics.
+`claim_label/2` is the *ontology label* dimension — exactly one of `descriptive`, `counterfactual`, `prescriptive`. Every claim must have one. See `../ontology.md` for semantics.
 
 ## Negated premises — 3-argument form
 

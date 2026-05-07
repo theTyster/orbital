@@ -24,8 +24,8 @@ the **first** of two sequential proof steps:
 2. `prove-invariants` — prove the formal properties hold in `target-world.pl`.
 
 Conceptually, `target-world.pl` is **`existing-world.pl` with counterfactual
-negations applied and prescriptive obligations asserted**. Each fact carries a
-provenance tag. The result is CWA-valid: a closed-world model Lean can lift into
+negations applied and prescriptive obligations asserted**. Each fact carries an
+ontology label. The result is CWA-valid: a closed-world model Lean can lift into
 its own logic.
 
 ## Three enforcement rules to remember
@@ -42,9 +42,9 @@ These shape every choice in this skill:
   claim is not the projection of a proof. The model verdict tracks structural
   consistency, not runtime behavior.
 
-## Schema and epistemic dimensions
+## Schema and ontology dimensions
 
-Two orthogonal dimensions carry across the boundary: `epistemic_label` on each claim (descriptive / counterfactual / prescriptive) and `negation_provenance` on each negated premise (absent / contradicts). Semantics: `${CLAUDE_SKILL_DIR}/../../references/epistemic-types.md`. Wire format for every artifact this skill touches: `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/` — read `hypothesis.md` for the input, `target-world.md` and `model-results.md` for the outputs, and `cross-skill-map.md` for the per-claim → per-fact translation this skill performs.
+Two orthogonal ontology dimensions carry across the boundary: the claim-origin label (`claim_label/2`) on each claim (descriptive / counterfactual / prescriptive) and the negation-provenance label on each negated premise (absent / contradicts). Semantics: `${CLAUDE_SKILL_DIR}/../../references/ontology.md`. Wire format for every artifact this skill touches: `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/` — read `hypothesis.md` for the input, `target-world.md` and `model-results.md` for the outputs, and `cross-skill-map.md` for the per-claim → per-fact translation this skill performs.
 
 ## Current Environment
 
@@ -287,7 +287,7 @@ Open `thoughts/target-world.pl` for write. Emit, in order:
    Lean has no source of truth for which theorems to discharge. Do **not**
    rename to `property/2`; do **not** strip the Lean sketch.
 
-Annotate every fact with its provenance tag so the diff between existing-world
+Annotate every fact with its ontology label so the diff between existing-world
 and target-world is auditable from the file alone. The canonical schemas for
 the two files this skill touches live in
 `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/` — read `hypothesis.md`
@@ -476,7 +476,7 @@ All artifacts are written to `thoughts/` (create it if it doesn't exist):
 
 - `thoughts/target-world.pl` — the constructed substrate KB. Existing-world
   with counterfactual negations applied and prescriptive obligations asserted.
-  Each fact carries a provenance tag. **Primary deliverable** — Lean proves
+  Each fact carries an ontology label. **Primary deliverable** — Lean proves
   against this.
 - `thoughts/model_results.pl` — per-property `verdict/2`, `counterexample/2`,
   `gap_reason/2`, and `cf_status/2` facts plus summary counts. **Primary

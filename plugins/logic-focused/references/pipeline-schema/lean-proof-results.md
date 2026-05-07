@@ -43,7 +43,7 @@ provenance_annotation(t_no_cli_to_logging, f_cli_logging, absent).
 provenance_annotation(t_no_legacy_deploy, f_deploy_legacy, contradicts).
 ```
 
-`provenance_annotation/3` is the structured echo of the `provenance(absent | contradicts)` docstring above each theorem in `thoughts/lean/Proofs/*.lean`. Domain is exactly `[absent, contradicts]`. If a theorem has a negated premise but no `provenance_annotation/3` fact, the run is malformed — `cwa_negation_neq_lean_proof` (see `../epistemic-types.md`) makes this distinction load-bearing, and dropping it silently upgrades CWA-absence into logical falsity.
+`provenance_annotation/3` is the structured echo of the `provenance(absent | contradicts)` docstring above each theorem in `thoughts/lean/Proofs/*.lean`. Domain is exactly `[absent, contradicts]`. If a theorem has a negated premise but no `provenance_annotation/3` fact, the run is malformed — `cwa_negation_neq_lean_proof` (see `../ontology.md`) makes this distinction load-bearing, and dropping it silently upgrades CWA-absence into logical falsity.
 
 ## Source locations
 
