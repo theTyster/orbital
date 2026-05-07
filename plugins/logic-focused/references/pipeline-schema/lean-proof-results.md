@@ -65,6 +65,40 @@ necessity_lemma_status(t_no_cli_to_logging, f_cli_logging, proven).
 necessity_lemma_status(t_no_cli_to_logging, f_cli_formatter, extraneous).
 ```
 
+## Gated-out properties — `cwa_check` and `lean_skipped`
+
+Not every formal property earns a Lean theorem. `prove-invariants` routes each
+property by its ontology label and negation provenance (see the "Gating"
+section in `prove-invariants/SKILL.md`); properties whose proof would reduce
+to literal-list membership over an inductive enum, vacuous KB-readout
+descriptive claims, and CWA-absent counterfactuals all skip the Lean kernel
+and instead emit:
+
+```prolog
+% cwa_check(PropId, AbsentFactId, verified | violated).
+% verified  → swipl-confirmed: \+ Fact succeeds in target-world.
+% violated  → swipl-confirmed: Fact still derivable; loopback to model-obligations.
+cwa_check(p_no_cli_to_logging, depends_on(cli_tool, logging), verified).
+
+% lean_skipped(PropId, Reason).
+% Reason ∈ {
+%   trivially_decidable_over_kb_listing,
+%   descriptive_kb_readout,
+%   cwa_absence_verified_directly
+% }.
+lean_skipped(p_no_cli_to_logging, cwa_absence_verified_directly).
+```
+
+`cwa_check/3` and `theorem_verdict/2` are mutually exclusive per `PropId` —
+exactly one of them appears for each `formal_property/3` in `target-world.pl`.
+Downstream consumers (`instantiate-properties`) read both: a `cwa_check`-backed
+property still becomes a `projection` test, but its `proof_strategy:` field
+records `prolog-cwa-check` rather than the Lean tactic chain.
+
+`provenance_annotation/3` is still required for any property with a negated
+premise, regardless of whether the proof is Lean- or CWA-check-backed —
+ontology labels propagate identically across the gate.
+
 ## Aggregate summary
 
 ```prolog
