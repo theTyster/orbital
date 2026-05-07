@@ -146,6 +146,39 @@ The pipeline predecessor of this skill is `model-obligations` (which produces `t
    If `${LEAN_PROJECT}/.lake/build/` does not exist, invoke the `setup-lean-project` skill to create and build it before continuing.
 4. **Required input** — `thoughts/target-world.pl` from the `model-obligations` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact ontology labels. If absent, stop and tell the user to run `model-obligations` first.
 
+## Pre-flight: version hygiene check
+
+Before reading `target-world.pl` or `hypothesis.pl` in earnest, run the
+version-hygiene diagnostic to catch stale cache from a prior pipeline pass.
+The check is a Prolog module under `${CLAUDE_SKILL_DIR}/../../prolog/version_hygiene.pl`:
+
+```bash
+PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
+swipl -g "use_module('${PROLOG}/version_hygiene'),
+          (check_hygiene -> halt(0) ; halt(1))" -t halt
+```
+
+It detects three drift signals:
+
+- **theorem_id_drift** — `lean_proof_results.pl` carries a
+  `theorem_verdict/2` whose property id is absent from the current
+  `hypothesis.pl`'s `formal_property/3` set.
+- **fact_id_drift** — `lean_proof_results.pl` carries a
+  `provenance_annotation/3` whose (Fact, Mode) pair is absent from the
+  current `claim_negation_provenance/3` records in `hypothesis.pl`.
+- **timestamp_inversion** — `lean_proof_results.pl` is older than
+  `hypothesis.pl` (a refined hypothesis without a fresh proof run).
+
+On clean: prints `hygiene_clean.` and exits 0; this skill proceeds.
+On warning: prints `[hygiene_warning]` lines to stderr and exits nonzero.
+**Halt and tell the user to re-run from `model-obligations`** — building on
+top of stale `lean_proof_results.pl` silently leaks v1 evidence into a v2
+run, which is exactly the failure mode the diagnostic exists to catch.
+
+The check is also re-runnable standalone for forensic review of an old
+ticket's `thoughts/` directory; the same one-liner above works from any
+working directory whose `thoughts/` subtree carries the relevant artifacts.
+
 ## Reading the input
 
 `thoughts/target-world.pl` is the sole input. Load it with `swipl` (or read it directly) and enumerate:
