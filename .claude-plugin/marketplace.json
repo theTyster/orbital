@@ -1,16 +1,16 @@
 {
-  "name": "orbital-shift",
-  "description": "Orbital-shift: a marketplace of intent-shaped Claude Code plugins. Skills are arranged in orbits around a shared core — formal-reasoning pipeline, architectural analysis, parallel orchestration, and developer utilities — each plugin answering one question about what invoking it does for you.",
+  "name": "orbital",
+  "description": "Orbital: a marketplace of intent-shaped Claude Code plugins. Skills are arranged in orbits around a shared core — formal-reasoning pipeline, architectural analysis, parallel orchestration, and developer utilities — each plugin answering one question about what invoking it does for you.",
   "owner": {
     "name": "ty",
     "email": "noreply@mail.thetyster.dev"
   },
   "plugins": [
     {
-      "name": "logic-focused",
+      "name": "shifting",
       "description": "Formal logic reasoning pipeline: closed-world KB construction, proposition decomposition, model-based and Lean 4 proof verification, property instantiation as TDD tests, and proof-grounded specification realization.",
-      "version": "3.11.0",
-      "source": "./plugins/logic-focused",
+      "version": "4.0.0",
+      "source": "./plugins/shifting",
       "author": {
         "name": "ty",
         "email": "noreply@mail.thetyster.dev",
@@ -22,13 +22,13 @@
           "logic"
         ]
       },
-      "homepage": "https://github.com/theTyster/orbital-shift"
+      "homepage": "https://github.com/theTyster/orbital"
     },
     {
-      "name": "c4-prolog",
+      "name": "scaffolding",
       "description": "C4 architectural modeling and Prolog-based codebase analysis with atomized phase skills.",
-      "version": "2.7.0",
-      "source": "./plugins/c4-prolog",
+      "version": "3.0.0",
+      "source": "./plugins/scaffolding",
       "author": {
         "name": "ty",
         "email": "noreply@mail.thetyster.dev",
@@ -39,29 +39,29 @@
           "analysis"
         ]
       },
-      "homepage": "https://github.com/theTyster/orbital-shift"
+      "homepage": "https://github.com/theTyster/orbital"
     },
     {
-      "name": "orchestrate",
-      "description": "End-to-end orchestration of the logic-focused pipeline. Runs a single ticket through close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification, finishing with explain. Renamed from `multi-plan`; the parallel multi-enhancement skill has been retired in favor of the single-ticket flow.",
-      "version": "3.0.0",
-      "source": "./plugins/orchestrate",
+      "name": "trajectory",
+      "description": "End-to-end orchestration of the shifting pipeline. Runs a single ticket through close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification, finishing with explain. Renamed from `orchestrate`; the parallel multi-enhancement skill has been retired in favor of the single-ticket flow.",
+      "version": "4.0.0",
+      "source": "./plugins/trajectory",
       "author": {
         "name": "ty",
         "email": "noreply@mail.thetyster.dev",
         "keywords": [
           "orchestration",
           "pipeline",
-          "logic-focused"
+          "shifting"
         ]
       },
-      "homepage": "https://github.com/theTyster/orbital-shift"
+      "homepage": "https://github.com/theTyster/orbital"
     },
     {
-      "name": "utilities",
+      "name": "telemetry",
       "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
-      "version": "2.5.0",
-      "source": "./plugins/utilities",
+      "version": "3.0.0",
+      "source": "./plugins/telemetry",
       "author": {
         "name": "ty",
         "email": "noreply@mail.thetyster.dev",
@@ -71,7 +71,7 @@
           "utilities"
         ]
       },
-      "homepage": "https://github.com/theTyster/orbital-shift"
+      "homepage": "https://github.com/theTyster/orbital"
     }
   ]
 }

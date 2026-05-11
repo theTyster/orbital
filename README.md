@@ -1,14 +1,14 @@
-# orbital-shift
+# orbital
 
 Intent-shaped skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code): a formal reasoning pipeline from logic translation through proof verification to test generation and implementation review, plus architectural analysis, parallel orchestration, and developer utilities.
 
-> Formerly `logic-focused-claude`. See [MIGRATION.md](MIGRATION.md) if you have an existing install under the old name.
+> Formerly `orbital-shift` (and before that `logic-focused-claude`). See [MIGRATION.md](MIGRATION.md) if you have an existing install under an old name.
 
 ## Plugins
 
 This repository contains 4 plugins, decomposed by concern domain:
 
-### logic-focused
+### orbital-shifting
 
 Formal logic reasoning pipeline — from Prolog translation through proof verification to TDD tests and implementation review.
 
@@ -28,7 +28,7 @@ Also includes:
 - **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
 - **measure-entailment** — Score how well two or more resources adhere to each other using Prolog-based relational analysis (shared facts, gaps, contradictions, extensions)
 
-### c4-prolog
+### orbital-scaffolding
 
 C4 architectural modeling and Prolog-based codebase analysis.
 
@@ -37,13 +37,13 @@ C4 architectural modeling and Prolog-based codebase analysis.
 - **c4-condense-patterns** — Transform Prolog analysis into an implementation plan
 - **c4-analyze** — Orchestrate the full pipeline (find > define > condense)
 
-### orchestrate
+### orbital-trajectory
 
-End-to-end orchestration of the logic-focused pipeline.
+End-to-end orchestration of the orbital-shifting pipeline.
 
 - **pipeline** — Run a single ticket through the full pipeline (close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification) and finish with `explain`. Renamed from `single-ticket-pipeline`. The previous `multi-plan` parallel orchestrator has been retired; its design is preserved at `thoughts/archive/multi-plan-skill-design.md`.
 
-### utilities
+### orbital-telemetry
 
 Standalone developer utilities.
 
@@ -53,12 +53,12 @@ Standalone developer utilities.
 ## Prerequisites
 
 - **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-invariants and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
-- **SWI-Prolog** (`swipl`): Required for close-world, decompose-proposition, and the `orchestrate:pipeline` skill.
+- **SWI-Prolog** (`swipl`): Required for close-world, decompose-proposition, and the `trajectory:pipeline` skill.
 
 ## Installation
 
 ```bash
-claude /install-plugin https://github.com/theTyster/orbital-shift
+claude /install-plugin https://github.com/theTyster/orbital
 ```
 
 ## Versioning
