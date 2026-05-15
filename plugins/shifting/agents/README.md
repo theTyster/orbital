@@ -57,6 +57,12 @@ Prolog refutation specialist — the adversarial mirror of `prolog-prover`. Enco
 
 **Used by**: disprove-proposition
 
+### proposition-sharpener
+
+Falsifiability discipline specialist. Given a raw user proposition and an `existing-world.pl` path, introspects the KB's predicate vocabulary via `swipl` and returns one of two shapes: a one-sentence falsifiable, scoped, contestable restatement (with the KB predicates it references), or `{outcome: "abstained", reason, what_user_should_clarify}`. Halt-on-ambiguity discipline: never invents predicates the KB does not enumerate, never emits multi-clause sharpenings, never hedges past one declarative sentence to disguise uncertainty. No `Write` tool (result returned, not stored), no `Agent` tool (leaf, not delegator). Sonnet/medium-effort budget.
+
+**Used by**: decompose-proposition, disprove-proposition
+
 ### lean-adversary
 
 Lean refutation specialist — the adversarial mirror of `lean-expert`. Constructs a Lean term inhabiting the negation of a pinned theorem and writes a refutation file at `thoughts/refutations/<target_id>.lean` on `refuted`, otherwise reports `inconclusive` or `abstained`. Inadmissible for purely behavioral/runtime targets. Shares input/output/discipline contract with `prolog-adversary` at `references/adversary-contract.md`. Reads `references/lean4-wiki/` directly for negation-lemma pages and `references/lean-tactics.md` for forbidden-tactics carve-outs. No `Agent` tool.

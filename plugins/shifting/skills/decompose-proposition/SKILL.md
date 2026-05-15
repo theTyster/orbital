@@ -74,21 +74,24 @@ Emit gap facts into `hypothesis.pl` alongside the claims; the orchestrator patte
 
 ### 1. State the Proposition Clearly
 
-Before touching Prolog, write down the proposition in one sentence. If the user gave a vague request ("analyze the knowledge base"), sharpen it into something actionable by scanning the KB schema first (see §Understand the KB below) and proposing a concrete claim.
+Before touching Prolog, the proposition must be one sentence that is **falsifiable, scoped, and contestable** against the KB's vocabulary. Delegate this sharpening pass to `shifting:proposition-sharpener` — that agent isolates the falsifiability check from orchestrator bias, returns either a sharpened sentence or an abstention naming what the user must clarify, and refuses to invent KB predicates to make the proposition "work."
 
-A good proposition is:
-- **Actionable** — it implies a decision or design consequence
-- **Scoped** — it names specific entities or relationships
-- **Contestable** — a reasonable person could disagree
+Briefing fields for the agent:
 
-Weak: "The code is well-structured."
-Strong: "auth_lib has no transitive dependency on cli_tool."
+- `raw_proposition_text` — the user's proposition verbatim. Do not paraphrase before delegation.
+- `existing_world_path` — the KB path from this skill's input.
+- `prolog_introspect_path` — `${CLAUDE_SKILL_DIR}/../../prolog/introspect`.
 
-Once the proposition is sharp, immediately restate it as a counterfactual question against the KB:
+Handle the two return shapes:
+
+- **`outcome: "sharpened"`** — record the `sentence` as the pinned proposition. If `note` reports "KB already entails this," the proposition is a trivial invariant; surface that to the user and stop, or proceed only if the user explicitly asks for the descriptive write-up.
+- **`outcome: "abstained"`** — surface `reason` and `what_user_should_clarify` to the user and stop. Do not guess a sharpening to keep the skill moving; the agent already considered and rejected every reading that exceeded the evidence.
+
+Once the pinned sentence is in hand, immediately restate it as a counterfactual question against the KB:
 
 > **What about the existing KB would need to be false for this proposition to be true?**
 
-This is the question the rest of the skill answers. If the answer is "nothing — the KB already entails it," say so and report the proposition as a trivial invariant. The interesting hypotheses are ones where the KB contains facts that stand in the way.
+This is the question the rest of the skill answers. If the agent's `note` flagged trivial entailment, report the proposition as a descriptive invariant rather than continuing. The interesting hypotheses are ones where the KB contains facts that stand in the way.
 
 ### 2. Decompose into Counterfactual Sub-Hypotheses
 
