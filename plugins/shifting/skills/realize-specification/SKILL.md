@@ -21,13 +21,33 @@ The tests and proofs are the specification. Refactoring existing code to satisfy
 
 ## Inputs
 
-- **Required**: `thoughts/tests/{file}` — the skipped TDD suite from `instantiate-properties`. Each test carries `test_category(projection | behavioral_claim)` plus a carried-forward ontology label and (for projections) negation-provenance annotation.
-- **Required environment**: `target_codebase_dir` — the directory whose source files will be modified. There is no default; if the caller did not provide it, halt and ask.
-- **Optional**: `thoughts/hypothesis.pl` — Prolog facts for claims, with `claim/2`, `claim_label(_, descriptive | counterfactual | prescriptive)`, `negation_provenance(_, absent | contradicts)`, sub-hypothesis decomposition, and edge predicates.
-- **Optional**: `thoughts/lean_proof_results.pl` (or `thoughts/model_results.pl`) — `theorem_verdict/2` and accompanying facts.
-- **Optional**: `thoughts/*.pl` — domain vocabulary or model results that the test file or hypothesis cite.
+**Carrier-only contract.** The sole carrier from the predecessor (`instantiate-properties`) is `thoughts/tests/` — the test file plus the `manifest.pl` that accompanies it. Each test carries `test_category(projection | behavioral_claim)` plus a carried-forward ontology label and (for projections) negation-provenance annotation. Predicates from `hypothesis.pl`, `lean_proof_results.pl`, and `model_results.pl` are *transitively cited* via the test-comment tags and the manifest's `cites_artifact/2` records — the `realize-test-briefer` sub-agent follows those references when assembling each per-test briefing. The orchestrator does not read upstream `.pl` files directly.
+
+- **Carrier**: `thoughts/tests/{file}` + `thoughts/tests/manifest.pl` — the skipped TDD suite from `instantiate-properties`.
+- **Stage-0 env**: `target_codebase_dir` (orchestrator-supplied) — the directory whose source files will be modified. There is no default; if the caller did not provide it, halt and ask.
 
 The test file's tags use **`test_category(projection | behavioral_claim)`** — exactly two values. Reference: `../../references/ontology.md`.
+
+## Orchestrator contract
+
+Stage 5. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+
+**Orchestrator parameters accepted:** `refutation_shape_briefing` (refutation classes the orchestrator wants attacked on the implementation outputs); `halt_condition`; `success_criteria` (e.g., "all targeted tests pass; zero regressions").
+
+**Gate-target descriptors emitted on completion** — two outputs:
+- `modified_source_files` — the implementation edits. Primary refutation surface: any modified file that re-introduces a counterfactual fact (the Stage 3d watchdog catches obvious cases, but `disprove-proposition` can attack the implementation more broadly).
+- `implementation_log_md` — the trace of unskip → green. Refutation surface: every entry tagged `property_verified` (a green projection test that is a sample, not a proof) is a candidate for adversarial sampling under different fixtures.
+
+**Adjacent loopback target:** `instantiate-properties` (gaps: `wrong_test`, `tests_conflict`, `missing_context`). These are this skill's own adjacent move and run without orchestrator gating.
+
+**Non-adjacent loopbacks** are now orchestrator-routed via `upstream_gap/3` emissions in `implementation_log.md`'s machine-readable header block, not the auto-routed prose blockers of the previous design:
+
+- `upstream_gap(realize_specification, gap_descriptor(untestable_category, test(TestId, category_mismatch(Expected, Actual))), recovery_hint(instantiate_properties, refutation_shape_briefing([retag_category])))` — adjacent.
+- `upstream_gap(realize_specification, gap_descriptor(schema_insufficient, claim(ClaimId, wrong_property)), recovery_hint(decompose_proposition, refutation_shape_briefing([resharpen_claim])))` — non-adjacent.
+- `upstream_gap(realize_specification, gap_descriptor(schema_insufficient, claim(ClaimId, fragile_counterfactual)), recovery_hint(decompose_proposition, refutation_shape_briefing([sharpen_cwa_absent_to_contradicts])))` — non-adjacent, CWA-fragility-specific.
+- `upstream_gap(realize_specification, gap_descriptor(schema_insufficient, claim(ClaimId, inaccurate_counterfactual_list)), recovery_hint(decompose_proposition, refutation_shape_briefing([reenumerate_counterfactuals])))` — non-adjacent.
+
+When two implementation attempts on the same test fail, Stage 4 still emits `thoughts/implementation_blocked.md`; the orchestrator pattern-matches on the gap entries in the implementation log and decides whether to honor the recovery_hint.
 
 If no language was detected when tests were generated (pseudotest format), halt and ask the user which language to implement in. Do not guess.
 
@@ -70,6 +90,16 @@ The orchestrator never inlines the contents of these files into its own context.
 - **Does not make large architectural decisions alone.** Any change bigger than one function's internals goes through `Agent(Explore)` first.
 - **Does not trust sub-agent summaries about test results.** Verification flows through `realize-suite-runner`, which compares to a persisted baseline.
 - **Does not re-verify universal properties.** A green `projection` test samples one point in `∀x.P(x)`; the proof is what verifies the universal.
+
+## Bias-isolation discipline
+
+Every sub-agent delegation in this skill — to Explore, the realize-* trio, or general-purpose — applies the canonical role-brief + minimum-context discipline. The orchestrator's hopes about which test "should" be easy MUST NOT reach the implementation agent.
+
+**Role-brief, applied per-invocation:** outcome-agnostic framing. For Explore: *"survey what exists; do not propose changes."* For the realize-counterfactual-scanner: *"locate or recheck; report findings as facts."* For the realize-suite-runner: *"run and digest; the digest is the verdict, not your summary."* For the briefer: *"assemble a self-contained briefing; halt with `status: blocked` rather than guess at routing."* For general-purpose (implementation): *"the briefing is the spec; halt if you cannot satisfy it without weakening a test."*
+
+**Minimum-necessary context, applied per-invocation:** every brief sends only the briefing path, scratch paths, and the orchestrator-supplied parameters (`refutation_shape_briefing`, `halt_condition`, `success_criteria`). Do not paste hypothesis prose, downstream measure-entailment hopes, or commentary on whether the test "matters" to the user.
+
+**Orchestrator responsibilities (never delegated):** decide the per-test routing only after the briefer returns; validate every digest against the implementation agent's claim before recording; own the upstream_gap emission decision; keep the implementation log structurally consistent.
 
 ## Process
 
