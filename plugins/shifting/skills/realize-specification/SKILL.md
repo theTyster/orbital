@@ -195,7 +195,15 @@ After finishing a coherent group of related tests, run a dedicated refactor pass
 
 **3b. `Agent(general-purpose)`** — briefed with the Explore findings and the invariant: every generated test and every pre-existing test must remain green; every proven property must still hold. The refactor agent executes the changes the Explore agent proposed (or a reasoned subset), runs the suite itself, and returns.
 
-**3c. Verify (`Agent(realize-suite-runner)` in `verify` mode)** with `run_id: 3c-refactor-<group>` and no `targeted_test`. Pass criteria: `regressions: 0`. On regression, revert via the refactor agent or escalate to loopback.
+**3c. Verify (`Agent(realize-suite-runner)` in `verify` mode)** with `run_id: 3c-refactor-<group>` and no `targeted_test`. Pass criteria: `regressions: 0`. On regression, delegate blame attribution to `Agent(regression-bisector)`:
+
+> baseline_digest_path: `thoughts/.realize_scratch/baseline.json`
+> current_digest_path: `thoughts/.realize_scratch/runs/3c-refactor-<group>.digest.json`
+> git_diff_range: `<the range spanning the refactor pass — orchestrator picks; usually HEAD~N..HEAD where N is the refactor's commit count, or the pre-refactor ref..HEAD if uncommitted>`
+> target_codebase_dir: {dir}
+> scratch_dir: `thoughts/.realize_scratch/`
+
+The bisector returns `{regression_test → suspect_files[] → confidence}` rows (NDJSON on stdout) plus a structured summary. The orchestrator uses the suspect mapping to decide between three routes: (a) brief the refactor agent to revert specific files when one or more `high`-confidence suspects map cleanly to the regression set, (b) revert the entire refactor pass when suspects are diffuse or all `low`-confidence, (c) escalate to Stage 4 loopback when bisection produces empty suspect lists (regression cause lies outside the diff window). The bisector produces blame, never a patch; the fix/revert decision stays with the orchestrator.
 
 **3d. Counterfactual re-introduction check (`Agent(realize-counterfactual-scanner)` in `recheck` mode):**
 
@@ -230,6 +238,7 @@ Write the classification and recommended pipeline stage to `thoughts/implementat
 | Refactor discovery | `Agent(Explore)` | Must not edit while finding smells |
 | Refactor execution | `Agent(general-purpose)` | Briefed from Explore findings |
 | Counterfactual re-introduction check | `Agent(realize-counterfactual-scanner)` mode `recheck` | Re-greps for forbidden signatures; reports drift vs prior locator |
+| Regression blame attribution (Stage 3c) | `Agent(regression-bisector)` | Intersects each regressed test's surface with the diff window; emits ranked suspect files per regression |
 | Loopback diagnosis | `Agent(Explore)` | Read-only classification |
 | Toggling one skip annotation | **Orchestrator (Edit)** | Single-line edit; the only direct test-file edit |
 | Appending to implementation log | **Orchestrator (Edit)** | Structured one-row append |
@@ -277,5 +286,6 @@ The orchestrator's own edits are limited to: toggling skip annotations in the te
 - **`../../agents/realize-test-briefer.md`** — per-test briefing agent
 - **`../../agents/realize-suite-runner.md`** — test-suite runner with baseline-delta digests
 - **`../../agents/realize-counterfactual-scanner.md`** — counterfactual locator + re-introduction watchdog
+- **`../../agents/regression-bisector.md`** — regression blame attribution agent for Stage 3c
 - **`../../references/realize-briefing-rules.md`** — canonical addition / removal / behavioral rule blocks copied into every briefing
 - **`../../references/ontology.md`** — definitions of `claim_label` and `negation_provenance`

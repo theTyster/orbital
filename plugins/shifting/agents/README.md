@@ -105,6 +105,12 @@ Per-test briefing builder. Reads one skipped test plus the Prolog artifacts it c
 
 **Used by**: realize-specification
 
+### regression-bisector
+
+Regression blame attribution specialist. Given a baseline digest, a current verify-mode digest with non-empty `regressions`, a `git diff` range, and the target codebase directory, intersects each regressed test's traceable surface (imports, exercised modules, one-hop transitive imports, package proximity) with the files in the diff window, then emits one NDJSON row per regression — `{regression_test, suspect_files[], confidence}` — with a three-band confidence vocabulary: `high` (test surface contains the suspect file directly), `medium` (one-hop transitive), `low` (same package, no direct trace). Honest empty answers: a regression whose surface does not intersect the diff window returns `{suspects: [], reason: "no traceable intersection"}` rather than padding with guesses. Single-suite per invocation; cross-suite aggregation is out of scope. Read-only against source; never runs tests, applies fixes, or reverts hunks — produces blame, not patches. No `Write` tool. Sonnet/medium-effort budget.
+
+**Used by**: realize-specification
+
 ### verdict-extractor
 
 Fixed-query verdict-row extractor. Given `adherence_facts.pl` (plus optionally `hypothesis.pl` and `existing-world.pl`) and an `impl_resource_id`, loads the adherence module with `use_module(..., except([claim/2, claim/3]))`, runs the five FIXED label-aware queries (counterfactual violations, counterfactual honored, prescriptive unfulfilled, prescriptive negation violations, descriptive drift), and returns a JSON digest with every row present — `count: 0, entries: []` when empty, `skipped: true, reason: ...` when an optional input was missing. No category invention (a new verdict is a `measure-entailment` ticket, not a runtime concern), no interpretation, no writes to the source KBs. No `Agent` tool (leaf, not delegator). Haiku/low-effort budget.
