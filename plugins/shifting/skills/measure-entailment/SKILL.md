@@ -224,23 +224,27 @@ The full agent contract — hard rules, missing-predicate semantics, digest sche
 
 #### Label-aware verdicts (pipeline-terminal mode only)
 
-When `thoughts/hypothesis.pl` exists, also consult it into the same swipl session and run the per-label verdict queries. This is what turns generic "extension" findings into specific Pattern 3 verdicts. Skip this block in stand-alone mode — without `hypothesis.pl` there is nothing to label-verdict against.
+When `thoughts/hypothesis.pl` exists, the five headline verdict rows (Pattern 3 counterfactual violations, counterfactual honored, prescriptive unfulfilled, prescriptive negation violations, descriptive drift) must be extracted from the loaded KBs. Skip this block in stand-alone mode — without `hypothesis.pl` there is nothing to label-verdict against.
 
-Use `use_module(..., except([claim/2, claim/3]))` for the label-aware load. The adherence module exports `claim/2` (resource-claim semantics) and `hypothesis.pl` defines `claim/2` (natural-language claim) — they are different predicates that share a name. The `except` clause keeps the adherence version internal to its module so the user-module load of `hypothesis.pl` doesn't trigger a `Local definition of user:claim/2 overrides weak import` warning. The internal calls inside `label_aware_report/1` still resolve to `adherence:claim/2` correctly.
+Delegate the verdict-row extraction to the `shifting:verdict-extractor` sub-agent via the `Agent` tool. The agent loads the adherence module with `use_module(..., except([claim/2, claim/3]))` (mandatory to avoid the `Local definition overrides weak import` warning when `hypothesis.pl`'s user-module `claim/2` is consulted), consults the supplied `.pl` files, runs the five FIXED queries, and returns a JSON digest with every row present (`count: 0, entries: []` when empty; `skipped: true, reason: ...` when an optional input was not supplied). The skill consumes the digest, not raw `swipl` stdout.
+
+**Briefing fields for `verdict-extractor`:**
+
+| Field | Source |
+|---|---|
+| `adherence_facts_path` | `thoughts/adherence_facts.pl` |
+| `hypothesis_path` | `thoughts/hypothesis.pl` |
+| `existing_world_path` | `thoughts/existing-world.pl` if present, otherwise omit (descriptive-drift row will be skipped) |
+| `impl_resource_id` | the resource id used for the implementation side in `adherence_facts.pl` (typically `impl`) |
+| `existing_resource_id` | the resource id used for the existing-world facts (typically `existing`); must match whatever `agent-of-truth` picked when emitting the facts |
+| `prolog_module_path` | `${PROLOG}/adherence.pl` (absolute path) |
+| `digest_path` | a path under `thoughts/` of the skill's choosing — the digest powers §6 report writing |
+
+The five queries are FIXED: `counterfactual_violations/2`, `counterfactual_honored/2`, `prescriptive_unfulfilled/2`, `prescriptive_negation_violations/2`, `descriptive_drift/3`. If a new verdict category is needed, that is a `measure-entailment` ticket — not a runtime concern of this skill. The full agent contract — schema, hard rules, skipped-row semantics — lives at `../../agents/verdict-extractor.md`.
+
+After the digest comes back, append the machine-readable `result/N` facts to `adherence_facts.pl` via `label_aware_facts_out/2` for any downstream consumer that wants to fail the pipeline on a non-zero Pattern 3 count:
 
 ```bash
-# Pattern 3 detection + prescriptive fulfillment.
-# Pass the impl resource id (e.g. `impl`) as the arg to label_aware_report/1.
-swipl -g "
-  use_module('${PROLOG}/adherence', except([claim/2, claim/3])),
-  consult('thoughts/adherence_facts.pl'),
-  consult('thoughts/hypothesis.pl'),
-  label_aware_report(impl)
-" -t halt
-
-# Append the verdicts to adherence_facts.pl as machine-readable result/N
-# facts. Used by the report writer in §6 and by callers that want to fail
-# the pipeline on any Pattern 3 violation.
 swipl -g "
   use_module('${PROLOG}/adherence', except([claim/2, claim/3])),
   consult('thoughts/adherence_facts.pl'),
@@ -251,7 +255,7 @@ swipl -g "
 " -t halt
 ```
 
-If `existing-world.pl` is also present and you want descriptive-drift detection, add `consult('thoughts/existing-world.pl')` and call `descriptive_drift(impl, existing, Lost)`. The "existing" resource id must match whatever you used in `adherence_facts.pl` — typically the agent-of-truth picks a short tag like `existing` for the existing-world facts.
+This append step stays in the skill — the verdict-extractor is a read-only verdict-row projector, not a writer of `result/N` facts back into the source KB.
 
 ### 5. Score Adherence
 
@@ -277,7 +281,7 @@ Record:
 
 In **pipeline-terminal mode**, the report has a fixed top-of-document section dedicated to the label-aware verdicts. The structural parts (scores, gaps, contradictions, extensions) come after. The reasoning: a Pattern 3 violation is more important than a 90% Jaccard score; reviewers should see the named obligation breaches before the aggregate stats.
 
-Pull the verdict numbers directly from the result/N facts that `label_aware_facts_out/2` appended to `adherence_facts.pl` (or re-query the predicates by hand). For each `result(counterfactual_violation, _, ClaimId, Fact, Provenance)` row, look up the corresponding `claim/2` natural-language string from hypothesis.pl so the report cites the human-readable claim alongside the structural evidence.
+Pull the verdict numbers directly from the `verdict-extractor` JSON digest written in §4. Each row carries `count` and `entries`; the Headline Verdicts table renders the counts and the per-row details render the entries. For each `counterfactual_violations` or `prescriptive_negation_violations` entry, look up the corresponding `claim/2` natural-language string from `hypothesis.pl` so the report cites the human-readable claim alongside the structural evidence. If a row has `skipped: true` (e.g., descriptive drift with no existing-world resource), render its reason as the verdict line rather than a zero count.
 
 Write to `thoughts/adherence_report.md`:
 

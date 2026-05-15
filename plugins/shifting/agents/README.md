@@ -81,6 +81,12 @@ Per-test briefing builder. Reads one skipped test plus the Prolog artifacts it c
 
 **Used by**: realize-specification
 
+### verdict-extractor
+
+Fixed-query verdict-row extractor. Given `adherence_facts.pl` (plus optionally `hypothesis.pl` and `existing-world.pl`) and an `impl_resource_id`, loads the adherence module with `use_module(..., except([claim/2, claim/3]))`, runs the five FIXED label-aware queries (counterfactual violations, counterfactual honored, prescriptive unfulfilled, prescriptive negation violations, descriptive drift), and returns a JSON digest with every row present — `count: 0, entries: []` when empty, `skipped: true, reason: ...` when an optional input was missing. No category invention (a new verdict is a `measure-entailment` ticket, not a runtime concern), no interpretation, no writes to the source KBs. No `Agent` tool (leaf, not delegator). Haiku/low-effort budget.
+
+**Used by**: measure-entailment
+
 ## Plugin References
 
 The two wikis under `plugins/shifting/references/` (`prolog-wiki/` and `lean4-wiki/`) are accessed **only by the agents above** — skills brief the agent with the absolute wiki path but never read the wiki content themselves. This keeps heavy reference material inside sub-agent contexts. When a wiki is thin on a topic, the domain agents fall back to `WebSearch` / `WebFetch` against the official Mathlib 4 or SWI-Prolog docs.
