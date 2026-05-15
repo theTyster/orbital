@@ -23,6 +23,20 @@ Everything the source asserts becomes one of these; everything the source does n
 
 The output filename — `thoughts/existing-world.pl` — names what it models: the world as it currently is, under CWA. The "target world" (what must become true for a proposition to hold) is built downstream by `model-obligations`.
 
+## Orchestrator contract
+
+This skill is the stage-0 primitive at the boundary between the orchestration substrate and the pipeline. The substrate's wire format is `plugins/trajectory/references/orchestration-substrate.md` — read it before parameterising this skill.
+
+**Orchestrator parameters accepted** (consult at startup; if a needed parameter is missing for the run, halt and ask):
+
+- **`predicate_schema_extension`** — bespoke predicates the orchestrator wants in `existing-world.pl` for this ticket (e.g., `csproj_content_directive/1`, `published_artifact/1` for substrate-audit cases that close-world cannot infer from the source alone). Inject these into the agent-of-truth brief so the extracted KB carries them.
+- **`success_criteria`** — minimum coverage targets, required predicate families. Drives tier-5 of the validation cascade.
+- **`halt_condition`** — when to stop and surface a partial KB rather than continue.
+
+**Gate-target descriptor emitted on completion** — the `existing-world.pl` artifact paired with its declared shape (the discontiguous block at the top of the file plus any predicate families the orchestrator extended) and refutation-shape suggestions: **open-domain CWA assumptions are the primary refutation surface** — every predicate family that is not closed-domain is a candidate for `disprove-proposition` to challenge. The orchestrator decides per run whether to attack.
+
+**Upstream gap emission** — close-world is stage 0; it has no upstream pipeline stage to gap toward. Gaps in close-world's input surface as the absence of expected predicate families post-run, handled by the orchestrator pre-invocation on the next run via `predicate_schema_extension`, not via `upstream_gap/3` emission.
+
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
@@ -56,13 +70,26 @@ Understand what you're modeling before choosing predicates. Ask:
 
 For any non-trivial domain (more than a handful of files, or any unfamiliar subject matter), spawn the `shifting:agent-of-truth` sub-agent with the `Agent` tool to do the modeling. That agent is the Prolog KB construction specialist — it picks predicates that fit the domain, uses DCGs where helpful, writes constraint rules, and validates the result with `swipl`. Doing this inside a sub-agent keeps predicate-design deliberation out of the main context window and gives you a cleaner, more idiomatic KB.
 
-Brief the agent with:
-- The source material (file paths, or the domain description)
-- The target output path (`thoughts/existing-world.pl` by default; `thoughts/<domain>-world.pl` if the user has a specific domain name)
-- Any predicates or constraints the user has already asked for
-- The validation tiers below — the agent must run each one before reporting done
-
 Skip delegation only when the user has explicitly asked you to translate it yourself in this turn. "The input looks small" is not a reason — small inputs still benefit from a specialist picking consistent predicate names, and inline execution clutters the main context with validation output. When in doubt, delegate.
+
+#### Bias-isolation discipline
+
+Specialist delegation isolates KB construction from orchestrator bias. The orchestrator's expectations about which predicates "should" exist MUST NOT reach the specialist; close-world has no checker for over-claiming, so a too-optimistic KB is invisible without structural defense.
+
+**Apply both defenses on every agent-of-truth invocation:**
+
+1. **Role-briefing.** Open the brief with an explicit outcome-agnostic role:
+   > "You are extracting facts that are asserted in the source material under the Closed World Assumption. Record what the source declares; do not infer what the user 'probably means' or what a reasonable system 'usually has.' Mark gaps via comments. The orchestrator has no preferred predicate set — only what the source asserts and what the orchestrator named in `predicate_schema_extension`."
+
+2. **Minimum-necessary context.** Send only:
+   - The source material (file paths or domain description)
+   - The target output path
+   - Any `predicate_schema_extension` predicates the orchestrator supplied for this run
+   - The validation tiers below — the agent must run each one before reporting done
+
+   Do **not** paste orchestrator reasoning, downstream hopes, hypothesis hints, or pipeline state. Escalate context only when the agent returns "underspecified" with a precise question.
+
+**Orchestrator responsibilities (never delegated):** supply the source material, decide the `predicate_schema_extension` parameters per ticket, validate the agent's digest, own the `success_criteria` verdict. The agent's reported tier-5 coverage is candidate evidence, not the run's verdict.
 
 #### Inline procedure (when not delegating)
 
