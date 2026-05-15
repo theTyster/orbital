@@ -1,0 +1,26 @@
+{
+  "thoughts/existing-world.pl": {
+    "upstream": [],
+    "produced_by": "close-world"
+  },
+  "thoughts/hypothesis.pl": {
+    "upstream": ["thoughts/existing-world.pl"],
+    "produced_by": "decompose-proposition"
+  },
+  "thoughts/target-world.pl": {
+    "upstream": ["thoughts/existing-world.pl", "thoughts/hypothesis.pl"],
+    "produced_by": "model-obligations"
+  },
+  "thoughts/model_results.pl": {
+    "upstream": ["thoughts/target-world.pl"],
+    "produced_by": "model-obligations"
+  },
+  "thoughts/lean_proof_results.pl": {
+    "upstream": ["thoughts/target-world.pl"],
+    "produced_by": "prove-invariants"
+  },
+  "thoughts/adherence_facts.pl": {
+    "upstream": ["thoughts/hypothesis.pl"],
+    "produced_by": "measure-entailment"
+  }
+}
