@@ -23,12 +23,21 @@ Run **one ticket** through the full orbital-shifting pipeline and finish with a
 plain-language explanation. The orchestrator is thin: each stage is delegated
 to its dedicated skill, which owns its own artifacts and sub-agents. The
 orchestrator's job is to sequence stages, hand the right paths forward, gate
-on artifact existence, and stop early on hard failures with a partial
+on artifact existence, parameterise each primitive at startup, read each
+stage's gate-target descriptor, and stop early on hard failures with a partial
 `explain` instead of crashing.
 
 > **Scope.** Exactly one ticket. The parallel multi-enhancement orchestrator
 > previously named `multi-plan` has been retired; this is now the canonical
 > orchestration skill in this plugin.
+
+**Read first:** `references/orchestration-substrate.md` is the canonical wire
+format for this skill's contract with the seven `shifting` primitives. It
+defines the gate-target descriptor shape, the inbound orchestrator parameters
+each primitive accepts, the four enforcement rules
+(`carrier_only_reads`, `gate_target_descriptor_total`, `bias_defense_uniform`,
+`orchestration_outside_pipeline`), and what this skill MAY and MUST NOT do.
+The body below *applies* that contract; the references doc *declares* it.
 
 ## Required inputs
 
@@ -39,6 +48,28 @@ on artifact existence, and stop early on hard failures with a partial
    `realize-specification` needs this explicitly; capture it up front.
 
 If either is missing or ambiguous, halt and ask. Do not invent a ticket.
+
+## Orchestration substrate role
+
+This skill is the in-marketplace expression of the orchestration substrate
+specified in `references/orchestration-substrate.md`. Five responsibilities,
+applied across the body below:
+
+- **Hold bespoke domain context** for the run — the ticket text, the target
+  codebase path, any prior witnesses the user carries forward, any
+  predicate-schema extensions to inject into close-world.
+- **Parameterise each primitive** at startup with the
+  `accepts_orchestrator_parameter` values appropriate for the run. Skills do
+  not invent these; if a needed parameter is missing for a stage, halt and ask.
+- **Read each gate-target descriptor** after a stage emits its output —
+  artifact identity, declared shape (per `shifting:references/pipeline-schema/`),
+  refutation-shape suggestions inherited from upstream context.
+- **Decide disprove invocation** per run. The orchestrator (this skill) is the
+  only legal invoker of `shifting:disprove-proposition`. See "Disprove gating"
+  below for when and when not.
+- **Decide non-adjacent loopback.** Primitives only loop to their immediate
+  predecessor. Cross-stage refinement is this skill's call, surfaced to the
+  user before re-invoking an earlier primitive.
 
 ## Artifact chain (read-only contract)
 
@@ -57,6 +88,12 @@ hand-off contract — never rename, never relocate.
 
 Before invoking each stage, verify the upstream artifact exists. After each
 stage, verify its declared output exists before advancing.
+
+Every primary output above is also a **gate-target descriptor** — the
+orchestrator MAY invoke `shifting:disprove-proposition` against any of them
+when the run's success criteria warrant it. The 12 emitted descriptors and
+the orchestrator parameters each stage accepts are catalogued in
+`references/orchestration-substrate.md`.
 
 ## Lean prerequisites
 
@@ -81,15 +118,25 @@ disk. Use TaskUpdate, not commentary.
 Invoke `shifting:close-world` with the target codebase as source
 material. This reads the codebase and emits `thoughts/existing-world.pl`.
 
+Orchestrator parameters to pass (if the ticket calls for them):
+`predicate_schema_extension` (bespoke predicates this ticket needs in the KB),
+`success_criteria` (minimum coverage / required predicate families),
+`halt_condition`.
+
 Gate: `thoughts/existing-world.pl` must exist and be non-empty before
 advancing. If empty or missing, stop and run `explain` against whatever was
-produced.
+produced. The emitted descriptor exposes the KB's open-domain assumptions —
+prime candidates for a refutation-shape briefing on the next stage.
 
 ### Stage 2 — decompose-proposition
 
 Invoke `shifting:decompose-proposition` with two arguments: the path
 `thoughts/existing-world.pl` and the **ticket text verbatim** as the
 proposition. Output: `thoughts/hypothesis.pl`.
+
+Orchestrator parameters to pass: `refutation_shape_briefing` (the classes of
+counterfactual the orchestrator wants surfaced), `artifact_versioning` (the
+v1/v2/... namespace if a re-decomposition is anticipated), `halt_condition`.
 
 Gate: `thoughts/hypothesis.pl` must exist and contain at least one `claim/2`
 fact. If decomposition refuses (e.g., proposition already entailed by KB),
@@ -101,9 +148,14 @@ Invoke `shifting:model-obligations` with `thoughts/hypothesis.pl` and
 `thoughts/existing-world.pl`. Output: `thoughts/target-world.pl` and
 `thoughts/model_results.pl`.
 
+Orchestrator parameters to pass: `refutation_shape_briefing`, `halt_condition`.
+
 Gate: both files must exist. If `model_results.pl` reports refutation of a
 required obligation, stop and run `explain` — the model has already shown the
-ticket cannot be realized as written.
+ticket cannot be realized as written. A `gap` verdict is not the same as
+`inconsistent`: surface the gap_reason and decide per run whether the gap
+warrants a non-adjacent loopback to `decompose-proposition` (this skill's
+call, user-gated) or proceeds to stage 3b on the consistent subset.
 
 ### Stage 3b — prove-invariants
 
@@ -111,18 +163,22 @@ Confirm Lean prerequisites (see above), then invoke
 `shifting:prove-invariants` with `thoughts/target-world.pl`. Output:
 `thoughts/lean/Proofs/*.lean` and `thoughts/lean_proof_results.pl`.
 
+Orchestrator parameters to pass: `refutation_shape_briefing`, `halt_condition`.
+
 Gate: `thoughts/lean_proof_results.pl` must exist. Inspect it: if every
 `theorem_verdict/2` is `unprovable`, the ticket is logically blocked at the
-Lean boundary. Per `prove-invariants`, the documented loop-back is to
-`decompose-proposition`. **The orchestrator does not loop automatically.**
-Surface the unprovable verdicts to the user, ask whether to refine the
-hypothesis (one round) or finish with `explain`. Default on no answer: finish
-with `explain`.
+Lean boundary. The adjacent loopback target is `model-obligations`. The
+non-adjacent loopback to `decompose-proposition` is **this skill's call**,
+not the primitive's — surface the unprovable verdicts to the user, propose
+the non-adjacent loopback with a one-sentence rationale, and act only on
+confirmation. Default on no answer: finish with `explain`.
 
 ### Stage 4 — instantiate-properties
 
 Invoke `shifting:instantiate-properties` with the target codebase
 directory. Output: skipped tests under `thoughts/tests/`.
+
+Orchestrator parameters to pass: `refutation_shape_briefing`, `halt_condition`.
 
 Gate: at least one test file must exist under `thoughts/tests/`. If empty,
 record and proceed to `explain` (no tests means nothing for stage 5 to drive).
@@ -133,6 +189,9 @@ For each test file produced in stage 4, invoke
 `shifting:realize-specification` with that test file path and the target
 codebase directory. Run them sequentially — `realize-specification` already
 manages its own sub-agents and is not safe to fan out.
+
+Orchestrator parameters to pass: `refutation_shape_briefing`, `halt_condition`,
+`success_criteria` (e.g., "all targeted tests pass; zero regressions").
 
 Gate: after each invocation, check `thoughts/implementation_log.md` and the
 suite-runner digest. If `thoughts/implementation_blocked.md` appears, stop the
@@ -145,9 +204,48 @@ directory. This stage **always runs**, even on partial pipelines — it is the
 presentation layer for whatever artifacts exist. Output:
 `thoughts/explanation.md`.
 
+`explain` is unstaged with respect to the disprove-gate contract — it is the
+narrator, not a primitive in the descriptor chain. Pass no orchestrator
+parameters; it reads what is on disk.
+
 After `explain` completes, summarize for the user in one short paragraph: the
 ticket as understood, the furthest stage reached, and the path to
 `thoughts/explanation.md`.
+
+## Disprove gating
+
+After any stage emits its primary artifact, this skill MAY invoke
+`shifting:disprove-proposition` against the corresponding gate-target
+descriptor — the artifact, its declared shape, and the refutation-shape
+suggestions the orchestrator wants attacked. The decision is per-run:
+
+- **Default: do not invoke.** A pipeline run is exploratory; disprove
+  invocations cost time and only pay off when the run's success criteria
+  specifically call for an adversarial check.
+- **Invoke when** a stage's verdict carries `gap`, `inconsistent`, or
+  `unprovable`, and the ticket (or a user-supplied refutation_shape_briefing)
+  names what to attack.
+- **Invoke when** the user explicitly asks for a second opinion on an
+  artifact before advancing.
+
+When invoking, brief `shifting:disprove-proposition` with: the gate-target
+descriptor (artifact path + declared shape from the relevant
+`shifting:references/pipeline-schema/` doc + the refutation-shape suggestions),
+plus a budget (token / wall-clock / attempts). Read its verdict from
+`thoughts/disproof_results.pl`. Three outcomes:
+
+- `refuted` — a concrete witness exists under `thoughts/counterexamples.pl`
+  or `thoughts/lean_disproofs/`. Halt the pipeline; surface the witness and
+  ask the user whether to drive a non-adjacent loopback or finish.
+- `inconclusive` — partial evidence. Record, decide whether to thread the
+  evidence into the next stage's `refutation_shape_briefing`, and proceed.
+- `abstained` — no progress within budget. Record the obstruction and
+  proceed without halting.
+
+Never invoke `disprove-proposition` recursively against its own outputs
+(witness R2 — universal-gate closure breaks at the self-application
+boundary). Primitives downstream never auto-consume disprove artifacts; the
+orchestrator threads verdicts back via parameters or halts.
 
 ## Effort and model
 
@@ -190,8 +288,37 @@ report.
   refuted obligations / unprovable verdicts to the user as the headline.
 - **Sub-agent or skill error** → record the stage and error, run `explain`
   against partial state, then surface the error.
-- **Never** silently retry a failed stage. Refinement loops (e.g.,
-  `prove-invariants` → `decompose-proposition`) are user-gated.
+- **Adjacent loopback** (e.g., `prove-invariants` → `model-obligations`,
+  `realize-specification` → `instantiate-properties`) belongs to the
+  primitive; the looped-back skill records its own decision.
+- **Non-adjacent loopback** (e.g., `prove-invariants` →
+  `decompose-proposition`, `realize-specification` → `decompose-proposition`)
+  is **this skill's call**. Surface the gap to the user with a one-sentence
+  rationale, propose the loopback, and act only on confirmation. Never
+  silently retry a non-adjacent stage.
+
+## Hard rules
+
+These hold for every run; they survive every refinement and override.
+Sourced from `references/orchestration-substrate.md` and the T2 R1/R2/R3
+axioms.
+
+- **Do not** re-introduce `emits_disprove_gate(_, _)` as a universal closure
+  over `produces/2` pairs. That commitment-shape predicate was refuted by
+  witness R2. The canonical predicate is `emits_gate_target_descriptor/2`,
+  capability-shaped.
+- **Do not** invoke `shifting:disprove-proposition` from inside any staged
+  primitive's run. This skill (the orchestrator) is the only legal invoker.
+  Witness R1 refuted self-invocation.
+- **Do not** treat a `negation_provenance(_, absent)` marker as a
+  Lean-disproved fact. CWA-absent ≠ Lean-disproved
+  (`cwa_negation_neq_lean_proof` in shifting's ontology).
+- **Do not** override a primitive's delegation discipline. The orchestrator
+  parameterises; it does not bypass the role-briefing + minimum-context
+  obligation each delegating primitive carries.
+- **Do not** read pipeline-internal predicates that are not exposed as
+  gate-target descriptors or orchestrator parameters. The contract in
+  `references/orchestration-substrate.md` is the only legal surface.
 
 ## What this skill is not
 
