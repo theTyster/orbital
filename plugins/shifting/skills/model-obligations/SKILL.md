@@ -164,19 +164,21 @@ Read **`references/prolog-proof-method.md`** before writing any encodings. The r
 
 ### 1. Read the Hypothesis (Prolog facts)
 
-Load `thoughts/hypothesis.pl` and query its claim structure. Do not parse markdown:
+Load `thoughts/hypothesis.pl` and query its claim structure. Do not parse markdown.
 
-```bash
-PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
-swipl -g "
-  use_module('${PROLOG}/introspect'),
-  forall(claim_label(Id, descriptive), format('descriptive: ~w~n', [Id])),
-  forall(claim_label(Id, counterfactual), format('counterfactual: ~w~n', [Id])),
-  forall(claim_label(Id, prescriptive), format('prescriptive: ~w~n', [Id]))
-" -t halt thoughts/hypothesis.pl
-```
+For the named-fact projection (the predicates and arities are already known — `claim_label/2`, `formal_property/3`, `claim_negation_provenance/3`, plus the prescriptive obligation atoms), delegate to the `shifting:pl-fact-extractor` sub-agent instead of writing inline `swipl` boilerplate. The agent returns a JSON digest of fact tuples and counts; the skill consumes the digest, not raw stdout.
 
-Extract:
+**Briefing fields for `pl-fact-extractor`:**
+
+| Field | Source |
+|---|---|
+| `pl_paths` | `[thoughts/hypothesis.pl]` |
+| `fact_spec` | `claim_label/2`, `formal_property/3`, `claim_negation_provenance/3` |
+| `output_format` | `json` |
+
+The full agent contract — hard rules, missing-predicate semantics, digest schema — lives at `../../agents/pl-fact-extractor.md`.
+
+Extract from the digest:
 - The formal property identifiers (`formal_property/3` facts) and their
   natural-language descriptions and Lean sketches (arg 2 and arg 3).
 - The claim breakdown by `claim_label/2` value.

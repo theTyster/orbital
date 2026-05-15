@@ -64,7 +64,17 @@ Emit gap facts into `thoughts/tests/manifest.pl` (the carrier-widened manifest a
 
 **Delegate Prolog interrogation to the `shifting:agent-of-questions` sub-agent.** That agent is the Prolog query specialist — it discovers predicates and arities via `swipl` introspection (never by reading `.pl` files as text) and surfaces exactly the facts this step needs. Hand it the carrier (`lean_proof_results.pl` + transitively-cited paths from its `theorem_source/2` and `provenance_annotation/3` records) and the extraction checklist below; do NOT grep or Read the `.pl` files yourself.
 
-For a quick inline spot-check, `swipl -g "consult('FILE'), forall(P, format('...', [P])), halt."` works against any of `theorem_verdict/2`, `formal_property/3`, or `provenance_annotation/3`.
+For a named-fact projection (the predicates and arities are already known — `theorem_verdict/2`, `formal_property/3`, `provenance_annotation/3`, `claim_label/2`, `necessity_lemma_status/3`, `proof_strategy/2`, etc.), delegate to the `shifting:pl-fact-extractor` sub-agent instead of writing inline `swipl` boilerplate. The agent returns a JSON digest of fact tuples and counts; the skill consumes the digest, not raw stdout. Use `agent-of-questions` for predicate discovery and `pl-fact-extractor` for projection of a pinned fact list — the two agents are complementary, not redundant.
+
+**Briefing fields for `pl-fact-extractor`:**
+
+| Field | Source |
+|---|---|
+| `pl_paths` | `thoughts/lean_proof_results.pl` plus transitively-cited paths from its `theorem_source/2` and `provenance_annotation/3` records |
+| `fact_spec` | the predicate/arity entries from the extraction checklist below (`theorem_verdict/2`, `proof_strategy/2`, `formal_property/3`, `theorem_source/2`, `necessity_lemma_status/3`, `provenance_annotation/3`, `cwa_check/3`, `lean_skipped/2`, `claim_label/2`) |
+| `output_format` | `json` |
+
+The full agent contract — hard rules, missing-predicate semantics, digest schema — lives at `../../agents/pl-fact-extractor.md`.
 
 **Bias-isolation discipline.** Specialist delegation isolates test-shape derivation from orchestrator bias. The orchestrator's hopes about which properties "should" project cleanly onto fixtures MUST NOT reach the specialist.
 

@@ -33,6 +33,12 @@ Prolog query specialist. Discovers KB structure through `swipl` introspection al
 
 **Used by**: decompose-proposition, model-obligations, measure-entailment
 
+### pl-fact-extractor
+
+Read-only Prolog projection specialist. Given a list of `.pl` paths and a list of `{predicate, arity}` entries, runs one focused `swipl` projection per entry and returns a JSON digest of fact tuples and counts. No discovery, no synthesis, no validation — projection only. Missing predicates are reported with `missing: true` rather than inferred. No `Write` tool (digest returned, not stored), no `Agent` tool (leaf, not delegator). Haiku/low-effort budget.
+
+**Used by**: instantiate-properties, prove-invariants, model-obligations, measure-entailment
+
 ### prolog-prover
 
 Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search. Reads `references/prolog-wiki/` directly for CLP and tabling recipes.

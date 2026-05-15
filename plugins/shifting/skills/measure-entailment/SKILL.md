@@ -210,29 +210,17 @@ swipl -g "
 " -t halt
 ```
 
-**Supplementary queries** — run these to deepen the analysis:
+**Supplementary queries** — deepen the analysis with the universal-claim and contradiction tuples. For these named-fact projections (the predicates and arities are already known — `universal_claim/1`, `find_contradictions/1` — exported by the `adherence` module), delegate to the `shifting:pl-fact-extractor` sub-agent instead of writing inline `swipl` boilerplate. The agent returns a JSON digest of fact tuples and counts; the skill consumes the digest, not raw stdout.
 
-```bash
-# What facts are shared across ALL resources?
-swipl -g "
-  use_module('${PROLOG}/adherence'),
-  consult('thoughts/adherence_facts.pl'),
-  findall(C, universal_claim(C), Cs),
-  length(Cs, N),
-  format('Universal claims (~w): ~n', [N]),
-  forall(member(C, Cs), format('  ~q~n', [C]))
-" -t halt
+**Briefing fields for `pl-fact-extractor`:**
 
-# What contradictions exist?
-swipl -g "
-  use_module('${PROLOG}/adherence'),
-  consult('thoughts/adherence_facts.pl'),
-  find_contradictions(Contradictions),
-  length(Contradictions, N),
-  format('Contradictions (~w):~n', [N]),
-  forall(member(C, Contradictions), format('  ~q~n', [C]))
-" -t halt
-```
+| Field | Source |
+|---|---|
+| `pl_paths` | `[thoughts/adherence_facts.pl]` (the agent must also pre-load the `${PROLOG}/adherence` module — pass the absolute path in the briefing prose so the agent's `consult` call sees `universal_claim/1` and `find_contradictions/1`) |
+| `fact_spec` | `universal_claim/1`, `find_contradictions/1` |
+| `output_format` | `json` |
+
+The full agent contract — hard rules, missing-predicate semantics, digest schema — lives at `../../agents/pl-fact-extractor.md`.
 
 #### Label-aware verdicts (pipeline-terminal mode only)
 

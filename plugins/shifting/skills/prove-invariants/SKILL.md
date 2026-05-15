@@ -124,11 +124,23 @@ working directory whose `thoughts/` subtree carries the relevant artifacts.
 
 ## Reading the input
 
-`thoughts/target-world.pl` is the sole input. Load it with `swipl` (or read it directly) and enumerate:
+`thoughts/target-world.pl` is the sole input. For the named-fact projection (the predicates and arities are already known — `formal_property/3`, `provenance/2`, `negation_provenance/2`, `cf_fact/N`), delegate to the `shifting:pl-fact-extractor` sub-agent instead of writing inline `swipl` boilerplate. The agent returns a JSON digest of fact tuples and counts; the skill consumes the digest, not raw stdout.
+
+**Briefing fields for `pl-fact-extractor`:**
+
+| Field | Source |
+|---|---|
+| `pl_paths` | `[thoughts/target-world.pl]` |
+| `fact_spec` | `formal_property/3`, `provenance/2`, `negation_provenance/2`, plus each `cf_fact/N` arity referenced by the predicates above |
+| `output_format` | `json` |
+
+The full agent contract — hard rules, missing-predicate semantics, digest schema — lives at `../../agents/pl-fact-extractor.md`.
+
+Enumerate from the digest:
 
 - The ground facts of the world (these are what Lean proves universals over).
 - The per-fact ontology labels: `provenance(Fact, descriptive|prescriptive)` for asserted facts, and `negation_provenance(Fact, absent|contradicts)` for counterfactually-removed facts. Domain of the negation tag: `[absent, contradicts]`.
-- The formal properties to discharge — enumerate `formal_property/3` facts directly from `target-world.pl` (propagated there verbatim by `model-obligations`). Each `formal_property(Id, NLDescription, LeanSketch)` gives the property identifier, natural-language statement, and a Lean sketch to start from. Claim labels (`descriptive | counterfactual | prescriptive`) and negated-premise provenance are read off the corresponding `cf_fact/N` and `negation_provenance/2` facts in the same file.
+- The formal properties to discharge — `formal_property/3` facts (propagated into `target-world.pl` verbatim by `model-obligations`). Each `formal_property(Id, NLDescription, LeanSketch)` gives the property identifier, natural-language statement, and a Lean sketch to start from. Claim labels (`descriptive | counterfactual | prescriptive`) and negated-premise provenance are read off the corresponding `cf_fact/N` and `negation_provenance/2` facts in the same file.
 
 The canonical wire format for `target-world.pl` lives in `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/target-world.md` (and `lean-proof-results.md` in the same directory for the output file this skill emits). Use them as the authoritative source when enumerating predicates.
 
