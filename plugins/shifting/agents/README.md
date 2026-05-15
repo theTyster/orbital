@@ -69,6 +69,12 @@ Falsifiability discipline specialist. Given a raw user proposition and an `exist
 
 **Used by**: decompose-proposition, disprove-proposition
 
+### hypothesis-decomposer
+
+Claim-synthesis specialist — the heavy delegator behind `decompose-proposition` stages 2-5. Given a sharpened proposition plus `existing-world.pl`, decomposes into sub-hypotheses, spawns `agent-of-questions` (with bias-isolation discipline) to gather evidence, assigns exactly one ontology label per claim from `{descriptive, counterfactual, prescriptive}`, attaches `claim_negation_provenance/3` for every negated premise from `{absent, contradicts}`, sketches `formal_property/3` where structural shape allows, then emits a schema-validated `hypothesis.pl` and returns a digest of label / status / provenance counts. Halt-on-ambiguity discipline: refuses to split silently, refuses to guess a label, refuses to coin predicates the KB lacks, emits nothing if schema validation fails. Opus/high-effort budget.
+
+**Used by**: decompose-proposition
+
 ### lean-adversary
 
 Lean refutation specialist — the adversarial mirror of `lean-expert`. Constructs a Lean term inhabiting the negation of a pinned theorem and writes a refutation file at `thoughts/refutations/<target_id>.lean` on `refuted`, otherwise reports `inconclusive` or `abstained`. Inadmissible for purely behavioral/runtime targets. Shares input/output/discipline contract with `prolog-adversary` at `references/adversary-contract.md`. Reads `references/lean4-wiki/` directly for negation-lemma pages and `references/lean-tactics.md` for forbidden-tactics carve-outs. No `Agent` tool.

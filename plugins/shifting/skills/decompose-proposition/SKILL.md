@@ -93,148 +93,33 @@ Once the pinned sentence is in hand, immediately restate it as a counterfactual 
 
 This is the question the rest of the skill answers. If the agent's `note` flagged trivial entailment, report the proposition as a descriptive invariant rather than continuing. The interesting hypotheses are ones where the KB contains facts that stand in the way.
 
-### 2. Decompose into Counterfactual Sub-Hypotheses
+### 2. Delegate claim synthesis to `hypothesis-decomposer`
 
-A proposition rarely stands on a single fact. Break it into smaller claims that can each be independently tested against the KB. The goal is to locate the *counterfactual surface*: the specific KB facts or relations whose falsity is a precondition for the proposition.
+With the pinned proposition in hand, delegate the full claim-synthesis pass — counterfactual decomposition into sub-hypotheses, evidence gathering via `agent-of-questions`, ontology-label and negation-provenance assignment, `formal_property/3` sketches, schema-validated emission of `thoughts/hypothesis.pl` — to `shifting:hypothesis-decomposer` via the `Agent` tool. That agent is the claim-synthesis specialist on opus/high effort: it owns the halt-on-ambiguity discipline (refusing to label a claim two ways, refusing to split silently, refusing to invent predicates the KB does not enumerate), validates the file against the canonical schema before exit, and returns a fixed-shape digest the skill consumes for the user-facing report. The orchestrator-level bias-isolation discipline (role-briefing + minimum-necessary context) lives inside the agent body; the skill's job is to assemble a clean briefing and consume the digest.
 
-**Counterfactual decomposition (primary)** — For each entity and relation named in the proposition, ask: "If the KB contained a fact that contradicts this proposition, what would that fact look like?" Then query for exactly those facts. A proposition like "auth_lib has no transitive dependency on cli_tool" decomposes into the counterfactual query: "enumerate every path `auth_lib →* cli_tool` in `depends_on`." Any such path found is a *counterfactual requirement* — a KB fact that must be falsified (removed, refactored, broken) for the proposition to hold.
+**Briefing fields for `hypothesis-decomposer`:**
 
-**Assumption surfacing** — What must be true for the proposition to hold? If someone claims "changing logging won't break anything," the hidden assumptions might be:
-(a) nothing depends on logging's internal API,
-(b) all dependents use logging through a stable interface,
-(c) logging has no transitive dependents beyond the obvious ones.
-Each assumption becomes a counterfactual question: "what KB fact would violate (a)?"
+| Field | Source |
+|---|---|
+| `sharpened_proposition` | The pinned sentence from §1's `proposition-sharpener` return. Verbatim. |
+| `existing_world_pl_path` | The KB path from this skill's input. |
+| `output_path` | `thoughts/hypothesis.pl` (or the orchestrator-overridden path). |
+| `schema_reference_path` | `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/hypothesis.md` |
+| `ontology_reference_path` | `${CLAUDE_SKILL_DIR}/../../references/ontology.md` |
+| `prolog_introspect_path` | `${CLAUDE_SKILL_DIR}/../../prolog/introspect` |
+| `refutation_shape_briefing` | The orchestrator-supplied value if present (per the orchestrator-contract section above); otherwise omit. |
+| `artifact_versioning` | The orchestrator-supplied namespace suffix if present; otherwise omit. |
 
-**Boundary identification** — Where does the claim stop being true? "auth_lib is isolated" might hold for direct dependencies but fail for transitive ones. The boundary is usually where counterfactual facts start appearing.
+Drop to inline synthesis only when the user has explicitly asked you to do the decomposition yourself in this turn. KB size is not a reason; claim count is not a reason. When in doubt, delegate — the agent's halt-on-ambiguity discipline cannot run inside the orchestrator's context.
 
-**Dependency tracing** — What entities are involved, and what connects them? Most propositions about a system involve paths through a graph. Trace the relevant paths — each existing path is a candidate counterfactual.
+Handle the two digest shapes:
 
-Write each sub-hypothesis as a concrete, falsifiable statement phrased against the KB:
-- "The KB contains no path from `cli_tool` to `logging` in `depends_on`" (counterfactual: any such path must be broken)
-- "The KB contains no module that `depends_on(web_framework)` but does not `depends_on(logging)`"
-- "The `depends_on` relation in the KB contains no cycles"
+- **`outcome: "emitted"`** — the agent wrote a validated `hypothesis.pl` at `output_path`. Read off `claim_count`, `label_counts`, `status_counts`, `provenance_counts`, `formal_property_count`, `coverage_percentage`, `open_assumptions` for the user-facing report (§3 below).
+- **`outcome: "halted"`** — the agent emitted no file. Surface `halt_reason`, `halt_detail`, and `what_orchestrator_should_clarify` to the user and stop. Do not retry the synthesis yourself or with adjusted inputs unless the user explicitly directs — the agent already considered the inputs and chose to halt rather than guess.
 
-### 3. Gather Evidence
+### 3. Synthesize the user-facing digest
 
-Now query the knowledge base. Each query should target a specific sub-hypothesis.
-
-#### Delegate querying to `agent-of-questions`
-
-Prefer spawning the `shifting:agent-of-questions` sub-agent with the `Agent` tool to run the evidence-gathering pass. That agent is the Prolog query specialist — it never reads `.pl` files directly, it discovers the schema through `swipl` introspection (`kb_summary`, `kb_describe`, `kb_find`, `kb_related`, `kb_graph`, `kb_stats`) and writes targeted queries against whatever predicates actually exist. This avoids a common failure mode where the main agent guesses at predicate names from memory and writes queries that silently return empty.
-
-Brief the sub-agent with:
-- The existing-world file path
-- Each sub-hypothesis from step 2, phrased as a counterfactual question: "Enumerate every KB fact that would contradict `{sub-hypothesis}`. The absence of such facts is itself a result — report 'no counterfactuals found after exhaustive search' rather than going silent."
-- An instruction to return, for each sub-hypothesis: the queries it ran, the raw results, and **the specific KB facts (if any) that must be false for the sub-hypothesis to hold**
-- For each claim reported, assign an ontology label via `claim_label/2`: `descriptive` if the claim restates what the existing world already entails; `counterfactual` if the claim asserts that an existing fact must become false; `prescriptive` if the claim asserts that a new fact (not yet in the KB) must become true in target-world.
-- For every *negated* premise (counterfactual claims and any claim with a negative assertion in its body), also record a negation-provenance label via `claim_negation_provenance/3`: `absent` if the negation comes from closed-world absence (`\+ fact` succeeds under CWA); `contradicts` if the KB or an integrity constraint explicitly derives the negation. The two dimensions are orthogonal — one labels the claim, one labels each negation it depends on.
-- An instruction that contradiction-hunting is the priority; confirming queries are secondary. The hypothesis file's value comes from the concrete list of counterfactual claims plus new prescriptive obligations, not from restating what the KB already entails.
-
-If the KB is clearly missing facts the hypothesis depends on, spawn `shifting:agent-of-truth` to extend the KB before continuing — don't try to patch facts by hand.
-
-Drop to inline querying only when the user has explicitly asked you to query it yourself in this turn. KB size is not a reason — a specialist running `swipl` introspection finds relationships you'd miss by eye, and delegation keeps the raw query noise out of the main context. When in doubt, delegate.
-
-#### Bias-isolation discipline
-
-Specialist delegation isolates the search from orchestrator bias. The orchestrator's hopes about whether the proposition decomposes "cleanly" or with rich counterfactual surface MUST NOT reach the specialist; decompose-proposition has no checker for missing-counterfactual under-reporting, so a too-clean hypothesis is invisible without structural defense.
-
-**Apply both defenses on every specialist invocation** (agent-of-questions for queries, agent-of-truth for KB extensions, lean-expert for Mathlib name lookups):
-
-1. **Role-briefing.** Open every specialist prompt with an explicit outcome-agnostic role:
-   > "You are enumerating the counterfactual surface of a proposition against the KB. Report every contradicting fact the KB contains; report exhaustive search returning empty as a positive finding; do not infer facts the KB does not assert in order to make the hypothesis 'work.' Abstention on a sub-hypothesis is a valid outcome; fabricating evidence to satisfy the proposition is a foul."
-
-2. **Minimum-necessary context.** Send only:
-   - The existing-world file path + the sub-hypothesis under attack
-   - The orchestrator-supplied `refutation_shape_briefing` if present
-   - The introspection module path
-
-   Do **not** paste orchestrator reasoning, the user's framing of the proposition's significance, or downstream model-obligations / prove-invariants hopes. Escalate context only when the specialist returns "underspecified" with a precise question.
-
-**Orchestrator responsibilities (never delegated):** pin the proposition in its strongest form, decide the `refutation_shape_briefing` per ticket, validate the agent's returned counterfactual surface against `existing-world.pl` before recording claims, own the ontology-label assignments.
-
-#### Understand the KB
-
-Start with the schema and contents:
-
-```bash
-PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
-swipl -g "use_module('${PROLOG}/introspect'), kb_summary" -t halt existing-world.pl
-swipl -g "use_module('${PROLOG}/introspect'), kb_describe" -t halt existing-world.pl
-```
-
-This tells you what predicates exist and what the data looks like. Use this to refine your hypotheses if needed — you may discover relationships you didn't know about.
-
-#### Query for each sub-hypothesis
-
-Run targeted queries. For each one, record:
-- The query itself
-- What a counterfactual fact would look like (the shape of a contradicting result)
-- What the KB actually returned
-- The concrete list of KB facts (if any) that must be falsified for the sub-hypothesis to hold
-- The **ontology label** of each claim: `descriptive` (what the existing world already entails), `counterfactual` (an existing fact that must become false), or `prescriptive` (a new fact that must become provable in target-world).
-- For every *negated* premise, the **negation provenance**: `absent` (CWA default — the KB does not derive the fact) or `contradicts` (the KB explicitly derives the negation from negative facts or integrity constraints). The `absent` case is fragile — it holds only as strongly as the KB is complete; the `contradicts` case is structurally necessary. Downstream `prove-invariants` uses this label to annotate theorems at the CWA→OWA boundary; dropping it silently upgrades CWA-absence into logical falsity.
-
-Prioritize contradiction-hunting. A sub-hypothesis that survives exhaustive attempts to falsify it is a strong invariant. A sub-hypothesis with a concrete list of contradicting facts is a roadmap — state both outcomes explicitly.
-
-#### Query patterns (reference)
-
-See the Prolog Reference section at the end of this document for:
-- How to invoke swipl
-- The introspect module (kb_summary, kb_find, kb_related, kb_graph, etc.)
-- Ad-hoc query patterns (forall, findall, transitive closure, negation)
-
-### 4. Assess Coverage
-
-After gathering evidence, check how much of the knowledge base your queries actually exercised:
-
-```bash
-PROLOG="${CLAUDE_SKILL_DIR}/../../prolog"
-swipl -g "
-  use_module('${PROLOG}/prolog_coverage_ai'),
-  use_module('${PROLOG}/introspect'),
-  coverage(( <your queries here> )),
-  show_coverage([modules([user])])
-" -t halt existing-world.pl
-```
-
-Interpret coverage as a confidence signal:
-- **>80%**: Most facts contributed to the exploration. The hypothesis is well-grounded in the available evidence.
-- **50–80%**: Significant portions unexplored. Ask whether the unexplored predicates are relevant to the proposition. If they are, query them.
-- **<50%**: Narrow slice. This is acceptable for a focused proposition, but flag it — there may be relevant evidence you missed.
-
-If important predicates show 0% coverage, investigate them before finalizing.
-
-### 5. Synthesize the Hypothesis
-
-From the evidence, formulate the hypothesis. It must be:
-
-- **Specific** — names concrete entities or relationships from the KB
-- **Falsifiable** — a Lean4 or Prolog proof could demonstrate it false
-- **Formalizable** — expressible as a logical proposition (∀, ∃, →, ¬)
-- **Counterfactual-aware** — explicitly names the KB facts (if any) that must be false for it to hold
-
-Each sub-hypothesis from step 2 lands in one of three states:
-
-- **Clear** — no contradicting KB facts found after exhaustive search → becomes a formal property asserting the universal negation (e.g., `∀ x, ¬ depends_on_trans(auth_lib, x) ∧ x = cli_tool`). This is a strong invariant of the current KB. Label the claim `descriptive`.
-- **Conditional** — contradicting KB facts found → these become **counterfactual claims** (KB facts that must become false in target-world) plus optional **prescriptive claims** (new facts that must become provable in target-world). Each claim carries its ontology label and, if it involves a negation, its negation-provenance label (`absent` or `contradicts`). The prove skills use both: `model-obligations` reads the label to decide whether a claim enters target-world as a removal or as a new assertion; `prove-invariants` reads the provenance to calibrate how fragile the corresponding theorem is at the CWA→OWA boundary.
-- **Open** — insufficient evidence → flag as an assumption and note what additional facts would resolve it.
-
-A hypothesis with zero counterfactual requirements is a proved invariant. A hypothesis with counterfactual requirements is a roadmap for the change the proposition implies — and that roadmap is exactly what the downstream proof skill formalizes.
-
-**Phrasing formal properties for the prove backends.** Default to quantified-invariant shape over enumerated conjunctions: phrase `formal_property/3` as `∀ a b, P a b → Q a b`, not as a list of explicit pair facts. The invariant form expresses the spec directly; the enumerated form degrades to `decide`-over-list at the Lean stage. For *conditional* sub-hypotheses, state the property over a *target relation* that excludes the counterfactual facts (e.g. `depends_on_target(X,Y) := depends_on(X,Y) ∧ ¬ cf(X,Y)`), plus one necessity claim per counterfactual. See `references/pipeline-schema/hypothesis.md` for the full shape contract and the `formal_property/3` argument layout.
-
-Good hypotheses:
-- "auth_lib has no transitive dependency on cli_tool" (with an empty counterfactual list, if the KB confirms it)
-- "`cli_tool` can stop depending on `logging` iff the KB facts `{depends_on(cli_tool, logging), depends_on(cli_tool, formatter), depends_on(formatter, logging)}` are falsified"
-- "The dependency graph from cli_tool is acyclic"
-
-### 6. Write the Hypothesis File
-
-Write to `thoughts/hypothesis.pl` (create `thoughts/` if needed). The file is a Prolog facts file — loadable with `swipl` and queryable by downstream skills. Every piece of hypothesis content lands as a ground fact, not as prose.
-
-**Emit against the canonical schema.** The predicate names, arities, and argument orders for `hypothesis.pl` are defined in `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/hypothesis.md`. Read that file before writing; do not invent local variations. `cross-skill-map.md` in the same directory documents how each predicate is consumed or translated downstream.
-
-**Validate** with `swipl -g halt thoughts/hypothesis.pl` before reporting done. The file must load without errors and every `claim/2` must have a matching `claim_label/2` and `claim_status/2`.
+From the agent's `emitted` digest, build the user-facing report. The skill does not re-validate the file the agent wrote — that validation happened inside the agent before emission, and re-validating in the orchestrator just adds context noise. The skill's job here is presentation, not verification.
 
 ## References
 
@@ -246,7 +131,7 @@ Keeping wiki content inside sub-agent contexts preserves your context window for
 
 ## Output
 
-Write `thoughts/hypothesis.pl` — a Prolog facts file structured for both `model-obligations` (target-world model construction) and `prove-invariants` (theorem proving).
+`thoughts/hypothesis.pl` — a Prolog facts file structured for both `model-obligations` (target-world model construction) and `prove-invariants` (theorem proving). The `hypothesis-decomposer` agent writes and validates this file before returning its digest; the skill consumes the digest for the user-facing report.
 
 Report to the user:
 - The original proposition (one line)
