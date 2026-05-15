@@ -299,26 +299,10 @@ report.
 
 ## Hard rules
 
-These hold for every run; they survive every refinement and override.
-Sourced from `references/orchestration-substrate.md` and the T2 R1/R2/R3
-axioms.
-
-- **Do not** re-introduce `emits_disprove_gate(_, _)` as a universal closure
-  over `produces/2` pairs. That commitment-shape predicate was refuted by
-  witness R2. The canonical predicate is `emits_gate_target_descriptor/2`,
-  capability-shaped.
-- **Do not** invoke `shifting:disprove-proposition` from inside any staged
-  primitive's run. This skill (the orchestrator) is the only legal invoker.
-  Witness R1 refuted self-invocation.
-- **Do not** treat a `negation_provenance(_, absent)` marker as a
-  Lean-disproved fact. CWA-absent ≠ Lean-disproved
-  (`cwa_negation_neq_lean_proof` in shifting's ontology).
-- **Do not** override a primitive's delegation discipline. The orchestrator
-  parameterises; it does not bypass the role-briefing + minimum-context
-  obligation each delegating primitive carries.
-- **Do not** read pipeline-internal predicates that are not exposed as
-  gate-target descriptors or orchestrator parameters. The contract in
-  `references/orchestration-substrate.md` is the only legal surface.
+Five prohibitions hold for every run, sourced from the T2 R1/R2/R3 witnesses.
+See `references/orchestration-substrate.md` §"What the orchestrator MUST NOT
+do" for the canonical list. Treat any conflict between this skill's behavior
+and that list as a bug in this skill, not in the references doc.
 
 ## What this skill is not
 
