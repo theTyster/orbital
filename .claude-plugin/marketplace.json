@@ -60,7 +60,7 @@
     {
       "name": "telemetry",
       "description": "Standalone developer utilities: logical commit generation, presentation creation, and bounded recurring loops.",
-      "version": "3.0.1",
+      "version": "3.1.0",
       "source": "./plugins/telemetry",
       "author": {
         "name": "ty",
