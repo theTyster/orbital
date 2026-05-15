@@ -30,7 +30,26 @@ Prolog is the evidence-gathering tool, not the focus.
 
 ## Loopback role
 
-This skill is re-invoked whenever a downstream prove step fails. If `model-obligations` reports `inconsistent` or `gap` verdicts in `model_results.pl`, or `prove-invariants` reports `unprovable` theorems in `lean_proof_results.pl`, the pipeline returns here to refine `hypothesis.pl` — typically by resharpening a claim, adjusting an ontology label, adding missing counterfactual requirements, or breaking a formal property into provable sub-properties. The loopback is **human-gated**: neither prove skill re-invokes `decompose-proposition` automatically. A user (or the previous prove-skill's report) must explicitly request a refinement pass, pointing at the specific unresolved property. On re-invocation, consult the previous `hypothesis.pl` plus any `model_results.pl` / `lean_proof_results.pl` verdicts and *amend* the hypothesis file — do not regenerate from scratch unless the proposition itself changed.
+Decompose is the canonical non-adjacent recovery target. When `model-obligations`, `prove-invariants`, `instantiate-properties`, or `realize-specification` cannot make progress against their immediate predecessor, they emit `upstream_gap/3` with `recovery_hint(decompose_proposition, refutation_shape_briefing([...]))`. The orchestrator decides whether to honor; this skill never auto-re-invokes. On re-invocation, consult the previous `hypothesis.pl` plus the cited `gap_descriptor` + `ParamSpec` and *amend*; do not regenerate unless the proposition itself changed.
+
+## Orchestrator contract
+
+This skill sits at stage 2; carrier is `existing-world.pl` from `close-world`. The orchestration-substrate wire format is `plugins/trajectory/references/orchestration-substrate.md`.
+
+**Orchestrator parameters accepted:**
+
+- **`refutation_shape_briefing`** — counterfactual classes the orchestrator wants surfaced (e.g., "narrow the search to absent-fact premises"; "include CWA-fragile claims even when contradiction evidence is weak"). Fold into the agent-of-questions brief.
+- **`artifact_versioning`** — when the orchestrator anticipates a re-decomposition, the v1/v2/... namespace for emission (e.g., `cf_v2_*`, `pr_v2_*` claim ids). Default: no version suffix.
+- **`halt_condition`** — when to stop and report a partial hypothesis rather than continue.
+
+**Gate-target descriptor emitted on completion** — `hypothesis.pl` paired with its declared shape (per `references/pipeline-schema/hypothesis.md`) and refutation-shape suggestions: **new premises and claim-label assignments are the primary refutation surface** — every counterfactual claim's pinned absent-fact and every prescriptive claim's new-fact assertion are candidates for `disprove-proposition` to challenge.
+
+**Upstream gap emissions** — when introspection of `existing-world.pl` reveals that the KB does not carry predicates the proposition requires:
+
+- `upstream_gap(decompose_proposition, gap_descriptor(missing_predicate, predicate(Name, Arity)), recovery_hint(close_world, predicate_schema_extension([Name/Arity, ...])))` — the canonical case (the DD fp_i06/fp_i07 substrate-audit pattern).
+- `upstream_gap(decompose_proposition, gap_descriptor(schema_insufficient, claim(ClaimId, missing_evidence_class)), recovery_hint(close_world, predicate_schema_extension([...])))` — when an entire evidence class (e.g., constructor-injection metadata, content-include directives) is absent.
+
+Emit gap facts into `hypothesis.pl` alongside the claims; the orchestrator pattern-matches and decides whether to re-invoke `close-world` with the extended schema before proceeding to `model-obligations`.
 
 ## Current Environment
 
@@ -110,6 +129,24 @@ If the KB is clearly missing facts the hypothesis depends on, spawn `shifting:ag
 
 Drop to inline querying only when the user has explicitly asked you to query it yourself in this turn. KB size is not a reason — a specialist running `swipl` introspection finds relationships you'd miss by eye, and delegation keeps the raw query noise out of the main context. When in doubt, delegate.
 
+#### Bias-isolation discipline
+
+Specialist delegation isolates the search from orchestrator bias. The orchestrator's hopes about whether the proposition decomposes "cleanly" or with rich counterfactual surface MUST NOT reach the specialist; decompose-proposition has no checker for missing-counterfactual under-reporting, so a too-clean hypothesis is invisible without structural defense.
+
+**Apply both defenses on every specialist invocation** (agent-of-questions for queries, agent-of-truth for KB extensions, lean-expert for Mathlib name lookups):
+
+1. **Role-briefing.** Open every specialist prompt with an explicit outcome-agnostic role:
+   > "You are enumerating the counterfactual surface of a proposition against the KB. Report every contradicting fact the KB contains; report exhaustive search returning empty as a positive finding; do not infer facts the KB does not assert in order to make the hypothesis 'work.' Abstention on a sub-hypothesis is a valid outcome; fabricating evidence to satisfy the proposition is a foul."
+
+2. **Minimum-necessary context.** Send only:
+   - The existing-world file path + the sub-hypothesis under attack
+   - The orchestrator-supplied `refutation_shape_briefing` if present
+   - The introspection module path
+
+   Do **not** paste orchestrator reasoning, the user's framing of the proposition's significance, or downstream model-obligations / prove-invariants hopes. Escalate context only when the specialist returns "underspecified" with a precise question.
+
+**Orchestrator responsibilities (never delegated):** pin the proposition in its strongest form, decide the `refutation_shape_briefing` per ticket, validate the agent's returned counterfactual surface against `existing-world.pl` before recording claims, own the ontology-label assignments.
+
 #### Understand the KB
 
 Start with the schema and contents:
@@ -179,17 +216,7 @@ Each sub-hypothesis from step 2 lands in one of three states:
 
 A hypothesis with zero counterfactual requirements is a proved invariant. A hypothesis with counterfactual requirements is a roadmap for the change the proposition implies — and that roadmap is exactly what the downstream proof skill formalizes.
 
-**Phrasing formal properties for the prove backends.** How a property is stated determines whether the prove skill can actually verify it. **Default to quantified-invariant shape over enumerated conjunctions of specific facts** whenever the underlying claim has invariant shape. A property phrased as "every fact (a, b) satisfying P also satisfies Q" should appear in `formal_property/3` as `∀ a b, P a b → Q a b`, not as a list of explicit pair facts. The invariant form expresses the spec directly; the enumerated form is a list of test cases dressed up as a theorem and degrades to `decide`-over-list at the Lean stage. Lean closes the invariant form by `cases h <;> ...` over an inductive predicate — this is the canonical structural proof shape and is what `prove-invariants` is now built around.
-
-When in doubt, ask: would a reader who has never seen the file recognize what is being asserted from the theorem statement alone? If yes, the form is spec-shaped. If the statement is a long conjunction of named facts, refactor to invariant form before emitting.
-
-- *Clear* sub-hypothesis → state the property directly over the KB's predicates as a quantified invariant (e.g. `∀ x, depends_on_trans(auth_lib, x) → x ≠ cli_tool`, not the list of every (auth_lib, x) pair the KB happens to entail). The prove skill will verify it as an invariant.
-- *Conditional* sub-hypothesis → state the property over a *target relation* that excludes the counterfactual facts, and name each counterfactual as a companion necessity claim. Example:
-
-  > **Property**: `cli_tool` has no transitive dependency on `logging` in `depends_on_target`, where `depends_on_target(X,Y) := depends_on(X,Y) ∧ ¬ cf(X,Y)` and `cf` is the set of counterfactual facts listed above.
-  > **Necessity claims** (one per counterfactual): re-introducing `cf_fact(cli_tool, logging)` to the target relation restores a path `cli_tool →* logging`.
-
-  The prove skills (`model-obligations`, `prove-invariants`) both consume this shape: they derive the target relation from the counterfactual list, prove sufficiency over the target, and prove a necessity lemma for each counterfactual fact. A property phrased directly over the base relation in conditional mode is unprovable by construction — the current KB contradicts it.
+**Phrasing formal properties for the prove backends.** Default to quantified-invariant shape over enumerated conjunctions: phrase `formal_property/3` as `∀ a b, P a b → Q a b`, not as a list of explicit pair facts. The invariant form expresses the spec directly; the enumerated form degrades to `decide`-over-list at the Lean stage. For *conditional* sub-hypotheses, state the property over a *target relation* that excludes the counterfactual facts (e.g. `depends_on_target(X,Y) := depends_on(X,Y) ∧ ¬ cf(X,Y)`), plus one necessity claim per counterfactual. See `references/pipeline-schema/hypothesis.md` for the full shape contract and the `formal_property/3` argument layout.
 
 Good hypotheses:
 - "auth_lib has no transitive dependency on cli_tool" (with an empty counterfactual list, if the KB confirms it)
