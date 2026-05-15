@@ -4,7 +4,7 @@ description: >
   Use this agent when a finished pipeline run must be audited for closed-world fragility — every `negation_provenance(_, absent)` premise traced through hypothesis → target-world → lean → tests with each downstream artifact's annotation cross-checked — typical triggers include "audit the CWA chain", "check for annotation drift", "find silent upgrades across artifacts". Emits a structured fragility report with claim id, the absent fact, every theorem/test inheriting the fragility, and a per-chain verdict (consistent / annotation_drift / silent_upgrade). Read-only; never edits artifacts. Do NOT use for live emission of upstream_gap/3 predicates (that's a future gap-emitter agent — coordinate via the orchestration-channel ticket).
 tools: Bash, Read
 model: sonnet
-color: yellow
+color: purple
 effort: medium
 ---
 
