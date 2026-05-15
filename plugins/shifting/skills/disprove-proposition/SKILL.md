@@ -69,7 +69,7 @@ Naming the refutation shape *before* the search prevents post-hoc rationalizatio
 
 ### 3. Delegate the search to the appropriate adversary
 
-The skill no longer drives counterexample search inline. The search step is a **delegation** to one of two refutation specialists; the orchestrator pins the claim and the refutation shape, then hands off:
+The search step is a **delegation** to one of two refutation specialists. The orchestrator pins the claim and the refutation shape, then hands off:
 
 - **Prolog target** → `prolog-adversary` (Bash + Read + Write + Glob + Grep). Use for any `claim/2` from `thoughts/hypothesis.pl`, any property previously closed by `prolog-prover`, or any counterfactual claim with a grep-able forbidden shape. The adversary runs CLP-driven search and writes `thoughts/refutations/<target_id>.pl` on `refuted`.
 - **Lean target** → `lean-adversary` (Bash + Read + Write + Edit + Glob + Grep). Use for any theorem name from `thoughts/lean_proof_results.pl`, or any Prolog claim with an attached `formal_property/3` that translates cleanly into Lean. The adversary constructs a Lean term inhabiting `¬claim` and writes `thoughts/refutations/<target_id>.lean` on `refuted`. **Inadmissible for purely behavioral/runtime targets** — Lean has no theorem to inhabit for an HTTP-service trace or wall-clock-timing claim; route those to `prolog-adversary` (if a Prolog encoding exists) or to source-grep / manual-construction inside this orchestrator.
