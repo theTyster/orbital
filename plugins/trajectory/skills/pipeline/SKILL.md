@@ -247,6 +247,36 @@ Never invoke `disprove-proposition` recursively against its own outputs
 boundary). Primitives downstream never auto-consume disprove artifacts; the
 orchestrator threads verdicts back via parameters or halts.
 
+## Upstream gap handling
+
+After each stage's primary artifact lands, scan it for `upstream_gap/3` facts
+— the reverse-direction outbound channel. See
+`references/orchestration-substrate.md` §"Upstream gaps" for the canonical
+shape and per-primitive emission table. Each gap is the primitive's
+machine-readable signal that its input was insufficient.
+
+Per gap, in order:
+
+1. **Validate directionality.** `recovery_hint(TargetSkill, _)` MUST name a
+   stage upstream of the emitter. A downstream-pointing gap is malformed —
+   surface it to the user, do not honor it.
+2. **Honor, batch, or decline.** Three options per run:
+   - **Honor** — re-invoke `TargetSkill` with the suggested `ParamSpec`
+     merged into the run's parameters, then re-run affected downstream
+     stages. Loop limit: one recovery per gap-class-per-stage per run, to
+     prevent oscillation.
+   - **Batch** — multiple gaps from the same stage with the same
+     `TargetSkill` collapse to one recovery invocation with merged
+     `ParamSpec` values.
+   - **Decline** — log the gap, proceed to `explain` without recovery,
+     surface the decision to the user.
+3. **Default on no decision** — decline the recovery and proceed to
+   `explain`. Never silently retry.
+
+Gaps and disprove invocations are independent decisions per run. A stage
+may emit zero gaps and still warrant a disprove; a stage may emit several
+gaps and need no disprove. Do not couple them.
+
 ## Effort and model
 
 Orchestrator runs at `model: sonnet`, `effort: medium`. The heavy reasoning
