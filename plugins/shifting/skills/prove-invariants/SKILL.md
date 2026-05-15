@@ -50,6 +50,27 @@ This skill cites three reference resources. They are **not** pipeline predecesso
 
 The pipeline predecessor of this skill is `model-obligations` (which produces `target-world.pl`); the pipeline successor is `instantiate-properties`.
 
+## Orchestrator contract
+
+Stage 3b. Carrier from predecessor: `thoughts/target-world.pl` (the SOLE input — see §"Reading the input" below). Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+
+**Orchestrator parameters accepted:** `refutation_shape_briefing` (e.g., "attack vacuous theorems"; "target absent-premise propagations"); `halt_condition`.
+
+**Gate-target descriptors emitted on completion** — two outputs:
+- `lean_proof_results_pl` — per-theorem verdicts. Primary refutation surface: `theorem_verdict(_, proven)` rows for theorems whose premises include `negation_provenance(_, absent)` markers (CWA-fragile proofs).
+- `lean_proofs_dir` — the `.lean` files themselves. Refutation surface: the kernel-checked proofs, attackable by `lean-adversary` (when that agent lands).
+
+**Adjacent loopback target:** `model-obligations` (gap=`forbidden_tactic_required`, `hygiene_drift`). The adjacent loop is this skill's own move when the target-world substrate needs sharpening but the hypothesis itself is sound.
+
+**Non-adjacent loopback target:** `decompose-proposition`. Per the orchestrator-routed channel, non-adjacent recovery goes through `upstream_gap/3` emissions (below), not via direct re-invocation. The orchestrator decides whether to honor.
+
+**Upstream gap emissions:**
+
+- `upstream_gap(prove_invariants, gap_descriptor(vacuous_theorem, theorem(TheoremId, reason)), recovery_hint(model_obligations, refutation_shape_briefing([tighten_quantifier_scope])))` — when a theorem closes vacuously because the target predicate has no constructors (open-domain reach insufficient).
+- `upstream_gap(prove_invariants, gap_descriptor(unresolvable_negation_provenance, theorem(TheoremId, absent_premise(Predicate, Args))), recovery_hint(decompose_proposition, refutation_shape_briefing([narrow_negation_to_lean_disproof])))` — when an `absent` provenance premise cannot be discharged at the Lean kernel.
+
+Emit gap facts into `lean_proof_results.pl` alongside the verdict facts.
+
 ## Prerequisites
 
 1. **Lean tools installed**: `lean --version` and `lake --version` must succeed.
@@ -158,6 +179,27 @@ Brief the sub-agent with:
 - Halt-and-report contract on genuine unprovability rather than rewriting the property
 
 Do the work inline only when the user has explicitly asked. Proof size is not a reason to skip the specialist — even a one-liner benefits from the agent's `lake build` discipline and Mathlib familiarity. The rest of this file is both your inline guide and the briefing material for the sub-agent.
+
+### Bias-isolation discipline
+
+Lean kernel-checking is structurally adversarial — the kernel either accepts the proof or rejects it — but the *choice of proof shape* and the *willingness to abstain on a hard theorem* are not protected by the kernel. The orchestrator's hopes that a property "should be provable" MUST NOT reach the specialist.
+
+**Apply both defenses on every lean-expert invocation:**
+
+1. **Role-briefing.** Open every specialist prompt with:
+   > "You are verifying or refuting universal properties against `target-world.pl`. A theorem proves only what the kernel accepts; if you cannot close it within the correction budget, halt and emit `theorem_verdict(_, unprovable)` with the diagnostic. Do not weaken the theorem statement to make it pass; do not close with `decide` / `native_decide` / `generalize` on a target-world predicate as a route around the encoding. Abstention is a valid verdict."
+
+2. **Minimum-necessary context.** Send only:
+   - `target-world.pl` + `target-world-shape.lean` (if emitted) paths
+   - Lean project + Mathlib paths
+   - Per-property correction budget (5 inner / 3 outer)
+   - Pattern-selection contract (per ontology label)
+   - Mandatory annotation rule (`provenance(absent | contradicts)`)
+   - Orchestrator-supplied `refutation_shape_briefing` if present
+
+   Do **not** paste hypothesis prose, orchestrator commentary, or downstream instantiate-properties / realize-specification targets. Escalate context only when the specialist returns "underspecified" with a precise question.
+
+**Orchestrator responsibilities (never delegated):** pin each property in its strongest form, set the correction budget, validate every `proven` verdict against the kernel-rejected reading before recording, own the loopback decision (which gap class? which `recovery_hint`?).
 
 ## Proof Methodology
 
