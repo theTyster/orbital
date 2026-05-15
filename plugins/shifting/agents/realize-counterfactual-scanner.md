@@ -5,6 +5,7 @@ description: >
 tools: Bash, Read, Grep, Glob, Write
 model: sonnet
 color: yellow
+effort: low
 ---
 
 # Realize Counterfactual Scanner

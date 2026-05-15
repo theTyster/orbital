@@ -5,6 +5,7 @@ description: >
 tools: Bash, Read, Grep, Glob, Write
 model: sonnet
 color: green
+effort: medium
 ---
 
 # Realize Test Briefer

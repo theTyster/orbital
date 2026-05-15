@@ -5,6 +5,7 @@ description: >
 tools: Bash, Read, Write
 model: sonnet
 color: red
+effort: low
 ---
 
 # Realize Suite Runner

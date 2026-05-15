@@ -5,6 +5,7 @@ description: >
 tools: Bash, Read, Write, Edit, Glob, Grep, Agent, WebSearch, WebFetch
 model: opus
 color: magenta
+effort: xhigh
 ---
 
 # Lean Expert Agent

@@ -5,6 +5,7 @@ description: >
 tools: Bash, Read, WebSearch, WebFetch
 model: sonnet
 color: cyan
+effort: high
 ---
 
 # Agent of Questions
