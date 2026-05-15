@@ -33,6 +33,12 @@ Prolog query specialist. Discovers KB structure through `swipl` introspection al
 
 **Used by**: decompose-proposition, model-obligations, measure-entailment
 
+### kb-validator
+
+Validation cascade specialist. Given a `.pl` path and a digest output path, runs the five-tier cascade — strict load → referential integrity → constraint firing → spot-check sample → uncovered-predicate report — with halt-on-tier-fail discipline, then writes a JSON digest to the caller's chosen path. Reports tier failures with enough specificity for the caller to fix the file, but never edits the `.pl` artifact and never opines on coverage thresholds. No `Agent` tool (leaf, not delegator). Haiku/low-effort budget.
+
+**Used by**: close-world, agent-of-truth
+
 ### pl-fact-extractor
 
 Read-only Prolog projection specialist. Given a list of `.pl` paths and a list of `{predicate, arity}` entries, runs one focused `swipl` projection per entry and returns a JSON digest of fact tuples and counts. No discovery, no synthesis, no validation — projection only. Missing predicates are reported with `missing: true` rather than inferred. No `Write` tool (digest returned, not stored), no `Agent` tool (leaf, not delegator). Haiku/low-effort budget.

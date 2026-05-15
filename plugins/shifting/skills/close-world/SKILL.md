@@ -118,35 +118,17 @@ Be creative in how you explore topics. As long as the information you document i
 
 ### 3. Validate
 
-Run each tier in order. Do not advance to the next tier until the current one passes.
+Delegate the five-tier validation cascade to the `kb-validator` sub-agent. The agent runs strict-load → referential integrity → constraint firing → spot-check sample → uncovered-predicate report with halt-on-tier-fail discipline and writes a JSON digest to a path the orchestrator chooses. The orchestrator reads the digest and decides whether to re-invoke `agent-of-truth` for repair, fail the run, or proceed to step 4.
 
-**Tier 1 — Load cleanly.** The file must load without errors or warnings.
+**Briefing fields the orchestrator must pin** before delegating:
 
-```bash
-swipl -g "halt" <file>
-```
+| Field | Source |
+|---|---|
+| `pl_path` | the `existing-world.pl` artifact just written (typically `thoughts/existing-world.pl`) |
+| `digest_path` | orchestrator's scratch path (e.g., `thoughts/validation-digest.json`) |
+| `top_predicates` | optional; the predicate names surveyed in step 1 plus any `predicate_schema_extension` entries — drives tier-4 sampling and tier-5 uncovered-report scope |
 
-Fix syntax errors, missing operators, and undefined predicates before continuing.
-
-**Tier 2 — Referential integrity.** Every predicate referenced in a rule body must be defined (as a fact or another rule). Query for orphan references:
-
-```bash
-swipl -g "use_module(library(check)), check, halt" <file>
-```
-
-If the KB declares `:- discontiguous` predicates, confirm each one actually appears.
-
-**Tier 3 — Spot-check ground truth.** Pick 3–5 representative facts and verify them against the source material. For each, run a query and confirm the result matches reality:
-
-```prolog
-?- <predicate>(X, Y), write(X-Y), nl, fail ; true.
-```
-
-If any fact is wrong, audit neighboring facts from the same source — errors tend to cluster.
-
-**Tier 4 — Run constraints.** If the KB includes constraint rules (`:- \+ ...` or validation predicates), invoke them and confirm no violations fire. If a constraint fires, determine whether the constraint is wrong or the facts are wrong — fix the correct one.
-
-**Tier 5 — Coverage check.** Revisit the domain survey from Step 1. For each key entity and relationship identified, confirm at least one predicate covers it. Flag any domain concept that was surveyed but has zero corresponding facts — it was either intentionally excluded (document why in a comment) or accidentally missed.
+The agent file is at `../../agents/kb-validator.md`; read it before changing how delegation is parameterized. The agent never modifies the validated `.pl` file — it reports, the orchestrator routes repair. Coverage assessment against `success_criteria` is the orchestrator's call, not the agent's; tier-5 lists uncovered predicates flatly and the orchestrator decides whether the count is acceptable.
 
 ## Output
 

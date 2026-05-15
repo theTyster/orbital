@@ -181,14 +181,17 @@ This catches errors early and lets the KB grow alongside your understanding.
 
 ### 3. Validate
 
-Run validation in tiers — each must pass before advancing:
+Delegate the five-tier validation cascade to the `kb-validator` sub-agent. The agent runs strict-load → referential integrity → constraint firing → spot-check sample → uncovered-predicate report with halt-on-tier-fail discipline and writes a JSON digest to a path you choose. You read the digest, decide whether to repair the file in-place (you have the `Edit` tool), then re-invoke `kb-validator` against the patched file until the digest is clean enough for the orchestrator's `success_criteria`.
 
-1. **Strict load** — every `.pl` file you produce must pass the strict-loading contract documented at `references/prolog-wiki/practices/strict-loading.md`. Read that page; it specifies the exact `swipl` invocation, the four warning classes you must treat as failures (singleton, discontiguous, undefined procedure, syntax), and the three legitimate relaxations. Do not advance to tier 2 until the strict load returns exit 0.
+**Briefing fields you must pin** before delegating:
 
-2. **Referential integrity**: `swipl -g "use_module(library(check)), check, halt" <file>`
-3. **Spot-check**: Query 3-5 representative facts against source material
-4. **Run constraints**: Execute any `:- ...` directives and confirm no violations
-5. **Coverage**: Confirm every major domain concept identified in the survey has corresponding predicates
+| Field | Source |
+|---|---|
+| `pl_path` | the `.pl` artifact you just wrote or appended to |
+| `digest_path` | a scratch path you choose (e.g., `thoughts/kb-validation-digest.json`) |
+| `top_predicates` | the predicate names you used in this KB plus any `predicate_schema_extension` entries from your brief — drives tier-4 sampling and tier-5 uncovered-report scope |
+
+The agent file is at `../agents/kb-validator.md`; read it before changing how delegation is parameterized. The strict-loading contract at `references/prolog-wiki/practices/strict-loading.md` is the tier-1 specification the agent runs against — read it once so you can interpret a tier-1 failure transcript. The agent never edits the `.pl` file; you own repair (the agent's role is reporting, yours is synthesis).
 
 ### 4. Document
 
