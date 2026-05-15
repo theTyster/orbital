@@ -3,6 +3,8 @@ name: instantiate-properties
 description: >
   Stage 4 of the 7-stage pipeline. Reads `thoughts/lean/Proofs/*.lean` and the carrier `thoughts/lean_proof_results.pl`; transitively cites the hypothesis / target-world / model-results via `theorem_source/2` and `provenance_annotation/3` records that prove-invariants propagates forward. Instantiates each universal Lean property as a `projection` test at a specific fixture, or emits a `behavioral_claim` test for an I/O / state / concurrency / timing claim that no upstream proof expressed. Universality is intentionally discarded at the lean → tdd boundary — this is a design choice, not a leak. Every test is tagged with exactly one of `projection` or `behavioral_claim`. All tests start skipped.
 user-invocable: true
+context: fork
+agent: general-purpose
 allowed-tools: Read, Glob, Grep, Write, Agent, Bash
 argument-hint: "[optional: target codebase directory; without it, pseudotest format is used]"
 ---

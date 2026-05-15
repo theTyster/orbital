@@ -3,6 +3,8 @@ name: explain
 description: >
   Cross-cutting support resource — produces a plain-language explanation of orbital-shifting work for non-technical review. Triggers: "explain what we did", "explain the proof", "summarize for my PM", "write this up for a stakeholder". NOT a pipeline stage and has no place in the linear flow; invoke it at any time, against whatever artifacts already exist. Cited by `prove-invariants` as a downstream readability resource, but never consumed by any other skill.
 user-invocable: true
+context: fork
+agent: general-purpose
 allowed-tools: Read, Glob, Grep, Write
 argument-hint: "[optional: thoughts/ directory, specific file, or codebase directory]"
 ---

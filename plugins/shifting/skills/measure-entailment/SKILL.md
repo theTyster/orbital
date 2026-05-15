@@ -3,6 +3,8 @@ name: measure-entailment
 description: >
   Pipeline stage 7 of 7 — the final adherence check. Extracts claims from each input resource as Prolog facts, then scores overlap, gaps, contradictions, and extensions. In pipeline-terminal mode also loads `thoughts/hypothesis.pl` directly and runs label-aware verdicts: Pattern 3 detection (counterfactual claims whose forbidden fact is still present in the implementation), prescriptive fulfillment (required facts present), and prescriptive negation violations. Runs in two valid framings: (1) terminal pipeline step, scoring how well the implemented codebase entails the original proposition encoded in `thoughts/hypothesis.pl`; and (2) stand-alone, comparing two or more arbitrary resources with an optional `--prime` source-of-truth. Emits an intermediate `thoughts/adherence_facts.pl` and the human-reviewed `thoughts/adherence_report.md`.
 user-invocable: true
+context: fork
+agent: general-purpose
 allowed-tools: Bash, Read, Glob, Grep, Write, Agent
 argument-hint: "[resource1] [resource2] [...] [--prime resource1]"
 ---

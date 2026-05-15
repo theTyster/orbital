@@ -3,6 +3,8 @@ name: model-obligations
 description: >
   Use this skill to construct the target-world model that Lean will later prove against — "build the target world", "apply counterfactuals and obligations", "construct the model substrate", "derive model verdicts". Reads thoughts/existing-world.pl and thoughts/hypothesis.pl, applies counterfactual negations and prescriptive obligations, and emits thoughts/target-world.pl plus thoughts/model_results.pl.
 user-invocable: true
+context: fork
+agent: general-purpose
 model: sonnet
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[hypothesis.pl path] [existing-world.pl path]"

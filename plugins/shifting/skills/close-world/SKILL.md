@@ -3,6 +3,8 @@ name: close-world
 description: >
   Use this skill whenever the user wants to translate a codebase, document, or logical system into a Prolog facts file — "translate to prolog", "model this as prolog facts", "create a knowledge base from", "make this queryable with swipl". Stage 1 of the 7-stage pipeline: applies the Closed World Assumption to source material and produces `thoughts/existing-world.pl` — ground facts, relationship rules, and constraint rules. Everything absent from the output is, by CWA, false.
 user-invocable: true
+context: fork
+agent: general-purpose
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: "[source code, requirements, domain rules, or any logical system to document]"
 ---
@@ -27,7 +29,7 @@ The output filename — `thoughts/existing-world.pl` — names what it models: t
 
 This skill is the stage-0 primitive at the boundary between the orchestration substrate and the pipeline. The substrate's wire format is `plugins/trajectory/references/orchestration-substrate.md` — read it before parameterising this skill.
 
-**Orchestrator parameters accepted** (consult at startup; if a needed parameter is missing for the run, halt and ask):
+**Orchestrator parameters accepted** (consult at startup; if a needed parameter is missing for the run, halt with `missing_required_parameter` recorded in the output rather than guessing — under `context: fork` there is no user to ask mid-run):
 
 - **`predicate_schema_extension`** — bespoke predicates the orchestrator wants in `existing-world.pl` for this ticket (e.g., `csproj_content_directive/1`, `published_artifact/1` for substrate-audit cases that close-world cannot infer from the source alone). Inject these into the agent-of-truth brief so the extracted KB carries them.
 - **`success_criteria`** — minimum coverage targets, required predicate families. Drives tier-5 of the validation cascade.

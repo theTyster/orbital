@@ -1,22 +1,19 @@
 ---
 name: realize-counterfactual-scanner
 description: >
-  Counterfactual locator and re-introduction watchdog for the
-  realize-specification skill. Queries `hypothesis.pl` for every claim
-  with `claim_label(_, counterfactual)` and locates the file:line sources
-  in the target codebase where each forbidden fact currently materialises
-  (an import, a call site, a config entry, etc.). Operates in two modes:
-  `initial` (Stage 0, builds the locator table the orchestrator hands to
-  removal briefings) and `recheck` (Stage 3d, re-greps after a refactor
-  to detect silently re-introduced counterfactuals under new names). All
-  output goes to the realize-specification scratch directory; never edits
-  source code or Prolog files.
+  Use this agent when the realize-specification skill needs to locate the source-tree positions where a forbidden (counterfactual) fact currently materialises, or to detect silent re-introduction after a refactor. Typical triggers include the Stage 0 initial-locator-table build and the Stage 3d post-refactor recheck. Operates read-only; writes only into the realize-specification scratch directory. Do NOT use for general code search (use Explore) or for editing the source tree. See "When to invoke" in the agent body for worked scenarios.
 tools: Bash, Read, Grep, Glob, Write
 model: sonnet
-effort: low
+color: yellow
 ---
 
 # Realize Counterfactual Scanner
+
+## When to invoke
+
+- **Stage 0 initial pass.** Build the `counterfactual_locator.json` + companion `.md` table that removal briefings cite — one row per `claim_label(_, counterfactual)` from `hypothesis.pl`, with the file:line locations where the forbidden fact currently materialises.
+- **Stage 3d recheck pass.** After a refactor that touched the codebase, re-grep across the entire target tree (not just touched files) for each claim's signatures; surface any re-introduction the refactor silently created.
+- **Standalone audit.** Outside a realize-specification run, query whether any named counterfactual fact still has live signatures in a given codebase.
 
 Counterfactual claims encode facts that must be ABSENT from the codebase for a downstream property to hold — e.g. `depends_on(cli_tool, logging)` being negated because the proof requires the CLI tool to be logging-free. Removal-shaped projection tests assert that absence at one fixture; the implementation work is deletion of the source.
 

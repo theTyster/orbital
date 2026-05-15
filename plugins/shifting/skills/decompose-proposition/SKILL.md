@@ -3,6 +3,8 @@ name: decompose-proposition
 description: >
   Explore a proposition against a Prolog KB through a counterfactual lens: identify which existing-world KB facts would need to be false, and which new facts would need to become provable, for the proposition to hold. Takes an existing-world `.pl` file and a proposition; decomposes it into falsifiable sub-hypotheses and emits `thoughts/hypothesis.pl` — a Prolog facts file carrying labeled claims (descriptive / counterfactual / prescriptive), query evidence, and formal-property sketches.
 user-invocable: true
+context: fork
+agent: general-purpose
 allowed-tools: Bash, Write, Agent
 argument-hint: "[existing-world.pl path] [proposition or question to explore]"
 ---

@@ -4,6 +4,8 @@ description: >
   Create an HTML-as-PowerPoint presentation from a topic, document, or handoff.
   Use when: "make a presentation", "create slides", "build a deck about X".
 user-invocable: true
+context: fork
+agent: general-purpose
 allowed-tools: Write, Read, Glob, Grep, Agent
 argument-hint: [topic, description, or path to source document]
 ---
