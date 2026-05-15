@@ -9,7 +9,7 @@
     {
       "name": "shifting",
       "description": "Formal logic reasoning pipeline: closed-world KB construction, proposition decomposition, model-based and Lean 4 proof verification, property instantiation as TDD tests, and proof-grounded specification realization.",
-      "version": "4.1.0",
+      "version": "4.2.0",
       "source": "./plugins/shifting",
       "author": {
         "name": "ty",
