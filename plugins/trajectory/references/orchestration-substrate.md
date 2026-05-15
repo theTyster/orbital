@@ -109,6 +109,58 @@ The five categories of orchestrator-supplied state covered:
 
 The orchestrator passes these as structured terms (Prolog facts) the skill consults at startup. Skills MUST NOT default to ad-hoc values when a parameter is absent — they MUST surface that the parameter is missing.
 
+## Upstream gaps — the reverse-direction outbound channel
+
+The complementary shape to the outbound gate-target descriptor. When a primitive detects that its input carrier is insufficient for the claim or property under processing, it emits a machine-readable `upstream_gap/3` fact **into its primary output artifact** (alongside the artifact's normal contents). The orchestrator pattern-matches on these facts at the end of each stage and decides whether to re-invoke an upstream primitive with a refined `accepts_orchestrator_parameter` set.
+
+The fixed shape:
+
+```prolog
+upstream_gap(EmittingSkill, gap_descriptor(GapClass, Detail), recovery_hint(TargetSkill, ParamSpec)).
+```
+
+- **`EmittingSkill`** — the staged primitive that detected the gap (atom matching one of the seven staged skill ids).
+- **`gap_descriptor(GapClass, Detail)`** — structured term naming what's wrong.
+  - `GapClass` is one of: `missing_predicate`, `unresolvable_negation_provenance`, `vacuous_theorem`, `unfixturable_property`, `untestable_category`, `schema_insufficient`.
+  - `Detail` is a structured term carrying the specifics (predicate name + arity, claim id, theorem id, property id, etc.). See the per-primitive table below.
+- **`recovery_hint(TargetSkill, ParamSpec)`** — structured term naming a suggested recovery.
+  - `TargetSkill` is the staged primitive the orchestrator should re-invoke (always an upstream stage of `EmittingSkill`, never downstream — this preserves the directionality of the channel).
+  - `ParamSpec` is a `accepts_orchestrator_parameter`-shaped term the orchestrator can pass through verbatim on the recovery run (e.g., `predicate_schema_extension([csproj_content_directive/2, published_artifact/1])`).
+
+Gap facts are **suggestions**, not orders. The orchestrator may ignore a gap, batch several gaps before recovery, decline the recovery and finish with `explain` instead, or override the suggested `TargetSkill` with a different upstream stage. The primitive's obligation is only to surface the diagnosis machine-readably; the orchestration decision lives outside the pipeline.
+
+### Per-primitive gap emissions
+
+| Skill | May emit `GapClass` | `Detail` shape | Recovery `TargetSkill` | Recovery `ParamSpec` shape |
+|---|---|---|---|---|
+| `close-world` | — | — | — | — (stage 0; gaps surface as the absence of expected predicate families, handled by the orchestrator pre-invocation) |
+| `decompose-proposition` | `missing_predicate` | `predicate(Name, Arity)` | `close-world` | `predicate_schema_extension([Name/Arity, ...])` |
+| `decompose-proposition` | `schema_insufficient` | `claim(ClaimId, missing_evidence_class)` | `close-world` | `predicate_schema_extension([...])` |
+| `model-obligations` | `unresolvable_negation_provenance` | `claim(ClaimId, absent_fact(Predicate, Args))` | `decompose-proposition` | `refutation_shape_briefing([reframe_absent_as_required_premise])` |
+| `prove-invariants` | `vacuous_theorem` | `theorem(TheoremId, reason)` | `model-obligations` | `refutation_shape_briefing([tighten_quantifier_scope])` |
+| `prove-invariants` | `unresolvable_negation_provenance` | `theorem(TheoremId, absent_premise(Predicate, Args))` | `decompose-proposition` | `refutation_shape_briefing([narrow_negation_to_lean_disproof])` |
+| `instantiate-properties` | `unfixturable_property` | `property(PropertyId, missing_fixture_shape)` | `prove-invariants` | `refutation_shape_briefing([narrow_universal_to_projectable])` |
+| `realize-specification` | `untestable_category` | `test(TestId, category_mismatch(Expected, Actual))` | `instantiate-properties` | `refutation_shape_briefing([retag_category, ...])` |
+| `measure-entailment` | — | — | — | (terminal stage; gaps surface as adherence-report verdicts, not loopback signals) |
+
+The two `unresolvable_negation_provenance` rows are the canonical DD-substrate case (fp_i06 / fp_i07): both `model-obligations` and `prove-invariants` may detect an absent premise that needs sharper handling upstream — `model-obligations` routes back to `decompose-proposition` to relabel; `prove-invariants` routes either to `model-obligations` (tighten the substrate) or back to `decompose-proposition` (narrow to a Lean-disprovable form). The orchestrator picks per run.
+
+### Where gap facts live on disk
+
+Each primitive emits its gap facts into its primary output artifact (the same file listed in the outbound-descriptor table). The orchestrator consults the same path it already reads to verify the stage's gate descriptor:
+
+- `decompose-proposition` → `thoughts/hypothesis.pl`
+- `model-obligations` → `thoughts/model_results.pl`
+- `prove-invariants` → `thoughts/lean_proof_results.pl`
+- `instantiate-properties` → a manifest at `thoughts/tests/manifest.pl` (the carrier-widening change Phase 4 introduces)
+- `realize-specification` → `thoughts/implementation_log.md`'s machine-readable header block (existing convention)
+
+Gaps are additive to the artifact's normal contents — a stage with zero gaps emits zero `upstream_gap/3` facts and proceeds normally. A stage with non-empty gaps still emits its primary output; the orchestrator decides whether to consume that output as final or to discard it and re-run from the recovery target.
+
+### The directionality invariant
+
+`recovery_hint(TargetSkill, _)` MUST name a staged primitive earlier in the seven-stage order than `EmittingSkill`. Forward `TargetSkill` (e.g., `instantiate-properties` emitting a gap that asks `realize-specification` to recover) is structurally meaningless — recovery is always upstream. Violating this collapses the channel back into the cross-skill coupling that T2 specifically removed.
+
 ## Bias-defense discipline — applies to every delegation
 
 Every primitive that delegates to a specialist sub-agent applies a **two-layer bias defense** on every delegation point:
@@ -140,9 +192,9 @@ After T2, every loopback inside the pipeline is to the **immediate stage-predece
 | `instantiate-properties` | `prove-invariants` | property has no theorem id, theorem verdict was vacuous |
 | `realize-specification` | `instantiate-properties` | test has no test_category label, briefing template missing |
 
-The ten non-adjacent loopbacks present in T1 (all `prove-invariants` / `instantiate-properties` / `realize-specification` → `decompose-proposition`) are CF-removed in T2. When a primitive's adjacent loopback alone is insufficient — when, say, `prove-invariants` cannot make progress against any nearby refinement of the model — the primitive escalates *upward to the orchestrator*, which decides whether to drive a non-adjacent loopback.
+The ten non-adjacent loopbacks present in T1 (all `prove-invariants` / `instantiate-properties` / `realize-specification` → `decompose-proposition`) are CF-removed in T2. When a primitive's adjacent loopback alone is insufficient — when, say, `prove-invariants` cannot make progress against any nearby refinement of the model — the primitive escalates *upward to the orchestrator* by emitting an `upstream_gap/3` fact into its output artifact (see §"Upstream gaps — the reverse-direction outbound channel"). The orchestrator pattern-matches on the gap and decides whether to drive a non-adjacent loopback.
 
-The orchestrator's escalation channel is *out of band* with respect to the pipeline; the pipeline records the escalation signal but does not act on it. The same channel that carries `halt_condition` parameters also carries escalation acknowledgements.
+The orchestrator's escalation channel is *out of band* with respect to the pipeline; the pipeline records the escalation signal as an `upstream_gap/3` fact but does not act on it. The same channel that carries `halt_condition` parameters inbound also carries gap-emission acknowledgements outbound.
 
 ## Disproof artifacts — orchestrator-consumed only
 
@@ -176,9 +228,11 @@ These are `enforcement_rule_cited_by/2` facts in `target-world.pl`. They feed Ph
 - Read any gate-target descriptor and invoke `disprove-proposition` against it with a refutation-shape briefing
 - Supply any subset of accepted orchestrator parameters to any primitive at run-start
 - Read `disproof_results.pl` / `counterexamples.pl` / `lean_disproofs_dir` and decide pipeline next moves
+- **Read `upstream_gap/3` facts from any stage's output artifact and decide whether to act on the suggested `recovery_hint` or ignore it**
 - Drive cross-stage non-adjacent loopback by re-invoking an upstream primitive with a refined parameter set
 - Hold ticket lineage across runs (e.g., `prior_witness/2` from a previous T1 refutation)
 - Extend the predicate schema of `existing-world.pl` per-run via `predicate_schema_extension`
+- Batch multiple `upstream_gap/3` facts from a single stage's output and route them to one recovery invocation, rather than re-invoking once per gap
 
 ## What the orchestrator MUST NOT do
 
@@ -187,6 +241,7 @@ These are `enforcement_rule_cited_by/2` facts in `target-world.pl`. They feed Ph
 - Treat a `negation_provenance(_, absent)` marker as a Lean-disproved fact — CWA-absent ≠ Lean-disproved (`cwa_negation_neq_lean_proof` in shifting's ontology).
 - Override a primitive's own delegation discipline. The orchestrator parameterizes; it does not bypass.
 - Read pipeline-internal predicates that are not surfaced through the gate-target descriptors or the parameters in this doc.
+- Act on an `upstream_gap/3` whose `recovery_hint(TargetSkill, _)` names a stage *downstream* of `EmittingSkill`. Recovery is always upstream by the directionality invariant; a downstream-pointing gap is malformed and must be surfaced to the user, not silently honored.
 
 ## Cross-references
 
