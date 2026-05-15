@@ -51,6 +51,12 @@ Read-only Prolog projection specialist. Given a list of `.pl` paths and a list o
 
 **Used by**: instantiate-properties, prove-invariants, model-obligations, measure-entailment
 
+### cwa-fragility-auditor
+
+Closed-world fragility cross-artifact auditor. Traces every `claim_negation_provenance(_, _, absent)` premise from `hypothesis.pl` forward through `target-world.pl` (`negation_provenance/2`), `lean_proof_results.pl` (`provenance_annotation/3`), and the tests directory (tag-block `negation_provenance:`), then emits `fragility_chain(ClaimId, DownstreamArtifact, DownstreamAnnotation, Verdict)` rows per downstream link with one of three verdicts — `consistent` (mode matches upstream), `annotation_drift` (mode differs without a recorded upgrade event), or `silent_upgrade` (mode strengthened `absent` → `contradicts` without an upgrade event, the dangerous case). Consolidates the cross-cutting CWA-absence check currently scattered across five skills (`prove-invariants`, `instantiate-properties`, `realize-specification`, `explain`, `measure-entailment`'s Pattern 3). Read-only; never edits artifacts, never reads `.pl` files as text (all queries via `swipl`). Sonnet/medium-effort budget.
+
+**Used by**: orchestrator post-pipeline audit (no in-pipeline skill currently). Coordination note: detection logic here will eventually feed Goal 6 of `thoughts/archive/ticket-pipeline-rewrite-primitive-with-orchestration-channel.md` — a future sibling `gap-emitter` agent will emit `upstream_gap/3` predicates in real time and share detection logic with this agent.
+
 ### prolog-prover
 
 Prolog formal proof specialist. Combines KB construction (agent-of-truth), query expertise (agent-of-questions), and CLP libraries to write exhaustive verification proofs. Every proof is a counterexample search. Reads `references/prolog-wiki/` directly for CLP and tabling recipes.
