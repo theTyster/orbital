@@ -39,6 +39,18 @@ Prolog formal proof specialist. Combines KB construction (agent-of-truth), query
 
 **Used by**: model-obligations
 
+### prolog-adversary
+
+Prolog refutation specialist — the adversarial mirror of `prolog-prover`. Encodes the negation of a pinned claim as a CLP-driven counterexample search and writes a refutation file at `thoughts/refutations/<target_id>.pl` on `refuted`, otherwise reports `inconclusive` or `abstained` with the obstruction named. Shares input/output/discipline contract with `lean-adversary` at `references/adversary-contract.md`. Reads `references/prolog-wiki/` directly for CLP extensions. No `Agent` tool — adversaries are leaves, not delegators.
+
+**Used by**: disprove-proposition
+
+### lean-adversary
+
+Lean refutation specialist — the adversarial mirror of `lean-expert`. Constructs a Lean term inhabiting the negation of a pinned theorem and writes a refutation file at `thoughts/refutations/<target_id>.lean` on `refuted`, otherwise reports `inconclusive` or `abstained`. Inadmissible for purely behavioral/runtime targets. Shares input/output/discipline contract with `prolog-adversary` at `references/adversary-contract.md`. Reads `references/lean4-wiki/` directly for negation-lemma pages and `references/lean-tactics.md` for forbidden-tactics carve-outs. No `Agent` tool.
+
+**Used by**: disprove-proposition
+
 ### realize-counterfactual-scanner
 
 Counterfactual locator and re-introduction watchdog. Queries `hypothesis.pl` for every claim with `claim_label(_, counterfactual)` and locates the file:line sources in the target codebase where each forbidden fact currently materialises (an import, a call site, a config entry). Two-mode operation: `initial` (Stage 0, builds the locator table the orchestrator hands to removal briefings) and `recheck` (Stage 3d, re-greps after a refactor to detect silently re-introduced counterfactuals under new names). Read-only against source; writes only into the realize-specification scratch directory.

@@ -32,6 +32,7 @@ Three disciplines are non-negotiable:
 `ls thoughts/lean_proof_results.pl` returns: !`ls thoughts/lean_proof_results.pl 2>/dev/null || echo "(not present)"`
 `ls thoughts/disproof_results.pl` returns: !`ls thoughts/disproof_results.pl 2>/dev/null || echo "(will be created)"`
 `ls thoughts/counterexamples.pl` returns: !`ls thoughts/counterexamples.pl 2>/dev/null || echo "(will be created on first refutation)"`
+`ls thoughts/refutations/` returns: !`ls thoughts/refutations/ 2>/dev/null || echo "(will be created on first adversary refutation)"`
 
 ## Input shapes
 
@@ -66,37 +67,47 @@ Before searching, name the *shape* of a successful refutation:
 
 Naming the refutation shape *before* the search prevents post-hoc rationalization of inconclusive evidence as a "win."
 
-### 3. Search for counter-evidence within budget
+### 3. Delegate the search to the appropriate adversary
 
-Use the techniques available to the skill — escalate from cheap to expensive:
+The skill no longer drives counterexample search inline. The search step is a **delegation** to one of two refutation specialists; the orchestrator pins the claim and the refutation shape, then hands off:
 
-- **CLP search.** For arithmetic/boolean claims, `clpfd`, `clpb`, or `clpq`/`clpr` constraint solving. Encode the claim's negation; ask `swipl` for satisfying assignments.
-- **Bounded enumeration.** For finite or small-domain claims, exhaustive search via swipl `findall/3` or `between/3`.
-- **Source-grep counterfactuals.** For Prolog claims with `claim_label(_, counterfactual)`, the forbidden fact has a syntactic shape — grep the target codebase for it (this is what `realize-counterfactual-scanner` does as part of `realize-specification`; here we use it standalone).
-- **Property-based fuzz.** If the target codebase has a PBT framework (`hypothesis`, `fast-check`, `proptest`, etc.), generate inputs and look for failures.
-- **Manual case construction.** When automated search is infeasible, construct candidate witnesses by hand and validate each against the claim.
-- **Lean term inhabiting the negation.** When the target is Lean-shaped — a theorem name from `lean_proof_results.pl`, or a Prolog claim with an attached `formal_property/3` — construct a Lean term inhabiting `¬claim` (a `theorem not_X : ¬ ... := ...` or a `Decidable` instance returning `isFalse`). Place the file under `thoughts/lean/Disproofs/`, paralleling `thoughts/lean/Proofs/`. Building the Lean project against this file machine-checks the refutation. **This technique is recommended (not required) when the target is Lean-shaped, and inadmissible when the target is purely behavioral/runtime — Lean has no theorem to inhabit for an HTTP-service trace or a wall-clock-timing claim.**
-- **Specialist delegation.** Invoke a specialist agent (`lean-expert`, `agent-of-questions`, `prolog-prover`) whenever the subgoal fits its fluency — Lean-term construction, deep `swipl` queries against a complex KB, careful CLP encoding. Specialists are peer techniques, not fallbacks; for a Lean-shaped subgoal, `lean-expert` is the *first* tool, not the last. The bias-isolation rationale and delegation discipline are documented in the section below — read that section before invoking a specialist.
+- **Prolog target** → `prolog-adversary` (Bash + Read + Write + Glob + Grep). Use for any `claim/2` from `thoughts/hypothesis.pl`, any property previously closed by `prolog-prover`, or any counterfactual claim with a grep-able forbidden shape. The adversary runs CLP-driven search and writes `thoughts/refutations/<target_id>.pl` on `refuted`.
+- **Lean target** → `lean-adversary` (Bash + Read + Write + Edit + Glob + Grep). Use for any theorem name from `thoughts/lean_proof_results.pl`, or any Prolog claim with an attached `formal_property/3` that translates cleanly into Lean. The adversary constructs a Lean term inhabiting `¬claim` and writes `thoughts/refutations/<target_id>.lean` on `refuted`. **Inadmissible for purely behavioral/runtime targets** — Lean has no theorem to inhabit for an HTTP-service trace or wall-clock-timing claim; route those to `prolog-adversary` (if a Prolog encoding exists) or to source-grep / manual-construction inside this orchestrator.
+- **English proposition** → sharpen first (this orchestrator's responsibility — see Process step 1), then route the sharpened form to whichever adversary the formalism maps onto. If sharpening cannot land the claim in either formalism, the skill returns `abstained` without delegating; an adversary is not the right tool for an un-formalized claim.
 
-State the budget explicitly at the start of search and stop when it is exhausted. A budget exhausted without a witness is **abstained**, not "unrefutable."
+The shared adversary contract — inputs, output digest shape, discipline — lives at `../../agents/references/adversary-contract.md`. The two agent files are at `../../agents/prolog-adversary.md` and `../../agents/lean-adversary.md`. Read all three when changing how delegation is parameterized.
 
-**Lean-disproof never gates abstention.** Producing a Lean term inhabiting the negation strengthens a `refuted` verdict; failing to produce one does not block abstention or downgrade a refuted verdict to inconclusive. If a textual witness is concrete and validated against the pinned claim, the verdict is `refuted` regardless of whether a Lean term was also written.
+**Briefing fields the orchestrator must pin** before delegating:
+
+| Field | Source |
+|---|---|
+| `target_id` | the user's input argument |
+| `target_text` | this orchestrator's Process step 1 (pin in strongest defendable form) |
+| `provenance` | the file the claim lives in |
+| `refutation_shape` | this orchestrator's Process step 2 (name the shape before search) |
+| `budget` | declared explicitly at the start of search; stops the agent when exhausted |
+| `output_dir` | defaults to `thoughts/refutations/`; the orchestrator may override for Lean to a path the project's lakefile reaches |
+
+When neither adversary fits and the orchestrator must search inline (e.g. a behavioral claim that requires a PBT framework run against the target codebase), the same disciplines from §"Specialist delegation discipline" below apply to whatever in-line technique is used. Inline search is a fallback, not a default.
+
+**Lean-disproof never gates abstention.** A `refuted` verdict from `prolog-adversary` is sufficient on its own; failing to additionally obtain a Lean refutation does not block abstention or downgrade a refuted verdict to inconclusive. If a textual witness from a Prolog refutation is concrete and validates against the pinned claim, the verdict is `refuted` regardless of whether a Lean refutation was also constructed.
 
 ## Specialist delegation discipline
 
-Specialist delegation isolates the search from orchestrator bias. The orchestrator's hopes about whether a claim survives MUST NOT reach the specialist; disproof has no checker for pulled-punches, so under-searching is invisible without structural defense.
+Adversary delegation isolates the search from orchestrator bias. The orchestrator's hopes about whether a claim survives MUST NOT reach the adversary; disproof has no checker for pulled-punches, so under-searching is invisible without structural defense.
 
-**Apply both defenses on every specialist invocation:**
+**Apply both defenses on every adversary invocation:**
 
-1. **Role-briefing.** Open every specialist prompt with an explicit adversarial role and outcome-agnostic instruction:
+1. **Role-briefing.** Open every adversary prompt with an explicit adversarial role and outcome-agnostic instruction:
    > "You are searching for refutations of the following claim. Record your result regardless of which way it falls. Abstaining within budget is a valid outcome; fabricating evidence is a foul. The orchestrator has no preferred outcome."
-2. **Minimum-necessary context.** Send the pinned claim, the named refutation shape, the budget, and only the artifacts directly relevant to the subgoal. Do not paste orchestrator reasoning, hopes, or broader pipeline state. Escalate context only when the specialist returns "underspecified" with a precise question, or when substance demonstrably demands it.
+   The adversary agents (`prolog-adversary`, `lean-adversary`) bake this discipline into their own bodies, but the briefing must restate it — agents do not infer the caller's preferred outcome from missing instructions.
+2. **Minimum-necessary context.** Send the pinned claim, the named refutation shape, the budget, and only the artifacts directly relevant to the subgoal. Do not paste orchestrator reasoning, hopes, or broader pipeline state. Escalate context only when the adversary returns `abstained` with `obstruction: "underspecified — orchestrator must supply X"`, or when substance demonstrably demands it.
 
-**Orchestrator responsibilities (never delegated):** pin the claim in its strongest form, name the refutation shape, set the budget, validate any reported witness against the pinned claim before recording `refuted`, own the verdict. A specialist's self-reported verdict is candidate evidence, not output.
+**Orchestrator responsibilities (never delegated):** pin the claim in its strongest form, name the refutation shape, set the budget, validate any reported witness against the pinned claim before recording `refuted`, own the verdict. The adversary's self-reported verdict is candidate evidence, not output.
 
-**Composition, not committee.** Run multiple specialists sequentially, composing their outputs. Never merge parallel specialist verdicts untouched.
+**Composition, not committee.** Run adversaries sequentially when more than one formalism applies, composing their outputs. Never merge parallel adversary verdicts untouched.
 
-Record which defenses were applied per invocation in `disprove_budget/2` so failure modes stay diagnostic.
+Record which defenses were applied per invocation in `disprove_budget/2` so failure modes stay diagnostic. The `defenses_applied` field returned in the adversary digest is the canonical source.
 
 ### 4. Verdict and deposit
 
@@ -127,11 +138,11 @@ disprove_evidence(c_007, "input list [3,1,2] violates the sorted-output postcond
 
 % disprove_evidence_lean(TargetId, LeanFilePath).
 %   Optional. Present when a Lean term inhabiting the negation has been written
-%   under thoughts/lean/Disproofs/ AND the Lean project builds against it.
-%   Recommended for Lean-shaped targets (theorems, claims with formal_property/3).
-%   Inadmissible for purely behavioral/runtime targets.
-%   Strengthens a refuted verdict; never gates abstention.
-disprove_evidence_lean(c_007, 'thoughts/lean/Disproofs/c_007_not_sorted.lean').
+%   to thoughts/refutations/<target_id>.lean by lean-adversary AND the Lean
+%   project builds against it. Recommended for Lean-shaped targets (theorems,
+%   claims with formal_property/3). Inadmissible for purely behavioral/runtime
+%   targets. Strengthens a refuted verdict; never gates abstention.
+disprove_evidence_lean(c_007, 'thoughts/refutations/c_007.lean').
 
 % disprove_budget(TargetId, "what was spent — time, technique, depth").
 disprove_budget(c_007, "clpfd search to depth 8; bounded enumeration over lists of length ≤ 5").
@@ -143,18 +154,19 @@ disprove_obstruction(c_023, "claim references runtime behavior of an external HT
 disproved_at(c_007, '2026-04-30T14:22:00Z').
 ```
 
-## Output: `thoughts/lean/Disproofs/*.lean` (optional, Lean-shaped targets only)
+## Output: `thoughts/refutations/<target_id>.{pl,lean}` (adversary-owned)
 
-When the target is Lean-shaped and a Lean term inhabiting the negation has been constructed, place the file under `thoughts/lean/Disproofs/`, paralleling `thoughts/lean/Proofs/` produced by `prove-invariants`. Use the same Lean project root so the disproof file imports the project's existing Lean library and is machine-checked by the project's build.
+The refutation artifact files are written by the adversary agents, not this skill. The skill records the path in `disprove_results.pl`; the agent owns the file content. Naming convention:
 
-File-naming convention: `<TargetId>_not_<short_description>.lean` (e.g. `c_007_not_sorted.lean`).
+- Prolog refutations: `thoughts/refutations/<target_id>.pl` (written by `prolog-adversary`).
+- Lean refutations: `thoughts/refutations/<target_id>.lean` (written by `lean-adversary`).
+- Cross-formalism (same target refuted by both): `thoughts/refutations/<target_id>__prolog.pl` and `thoughts/refutations/<target_id>__lean.lean`.
 
-Each Lean disproof file MUST:
-- State the negated claim as a `theorem` (or a `Decidable` instance returning `isFalse`).
-- Import only modules already present in the project's Lean configuration.
-- Build successfully — an unbuildable disproof file is not a disproof. If the file does not build within budget, do not record `disprove_evidence_lean/2`; the verdict can still be `refuted` on textual-witness grounds alone.
+Each artifact file is self-contained and machine-checkable. Prolog refutations load cleanly under `swipl`; Lean refutations build cleanly under `lake build` (the orchestrator must ensure the Lean project's lakefile reaches `thoughts/refutations/` as a source root before delegating to `lean-adversary`).
 
-Behavioral or runtime targets (HTTP traces, wall-clock timing, observed I/O) MUST NOT be encoded as Lean disproof files. Lean has no theorem to inhabit for these; the textual witness in `disprove_evidence/2` is the complete record.
+Per-formalism file contracts live in the agent bodies; the shared input/output/discipline contract lives at `../../agents/references/adversary-contract.md`.
+
+Behavioral or runtime targets (HTTP traces, wall-clock timing, observed I/O) MUST NOT be routed to `lean-adversary` — Lean has no theorem to inhabit. The textual witness in `disprove_evidence/2` is the complete record for those targets, optionally supported by a Prolog refutation when an encoding exists.
 
 ## Output: `thoughts/counterexamples.pl` (refuted verdicts only)
 
@@ -182,7 +194,7 @@ What this skill prescribes: every invocation, regardless of caller, follows the 
 What this skill explicitly forbids (Phase 5 resolution of witness R1):
 
 - **Pipeline primitives MUST NOT invoke this skill.** `close-world`, `decompose-proposition`, `model-obligations`, `prove-invariants`, `instantiate-properties`, `realize-specification`, and `measure-entailment` do not contain any `Agent(shifting:disprove-proposition)` or equivalent dispatch. If you find such an invocation in a staged primitive, it is a bug: report it.
-- **Pipeline primitives MUST NOT auto-consume this skill's outputs.** `thoughts/disproof_results.pl`, `thoughts/counterexamples.pl`, and `thoughts/lean/Disproofs/*.lean` are read **only by the orchestrator**. They are `consumed_by_orchestrator(_)` facts in the orchestration-substrate KB. The pipeline does not pattern-match on them.
+- **Pipeline primitives MUST NOT auto-consume this skill's outputs.** `thoughts/disproof_results.pl`, `thoughts/counterexamples.pl`, and `thoughts/refutations/*` are read **only by the orchestrator**. They are `consumed_by_orchestrator(_)` facts in the orchestration-substrate KB. The pipeline does not pattern-match on them.
 
 ## How the orchestrator consumes the outputs
 
