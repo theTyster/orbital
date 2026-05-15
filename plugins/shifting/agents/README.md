@@ -17,7 +17,13 @@ Skills reference an agent by reading its `.md` file and incorporating the instru
 
 ### lean-expert
 
-Lean 4 formal proof specialist. Uses `lake build` as deductive reasoning steps rather than chain-of-thought. Incorporates adversarial verification patterns: interpretation checking, extracted-lemma counterexample search, and calibrated abstention.
+Lean 4 proof-closing specialist. Receives a stub (theorem statement + `@[ontology …]` attribute + `by sorry`) already transcribed by `lean-spec-writer`, and discharges the proof body via structural tactics, Mathlib lemmas, and `lake build` discipline. Does NOT transcribe theorem statements (that is `lean-spec-writer`'s job) or refute (that is `lean-adversary`'s job). Incorporates adversarial verification patterns: interpretation checking, extracted-lemma counterexample search, and calibrated abstention.
+
+**Used by**: prove-invariants
+
+### lean-spec-writer
+
+Lean transcription specialist (NOT a prover). Reads `target-world.pl` and `target-world-shape.lean`; for each `formal_property/3` row emits a `.lean` stub with the theorem statement, ontology attribute, and `by sorry` placeholder, then runs `lake build` to type-check the stub batch. Halt-on-open-domain discipline: when a property's domain is open-shape (strings, lists, free-form identifiers) and no matching inductive enum is declared upstream, reports `open_domain_shape` rather than emitting a string-typed approximation — opus does not burn a budget on an unshape-able theorem. Every stub uses `by sorry`; no proof attempts. Sonnet/medium-effort budget.
 
 **Used by**: prove-invariants
 

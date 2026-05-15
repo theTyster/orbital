@@ -176,20 +176,20 @@ Full templates per pattern (file headers, inductive-predicate scaffolding, suffi
 
 The proof-as-specification frame — defaulting to spec-shaped proofs over concept-validation when both are valid, with constructor names that read as the domain — lives in **`agents/lean-expert.md`** (the canonical home; this skill points there rather than duplicating).
 
-## Delegate to `lean-expert`
+## Delegate to `lean-expert` (per-stub closing)
 
-The primary execution path is to spawn the `shifting:lean-expert` sub-agent with the `Agent` tool. That agent treats `lake build` as its reasoning tool and applies adversarial verification patterns; running proofs through it also isolates compiler output from the main context.
+For each stub emitted by `lean-spec-writer` (§2 above), spawn the `shifting:lean-expert` sub-agent with the `Agent` tool. That agent treats `lake build` as its reasoning tool and applies adversarial verification patterns; running proofs through it also isolates compiler output from the main context. Transcription has already happened — the stub statement, the `@[ontology …]` attribute, and any negation-provenance docstring are already in place. The closer's job is the proof body.
 
 Brief the sub-agent with:
 
-- `thoughts/target-world.pl` (sole input — facts, ontology labels, formal properties)
-- Lean project root (`thoughts/lean`), proofs directory (`thoughts/lean/Proofs`), Mathlib (`~/.lean/mathlib4`)
+- The specific stub path (`${LEAN_PROOFS}/<claim_id>.lean`) — one closing call per stub
+- `thoughts/target-world.pl` (for the facts and ontology labels the proof reasons over)
+- Lean project root (`thoughts/lean`), Mathlib (`~/.lean/mathlib4`)
 - Mathlib wiki path: `${CLAUDE_SKILL_DIR}/../../references/lean4-wiki/`
 - Methodology pointer: `${CLAUDE_SKILL_DIR}/references/lean-proof-method.md`
 - Per-property correction budget: 5 inner / 3 outer (§4)
 - Output contract: `thoughts/lean_proof_results.pl` as Prolog facts (schema in §7), not markdown
-- Pattern-selection contract: read every claim label and per-fact ontology label from `target-world.pl` first; counterfactual properties become sufficiency theorem + one necessity lemma per negated-premise fact (do not collapse them)
-- Mandatory annotation: every theorem carries a `provenance(absent | contradicts)` docstring or `@[ontology .X, .Y]` attribute, value read off `target-world.pl` (`requires_annotation` enforced)
+- Pattern-selection contract: read the claim label off the stub's `@[ontology …]` attribute; counterfactual properties become sufficiency theorem + one necessity lemma per negated-premise fact (do not collapse them)
 - Halt-and-report contract on genuine unprovability rather than rewriting the property
 
 Do the work inline only when the user has explicitly asked. Proof size is not a reason to skip the specialist — even a one-liner benefits from the agent's `lake build` discipline and Mathlib familiarity. The rest of this file is both your inline guide and the briefing material for the sub-agent.
@@ -241,9 +241,26 @@ Record the proof-pattern selection and the provenance map at the top of each `.l
 
 **First, gate.** Apply the routing in `references/gating.md` to every formal property. Properties routed to `cwa_check` skip Lean translation entirely; record `cwa_check/3` and `lean_skipped/2` for the skipped set when emitting `lean_proof_results.pl` in step 7. Only properties routed to "Run Lean" continue.
 
-For each property routed to Lean, create a `.lean` file in `${LEAN_PROOFS}/` and use the pattern from `references/proof-patterns.md` matching the property's claim label. Read `thoughts/target-world-shape.lean` first — if `model-obligations` emitted it, the inductive enums and inductive `Prop` predicates are already declared; import them rather than re-deriving. If absent and the run has closed-domain predicates, loop back.
+The Lean step splits into two passes: **transcription** (statement + `sorry`) and **closing** (proof body). Delegate transcription to the `shifting:lean-spec-writer` sub-agent, then hand each emitted stub to `shifting:lean-expert` for closing. The split lets the orchestrator halt cleanly when the spec writer reports `open_domain_shape` — the upstream encoding is wrong, and opus burning a budget against an unshape-able theorem is exactly the failure mode this split prevents.
 
-Every theorem carries either an `@[ontology .X, .Y]` attribute (preferred) or a `/- provenance(absent | contradicts) -/` docstring block. Values come from the ontology label and per-fact negation provenance in `target-world.pl` — do not derive them.
+**Briefing fields for `lean-spec-writer`:**
+
+| Field | Source |
+|---|---|
+| `target_world_pl_path` | `thoughts/target-world.pl` |
+| `target_world_shape_lean_path` | `thoughts/target-world-shape.lean` (must exist; if absent, loop back to `model-obligations`) |
+| `output_dir` | `${LEAN_PROOFS}` (typically `thoughts/lean/Proofs/`) |
+| `lean_project_root` | `${LEAN_PROJECT}` (typically `thoughts/lean/`) |
+
+The full agent contract — hard rules, open-domain halt semantics, digest schema — lives at `../../agents/lean-spec-writer.md`. Read `target-world-shape.lean` first; if `model-obligations` did not emit it and the run carries closed-domain predicates, loop back rather than delegating against a missing shape file.
+
+On return, the spec writer's digest partitions the properties into `stubs_emitted`, `open_domain_halts`, and `type_errors`. Route them:
+
+- `stubs_emitted` → brief `lean-expert` per stub (next paragraph).
+- `open_domain_halts` → emit `upstream_gap(prove_invariants, ..., recovery_hint(model_obligations, ...))` per property; do **not** invoke `lean-expert` against these.
+- `type_errors` → loop back to `model-obligations`; the Lean sketch in `formal_property/3` is malformed.
+
+Then, for each stub in `stubs_emitted`, brief `lean-expert` to close it per the patterns in `references/proof-patterns.md`. Every theorem already carries its `@[ontology .X, .Y]` attribute from the transcription pass; the closer's job is the proof body, not the statement.
 
 A necessity lemma that cannot be closed is a signal — flag the fact as extraneous and loop back to `decompose-proposition` rather than papering with `sorry`. If a proof requires `decide` / `native_decide` / `generalize` as the closing move on a target-world predicate, halt and report; the upstream encoding is wrong, not the tactic.
 
