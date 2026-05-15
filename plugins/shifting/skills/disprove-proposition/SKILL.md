@@ -173,15 +173,30 @@ counterexample_shrunk(c_007, "[3,1,2]").
 counterexample_blocks_proof(c_007, theorem_sorted_output).
 ```
 
-## When this skill is invoked as a debate move
+## When this skill is invoked
 
-Other skills MAY invoke `disprove-proposition` against a specific claim mid-pipeline. The wiring of those injection points (which skill, against which claim, with what budget) is out of scope for this skill — it lives in each invoking skill's body. This skill provides the move; it does not prescribe when each upstream skill should make it.
+This skill is **structurally outside** the seven-stage pipeline. Per the orchestration-substrate contract (`plugins/trajectory/references/orchestration-substrate.md`), `disprove-proposition` is `unstaged_skill/1`: it lives at the orchestration layer, not as a step the pipeline self-invokes. The **only legal invoker is the orchestrator** (the `trajectory:pipeline` skill, or a user, or a future meta-orchestrator).
 
-What this skill **does** prescribe: every invocation, regardless of caller, follows the same four-step process and produces the same output schema. Verdicts are consumed identically whether the caller was a user or another skill.
+What this skill prescribes: every invocation, regardless of caller, follows the same four-step process and produces the same output schema. Verdicts are consumed identically whether the caller was a user directly or the orchestrator routing around a pipeline-stage descriptor.
 
-## Loopback
+What this skill explicitly forbids (Phase 5 resolution of witness R1):
 
-A `refuted` verdict is a strong signal that the claim, as currently stated, cannot move forward. The natural next move is to invoke `decompose-proposition` to refine the offending claim — typically by adding a counterfactual sub-claim that names the witness explicitly, or by narrowing the claim's scope to exclude the witness's domain.
+- **Pipeline primitives MUST NOT invoke this skill.** `close-world`, `decompose-proposition`, `model-obligations`, `prove-invariants`, `instantiate-properties`, `realize-specification`, and `measure-entailment` do not contain any `Agent(shifting:disprove-proposition)` or equivalent dispatch. If you find such an invocation in a staged primitive, it is a bug: report it.
+- **Pipeline primitives MUST NOT auto-consume this skill's outputs.** `thoughts/disproof_results.pl`, `thoughts/counterexamples.pl`, and `thoughts/lean/Disproofs/*.lean` are read **only by the orchestrator**. They are `consumed_by_orchestrator(_)` facts in the orchestration-substrate KB. The pipeline does not pattern-match on them.
+
+## How the orchestrator consumes the outputs
+
+The orchestrator (e.g., `trajectory:pipeline`) reads `disproof_results.pl` and decides:
+
+- **`refuted`** — halt the pipeline; surface the witness; ask the user whether to drive a non-adjacent loopback (e.g., re-invoke `decompose-proposition` with the witness as a starting axiom via `refutation_shape_briefing`) or finish with `explain` against partial state.
+- **`inconclusive`** — record; decide whether to fold the partial evidence into the next stage's `refutation_shape_briefing` parameter and proceed.
+- **`abstained`** — record the obstruction and proceed without halting.
+
+The orchestrator never threads disprove outputs back into the pipeline by passing the artifact paths to a staged primitive. The threading happens through orchestrator parameters (`refutation_shape_briefing`, `halt_condition`) at the next primitive invocation, not through cross-skill reads. This is the R2 resolution by typing: disprove-proposition's outputs are *inputs to orchestrator decision-making*, never artifacts the pipeline self-attacks.
+
+## Loopback (orchestrator-mediated)
+
+A `refuted` verdict is a strong signal that the claim, as currently stated, cannot move forward. The natural next move — re-invoking `decompose-proposition` to refine the offending claim — is **the orchestrator's call**, not this skill's. This skill emits the verdict to `thoughts/disproof_results.pl` and stops. The orchestrator reads, decides, and parameterises the next primitive invocation accordingly.
 
 A `refuted` verdict is **not** a license to weaken the spec around the witness. The witness is information; weakening the spec to swallow it is a debate foul.
 
