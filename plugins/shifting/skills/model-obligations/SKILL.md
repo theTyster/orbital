@@ -46,6 +46,29 @@ These shape every choice in this skill:
 
 Two orthogonal ontology dimensions carry across the boundary: the claim-origin label (`claim_label/2`) on each claim (descriptive / counterfactual / prescriptive) and the negation-provenance label on each negated premise (absent / contradicts). Semantics: `${CLAUDE_SKILL_DIR}/../../references/ontology.md`. Wire format for every artifact this skill touches: `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/` — read `hypothesis.md` for the input, `target-world.md` and `model-results.md` for the outputs, and `cross-skill-map.md` for the per-claim → per-fact translation this skill performs.
 
+## Orchestrator contract
+
+This skill is stage 3a. Carrier from predecessor: `thoughts/hypothesis.pl`. The orchestration-substrate wire format is `plugins/trajectory/references/orchestration-substrate.md`.
+
+**Carrier-only reads.** The carrier is `hypothesis.pl`; it carries the metadata pointer to `existing-world.pl` that this skill follows transitively to read the substrate facts. No optional reads of other skill outputs are permitted — what hypothesis.pl points at is in scope; everything else is not.
+
+**Orchestrator parameters accepted:** `refutation_shape_briefing` (refutation classes the orchestrator wants surfaced in `model_results.pl` verdicts when later attacked); `halt_condition`.
+
+**Gate-target descriptors emitted on completion** — three outputs, each its own descriptor:
+- `target_world_pl` — the Prolog substrate (carrier into prove-invariants).
+- `target_world_shape_lean` — the Lean structural translation (omitted when no closed domains; see "Dual emission" below).
+- `model_results_pl` — per-property `verdict/2`, `counterexample/2`, `gap_reason/2`, `cf_status/2` facts.
+
+Primary refutation surface for these descriptors: the counterfactual-vs-prescriptive split in target-world (a counterfactually-removed fact that the implementation still asserts is a Pattern-3 violation) and any `verdict(_, consistent)` row whose `cf_status` says `extraneous` (over-specified hypothesis).
+
+**Upstream gap emissions.** When the hypothesis cannot be lifted into a coherent target-world, emit:
+
+- `upstream_gap(model_obligations, gap_descriptor(unresolvable_negation_provenance, claim(ClaimId, absent_fact(Predicate, Args))), recovery_hint(decompose_proposition, refutation_shape_briefing([reframe_absent_as_required_premise])))` — when a counterfactual claim's `negation_provenance` is `absent` and the resulting target-world would silently weaken Lean's downstream reach. The DD substrate-audit pattern.
+
+Emit gap facts into `model_results.pl` alongside the verdict facts; the orchestrator decides whether to re-invoke `decompose-proposition` with the briefing folded in or to proceed.
+
+**Adjacent loopback target.** When this skill's own work cannot reach a consistent target-world from a given hypothesis, the adjacent loopback target is `decompose-proposition` (gap=`inconsistent` / `gap` / `extraneous_counterfactual` per existing-world.pl). That loop runs through the orchestrator via the gap emissions above.
+
 ## Current Environment
 
 `which swipl` returns: !`which swipl`
@@ -99,37 +122,37 @@ The primary way to execute this skill is to spawn the `shifting:prolog-prover`
 sub-agent with the `Agent` tool. That agent is the Prolog formal-proof specialist:
 it combines KB construction (agent-of-truth), query expertise (agent-of-questions),
 and CLP libraries (CLP(FD), CLP(B), CLP(Q/R)) with tabling, and treats every
-verdict-derivation as a counterexample search. It owns the correction budget and
-the encoding-strategy choices described below.
-
-Brief the sub-agent with:
-- The hypothesis file path (`thoughts/hypothesis.pl`)
-- The existing-world facts file path (`thoughts/existing-world.pl`)
-- The target output paths (`thoughts/target-world.pl` and
-  `thoughts/model_results.pl`)
-- The per-property correction budget (5 inner / 3 outer, see §5)
-- An instruction to read every `claim_label/2` fact in `hypothesis.pl` to
-  enumerate counterfactual, prescriptive, and descriptive claims before
-  constructing target-world.
-- An instruction that when a property verdict is genuinely `inconsistent` it
-  must stop and surface the counterexample rather than patch the property
-  encoding to pass.
-- For each counterfactual claim, propagate the `negation_provenance` value
-  (`absent` or `contradicts`) into target-world. CWA-absent ≠ Lean-disproved
-  (`cwa_negation_neq_lean_proof`); the downstream Lean lift behaves differently
-  for each.
-
-For standalone intermediate queries (spot-checking a helper predicate, inspecting
-the KB schema mid-construction) spawn `shifting:agent-of-questions` instead —
-it's lighter weight and built for introspection queries.
+verdict-derivation as a counterexample search.
 
 Execute the methodology below inline only when the user has explicitly asked you
 to construct the target-world yourself in this turn. Property count is not a
 reason — even a single transitive-closure verdict benefits from the specialist's
-counterexample-search discipline and correction budget, and inline execution
-floods the main context with swipl output. When in doubt, delegate. The rest of
-this file is both your guide for the inline case and the briefing material for
-the sub-agent.
+counterexample-search discipline. When in doubt, delegate.
+
+### Bias-isolation discipline
+
+Specialist delegation isolates verdict derivation from orchestrator bias. The orchestrator's hopes about which properties "should" be consistent MUST NOT reach the specialist; model-obligations has no checker for patched-to-pass encodings, so a too-optimistic verdict is invisible without structural defense.
+
+**Apply both defenses on every prolog-prover / agent-of-questions invocation:**
+
+1. **Role-briefing.** Open every specialist prompt with:
+   > "You are deriving target-world consistency verdicts via counterexample search. A `consistent` verdict is earned only after a genuine falsification attempt fails. If a property is genuinely `inconsistent`, stop and surface the counterexample — do not patch the encoding to pass. Abstention with a `gap` verdict and gap_reason is a valid outcome. The orchestrator has no preferred verdict."
+
+2. **Minimum-necessary context.** Send only:
+   - The hypothesis path + existing-world path (transitively cited)
+   - The target output paths
+   - The per-property correction budget (5 inner / 3 outer, see §5)
+   - The orchestrator-supplied `refutation_shape_briefing` if present
+   - The `negation_provenance` propagation rule (`absent` vs `contradicts`; CWA-absent ≠ Lean-disproved)
+
+   Do **not** paste orchestrator reasoning, hopes about which counterfactuals are "real," or downstream prove-invariants targets. Escalate context only when the specialist returns "underspecified" with a precise question.
+
+**Orchestrator responsibilities (never delegated):** pin the hypothesis in its strongest form, set the `refutation_shape_briefing`, validate the verdict file's structure before recording, own the `consistent` / `inconsistent` / `gap` assignments.
+
+For standalone intermediate queries (spot-checking a helper predicate, inspecting
+the KB schema mid-construction) spawn `shifting:agent-of-questions` instead —
+it's lighter weight and built for introspection queries. The same bias-isolation
+discipline applies.
 
 ## Methodology
 
