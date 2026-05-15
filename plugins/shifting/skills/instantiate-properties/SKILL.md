@@ -1,7 +1,7 @@
 ---
 name: instantiate-properties
 description: >
-  Stage 5 of the 7-stage pipeline. Reads `thoughts/lean/Proofs/*.lean` (primary) and `thoughts/lean_proof_results.pl` (required); optionally consumes `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl`. Instantiates each universal Lean property as a `projection` test at a specific fixture, or emits a `behavioral_claim` test for an I/O / state / concurrency / timing claim that no upstream proof expressed. Universality is intentionally discarded at the lean → tdd boundary — this is a design choice, not a leak. Every test is tagged with exactly one of `projection` or `behavioral_claim`. All tests start skipped.
+  Stage 4 of the 7-stage pipeline. Reads `thoughts/lean/Proofs/*.lean` and the carrier `thoughts/lean_proof_results.pl`; transitively cites the hypothesis / target-world / model-results via `theorem_source/2` and `provenance_annotation/3` records that prove-invariants propagates forward. Instantiates each universal Lean property as a `projection` test at a specific fixture, or emits a `behavioral_claim` test for an I/O / state / concurrency / timing claim that no upstream proof expressed. Universality is intentionally discarded at the lean → tdd boundary — this is a design choice, not a leak. Every test is tagged with exactly one of `projection` or `behavioral_claim`. All tests start skipped.
 user-invocable: true
 allowed-tools: Read, Glob, Grep, Write, Agent, Bash
 argument-hint: "[optional: target codebase directory; without it, pseudotest format is used]"
@@ -30,12 +30,29 @@ Each test also carries diagnostic tags (`ontology_label`, `negation_provenance`,
 
 Structured artifacts are **Prolog facts files** (`.pl`) — query them via `Agent(subagent_type="shifting:agent-of-questions")` or `swipl -g` for one-off spot checks. Never grep or Read the `.pl` files. The Lean source files are the exception: read them directly.
 
-- **Primary**: `thoughts/lean/Proofs/*.lean` — Lean theorem source.
-- **Required**: `thoughts/lean_proof_results.pl` (from `prove-invariants`) — `theorem_verdict/2`, `proof_strategy/2`, `failure_mode/2`, `theorem_source/2`, `necessity_lemma_status/3`, `provenance_annotation/3` (mandatory for negated-premise theorems), and optional `cwa_check/3` + `lean_skipped/2` for gated-out properties. Treat `cwa_check(Prop, _, verified)` like `theorem_verdict(Prop, proven)`, with `proof_strategy: prolog-cwa-check` in the test comment.
-- **Optional**: `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl`, any other `.pl` in `thoughts/`. Wire format for each lives under `${CLAUDE_SKILL_DIR}/../../references/pipeline-schema/`.
-- **Optional env**: `target_codebase_dir` — without it pseudotest format is used; with it emit real framework tests (no pseudotest fallback).
+**Carrier-only contract.** The sole carrier from the predecessor is `thoughts/lean_proof_results.pl` plus the `thoughts/lean/Proofs/*.lean` directory it cross-references. Predicates from `hypothesis.pl`, `model_results.pl`, and `target-world.pl` are *transitively cited* via `theorem_source/2`, `provenance_annotation/3`, and `formal_property/3` records that prove-invariants propagates into its output — follow those references when richer context is needed. Do not read upstream `.pl` files except through their transitive citation chains.
 
-Richest suites come from combining all four sources (Lean source, `lean_proof_results.pl`, `hypothesis.pl`, `model_results.pl`).
+- **Primary**: `thoughts/lean/Proofs/*.lean` — Lean theorem source.
+- **Carrier**: `thoughts/lean_proof_results.pl` (from `prove-invariants`) — `theorem_verdict/2`, `proof_strategy/2`, `failure_mode/2`, `theorem_source/2`, `necessity_lemma_status/3`, `provenance_annotation/3` (mandatory for negated-premise theorems), and optional `cwa_check/3` + `lean_skipped/2` for gated-out properties. Treat `cwa_check(Prop, _, verified)` like `theorem_verdict(Prop, proven)`, with `proof_strategy: prolog-cwa-check` in the test comment.
+- **Stage-0 env**: `target_codebase_dir` (orchestrator-supplied) — without it pseudotest format is used; with it emit real framework tests (no pseudotest fallback).
+
+## Orchestrator contract
+
+Stage 4. Carrier: `lean_proof_results.pl` + `thoughts/lean/Proofs/`. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+
+**Orchestrator parameters accepted:** `refutation_shape_briefing` (e.g., "include CWA-fragile counterfactual removal tests even when necessity lemmas are extraneous"); `halt_condition`.
+
+**Gate-target descriptor emitted on completion** — `tests_dir` (the directory of skipped tests). Primary refutation surface: any `projection` test that descends from a `negation_provenance(_, absent)` premise — these are CWA-fragile and `disprove-proposition` may attack the fixture chosen for sampling.
+
+**Adjacent loopback target:** `prove-invariants` (gap=`provenance_disagreement` per existing-world.pl) — when the proof artifact's annotations disagree internally.
+
+**Upstream gap emissions** routed back to the orchestrator (non-adjacent):
+
+- `upstream_gap(instantiate_properties, gap_descriptor(unfixturable_property, property(PropertyId, missing_fixture_shape)), recovery_hint(prove_invariants, refutation_shape_briefing([narrow_universal_to_projectable])))` — when a universal property cannot be projected onto any fixture in the target codebase (open-domain reach mismatch).
+- `upstream_gap(instantiate_properties, gap_descriptor(schema_insufficient, claim(ClaimId, extraneous_counterfactual)), recovery_hint(decompose_proposition, refutation_shape_briefing([prune_extraneous_counterfactual])))` — when `necessity_lemma_status(_, _, extraneous)` shows the hypothesis was over-specified. (Replaces the prior LOOPBACK SIGNAL prose at §7b for the extraneous case.)
+- `upstream_gap(instantiate_properties, gap_descriptor(schema_insufficient, claim(ClaimId, insufficient_counterfactuals)), recovery_hint(decompose_proposition, refutation_shape_briefing([enumerate_more_counterfactuals])))` — when an INSUFFICIENT conditional proof needs more counterfactual claims.
+
+Emit gap facts into `thoughts/tests/manifest.pl` (the carrier-widened manifest accompanying the tests directory). The orchestrator decides per gap whether to honor the recovery_hint.
 
 ## Process
 
@@ -43,9 +60,20 @@ Richest suites come from combining all four sources (Lean source, `lean_proof_re
 
 ### 1. Read All Inputs
 
-**Delegate Prolog interrogation to the `shifting:agent-of-questions` sub-agent.** That agent is the Prolog query specialist — it discovers predicates and arities via `swipl` introspection (never by reading `.pl` files as text) and surfaces exactly the facts this step needs. Hand it the `.pl` artifacts (`lean_proof_results.pl`, `target-world.pl`, `hypothesis.pl`, `model_results.pl`) and the extraction checklist below; do NOT grep or Read the `.pl` files yourself.
+**Delegate Prolog interrogation to the `shifting:agent-of-questions` sub-agent.** That agent is the Prolog query specialist — it discovers predicates and arities via `swipl` introspection (never by reading `.pl` files as text) and surfaces exactly the facts this step needs. Hand it the carrier (`lean_proof_results.pl` + transitively-cited paths from its `theorem_source/2` and `provenance_annotation/3` records) and the extraction checklist below; do NOT grep or Read the `.pl` files yourself.
 
 For a quick inline spot-check, `swipl -g "consult('FILE'), forall(P, format('...', [P])), halt."` works against any of `theorem_verdict/2`, `formal_property/3`, or `provenance_annotation/3`.
+
+**Bias-isolation discipline.** Specialist delegation isolates test-shape derivation from orchestrator bias. The orchestrator's hopes about which properties "should" project cleanly onto fixtures MUST NOT reach the specialist.
+
+Apply both defenses on every agent-of-questions / Explore invocation:
+
+1. **Role-briefing:**
+   > "You are projecting universal proofs onto specific fixtures, or recording behavioral claims the proofs could not state. A property that cannot be projected onto any fixture in the target codebase is an `unfixturable_property` upstream gap, not a malformed test — emit the gap signal and proceed to the next property. Do not invent fixtures to make a property 'work.'"
+
+2. **Minimum-necessary context:** the carrier path + the extraction checklist + the orchestrator-supplied `refutation_shape_briefing` if present. Do not paste hypothesis text, downstream realize-specification targets, or the orchestrator's framing of why this proof matters.
+
+**Orchestrator responsibilities (never delegated):** decide the `refutation_shape_briefing`, own the upstream_gap emission decisions, validate the test file's `test_category` tagging before recording.
 
 Extract per verdict (full source-predicate table in **`references/tagging.md`**):
 
