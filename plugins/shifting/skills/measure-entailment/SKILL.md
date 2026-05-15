@@ -32,13 +32,29 @@ Pattern 3 detection is the headline addition: without label awareness, a counter
 
 ## Inputs, outputs, and required tools
 
-- **Primary input**: `source_files` — the codebase under review (in pipeline-terminal mode) or the resource files supplied directly (stand-alone).
-- **Also consumes**: `thoughts/implementation_log.md` (when present from `realize-specification`), `thoughts/adherence_facts.pl` (regenerated each run; prior copies are overwritten).
-- **Pipeline-terminal mode also consults**: `thoughts/hypothesis.pl` *directly* (loaded into the swipl session, not just re-extracted into `adherence_facts.pl`). This is what makes label-aware verdicts work — `claim_label/2`, `claim_premise/2`, and `claim_negation_provenance/3` must be queryable. Optionally also `thoughts/existing-world.pl` for descriptive-drift checks.
-- **Required environment**: `resource_paths` (2 or more), and optionally `prime_designation` to nominate one as source-of-truth.
+**Carrier-only contract (pipeline-terminal mode).** The sole carrier from the predecessor (`realize-specification`) is `thoughts/implementation_log.md` plus the `target_codebase_dir` env. `thoughts/hypothesis.pl` is loaded *directly* into the swipl session — not via a transitive carrier reference — because the label-aware verdict pass needs `claim_label/2` and `claim_negation_provenance/3` queryable in the same module; this is a documented exception to the carrier-only rule (`measure_entailment_hypothesis_direct_load` per the orchestration-substrate doc's narrowing).
+
+- **Carrier**: `thoughts/implementation_log.md` (from `realize-specification`) + `target_codebase_dir` env. The codebase is read for claim extraction.
+- **Direct-load exception**: `thoughts/hypothesis.pl` — loaded into swipl alongside `adherence_facts.pl` to enable label-aware verdicts.
+- **Optional in stand-alone mode**: resource paths supplied directly, `--prime` designation.
+- **Optional supplementary** (pipeline-terminal): `thoughts/existing-world.pl` for descriptive-drift checks.
 - **Required tools**: `swipl`.
 - **Intermediate output**: `thoughts/adherence_facts.pl` — extracted claims from every resource, in `asserts/2` form.
 - **Primary output**: `thoughts/adherence_report.md` — human-reviewed Markdown report with scores, gaps, contradictions, extensions, and per-label verdicts.
+
+## Orchestrator contract
+
+Stage 6, terminal. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+
+**Orchestrator parameters accepted:** `success_criteria` (e.g., "zero Pattern 3 violations; ≥80% adherence to hypothesis prime"); `halt_condition`. No `refutation_shape_briefing` — the report itself enumerates the refutation surfaces inline.
+
+**Gate-target descriptors emitted on completion** — two outputs:
+- `adherence_facts_pl` — the extracted-claim Prolog file. Primary refutation surface: any `asserts/2` row whose predicate doesn't match a known domain shape (the agent may have over-extracted).
+- `adherence_report_md` — the verdict narrative. Refutation surface: every Pattern 3 violation row (counterfactual fact still asserted in impl) is by construction what `disprove-proposition` would attack if invoked against the implementation.
+
+**Upstream gap emission** — none. As the terminal pipeline stage, measure-entailment surfaces gaps *as adherence-report verdicts*, not as `upstream_gap/3` facts. A non-zero Pattern-3-violation count is the human-readable equivalent of an upstream gap, but routing the recovery is the orchestrator's call based on the report, not on a structured signal from this skill.
+
+**Adjacent loopback target:** none (terminal). The orchestrator may, on reviewing the report, decide to drive any upstream stage's re-invocation with `success_criteria` derived from the report's verdict list.
 
 ## Current Environment
 
@@ -138,6 +154,19 @@ Fix any syntax errors before proceeding.
 #### Delegate claim extraction to `agent-of-truth`
 
 Spawn the `shifting:agent-of-truth` sub-agent with the `Agent` tool to do the extraction. Skip delegation only when the user has explicitly asked you to extract inline this turn — resource size is not a reason. It will choose consistent, domain-appropriate predicates and validate the resulting facts file with `swipl`. Brief it with all resource paths at once so it picks predicate names that line up across resources — inconsistent predicate naming is the single biggest cause of false "gap" and "contradiction" results in this skill.
+
+#### Bias-isolation discipline
+
+Specialist delegation isolates claim extraction and verdict computation from orchestrator bias. The orchestrator's hopes about whether the implementation adheres MUST NOT reach the specialist; measure-entailment has no checker for under-extraction (claims silently missing make adherence look spuriously high) or for over-aligned predicate naming (forcing a spec claim and impl claim to share a predicate when they shouldn't).
+
+**Apply both defenses on every agent-of-truth / agent-of-questions invocation:**
+
+1. **Role-briefing.** Open every specialist prompt with:
+   > "You are extracting what each resource asserts. Use the same predicate name across resources only when the claims are structurally the same; do not paper over differences by collapsing distinct claims into one predicate. Report `asserts/2` rows as facts; a low adherence score is a valid result. The orchestrator has no preferred score."
+
+2. **Minimum-necessary context.** Send only the resource paths, the prime designation, the orchestrator-supplied `success_criteria` if present, and (in pipeline-terminal mode) the path to `hypothesis.pl` for cross-vocabulary alignment. Do not paste orchestrator commentary or framing of why this adherence check matters.
+
+**Orchestrator responsibilities (never delegated):** decide `--prime` per run, validate the report's structural-vs-verdict ordering before recording, own the success_criteria interpretation.
 
 ### 4. Run Adherence Queries
 
