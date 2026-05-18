@@ -62,7 +62,7 @@ Stage 6, terminal. Orchestration-substrate wire format: `plugins/trajectory/refe
 
 ## Current Environment
 
-`which swipl` returns: !`which swipl`
+Setup marker: !`CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"; [ -x "$CHECK" ] && "$CHECK" --summary || echo "orbital: scaffolding plugin not installed; setup state unknown"`
 `ls thoughts/hypothesis.pl` returns: !`ls thoughts/hypothesis.pl 2>/dev/null || echo "(not yet created)"`
 
 ```

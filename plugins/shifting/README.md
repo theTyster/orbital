@@ -17,9 +17,9 @@ Step c has two alternative proof backends — use Lean for mathematical/abstract
 
 ## Additional Skills
 
-- **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
-- **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
 - **measure-entailment** — Score how well two or more resources adhere to each other using Prolog-based relational analysis
+
+The Lean toolchain bootstrap skills (`setup-lean-mathlib`, `setup-lean-project`) used to live here; they moved to the `scaffolding` plugin in 5.0.0 so a single `scaffolding:setup` flow owns all marketplace-wide provisioning. Invoke them as `scaffolding:setup-lean-mathlib` and `scaffolding:setup-lean-project`, or just run `/setup` once and let it delegate.
 
 ## Plugin References
 
@@ -34,5 +34,7 @@ Both follow the same shape: a root `index.md` plus one subdirectory per category
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan)) — use `setup-lean-mathlib` for initial setup
-- **SWI-Prolog** (`swipl`)
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)) — provisioned by `scaffolding:setup` (delegates to `scaffolding:setup-lean-mathlib`)
+- **SWI-Prolog** (`swipl`) — verified by `scaffolding:setup`
+
+Run `/setup` once per project; the result is recorded in `.claude/orbital-setup.json` and shifting's skills consult that marker instead of re-probing the filesystem on every invocation.

@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Grep, Write, Agent
 argument-hint: "[target — claim_id | theorem_name | test_name | english_proposition] [optional: source_file]"
 ---
 
-- **Proof that `swipl` exists:** !`which swipl`
+- **Setup marker:** !`CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"; [ -x "$CHECK" ] && "$CHECK" --summary || echo "orbital: scaffolding plugin not installed; setup state unknown"`
 
 # disprove-proposition
 
@@ -31,7 +31,7 @@ Three disciplines are non-negotiable:
 
 ## Current Environment
 
-`which swipl` returns: !`which swipl`
+Setup marker: !`CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"; [ -x "$CHECK" ] && "$CHECK" --summary || echo "orbital: scaffolding plugin not installed; setup state unknown"`
 `ls thoughts/hypothesis.pl` returns: !`ls thoughts/hypothesis.pl 2>/dev/null || echo "(not present — that's fine; this skill works against any claim shape)"`
 `ls thoughts/lean_proof_results.pl` returns: !`ls thoughts/lean_proof_results.pl 2>/dev/null || echo "(not present)"`
 `ls thoughts/disproof_results.pl` returns: !`ls thoughts/disproof_results.pl 2>/dev/null || echo "(will be created)"`

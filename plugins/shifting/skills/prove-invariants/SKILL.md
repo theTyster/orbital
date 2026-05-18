@@ -47,8 +47,8 @@ Full Layer 1 / Layer 2 derivation, the hard rule's legitimate-use carve-outs, an
 
 This skill cites three reference resources. They are **not** pipeline predecessors — they are setup utilities and a downstream explainer that the user may run independently:
 
-- `setup-lean-mathlib` — installs the shared Mathlib clone at `~/.lean/mathlib4`.
-- `setup-lean-project` — initializes a thin Lean project at `thoughts/lean/` referencing the shared Mathlib clone.
+- `scaffolding:setup-lean-mathlib` — installs the shared Mathlib clone at `~/.lean/mathlib4`.
+- `scaffolding:setup-lean-project` — initializes a thin Lean project at `thoughts/lean/` referencing the shared Mathlib clone.
 - `explain` — produces plain-language explanations of pipeline output (including this skill's `lean_proof_results.pl`) for non-technical review.
 
 The pipeline predecessor of this skill is `model-obligations` (which produces `target-world.pl`); the pipeline successor is `instantiate-properties`.
@@ -76,19 +76,26 @@ Emit gap facts into `lean_proof_results.pl` alongside the verdict facts.
 
 ## Prerequisites
 
-1. **Lean tools installed**: `lean --version` and `lake --version` must succeed.
-2. **`mathlib_clone` env**: Shared Mathlib clone must exist at `~/.lean/mathlib4`:
-   ```bash
-   MATHLIB_ROOT="$(cd ~/.lean/mathlib4 2>/dev/null && pwd)" || echo "NOT FOUND"
-   ```
-   If not found, tell the user to run the `setup-lean-mathlib` skill first and stop.
-3. **`lean_project_built` env**: Lean project must be built at `thoughts/lean/.lake/build/`:
-   ```bash
-   LEAN_PROJECT="thoughts/lean"
-   LEAN_PROOFS="${LEAN_PROJECT}/Proofs"
-   ```
-   If `${LEAN_PROJECT}/.lake/build/` does not exist, invoke the `setup-lean-project` skill to create and build it before continuing.
-4. **Required input** — `thoughts/target-world.pl` from the `model-obligations` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact ontology labels. If absent, stop and tell the user to run `model-obligations` first.
+Consult the setup marker first; only fall back to inline probing if the marker is absent.
+
+```bash
+CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"
+if [ -x "$CHECK" ] && "$CHECK" mathlib_clone && "$CHECK" lean_project; then
+  # Marker says these are provisioned — trust it, do not re-probe.
+  LEAN_PROJECT="thoughts/lean"
+  LEAN_PROOFS="${LEAN_PROJECT}/Proofs"
+else
+  # Marker absent or incomplete — print a single line and stop.
+  echo "prove-invariants needs the Lean toolchain. Run /setup first." >&2
+  exit 1
+fi
+```
+
+The marker is `.claude/orbital-setup.json`, written by `scaffolding:setup` on completion. It records whether `mathlib_clone` (the shared `~/.lean/mathlib4`) and `lean_project` (`thoughts/lean/.lake/build/`) are provisioned. Skills do not re-probe filesystem state on every invocation; the marker is the single source of truth.
+
+Required pipeline input:
+
+- `thoughts/target-world.pl` from the `model-obligations` skill: the materialized world (existing facts ∪ counterfactual negations ∪ prescriptive obligations) with per-fact ontology labels. If absent, stop and tell the user to run `model-obligations` first.
 
 ## Pre-flight: version hygiene check
 

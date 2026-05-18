@@ -11,7 +11,7 @@ allowed-tools: Bash, Write, Agent
 argument-hint: "[existing-world.pl path] [proposition or question to explore]"
 ---
 
-- **Proof that `swipl` exists:** !`which swipl`
+- **Setup marker:** !`CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"; [ -x "$CHECK" ] && "$CHECK" --summary || echo "orbital: scaffolding plugin not installed; setup state unknown"`
 
 # decompose-proposition
 
@@ -57,7 +57,7 @@ Emit gap facts into `hypothesis.pl` alongside the claims; the orchestrator patte
 
 ## Current Environment
 
-`which swipl` returns: !`which swipl`
+Setup marker: !`CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"; [ -x "$CHECK" ] && "$CHECK" --summary || echo "orbital: scaffolding plugin not installed; setup state unknown"`
 `ls thoughts/existing-world.pl` returns: !`ls thoughts/existing-world.pl 2>/dev/null || echo "(not yet created)"`
 `ls thoughts/hypothesis.pl` returns: !`ls thoughts/hypothesis.pl 2>/dev/null || echo "(not yet created)"`
 

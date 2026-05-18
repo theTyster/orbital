@@ -41,6 +41,37 @@ The original name (`logic-focused-claude`) described one of the marketplace's pl
 
 Each plugin's new single-word identifier corresponds to a role in that orbit: `shifting` reasons across formal/informal frames, `scaffolding` builds the architectural substrate, `trajectory` plans the pipeline's flight path, and `telemetry` reports back from the dev-tools instruments.
 
+## 2026-05-18 — Lean setup skills relocated to `scaffolding`
+
+In `shifting` 5.0.0 / `scaffolding` 4.0.0, the two Lean toolchain bootstrap
+skills moved out of `shifting` so a single `scaffolding:setup` flow owns
+marketplace-wide provisioning:
+
+| Old reference                         | New reference                         |
+| ------------------------------------- | ------------------------------------- |
+| `shifting:setup-lean-mathlib`         | `scaffolding:setup-lean-mathlib`      |
+| `shifting:setup-lean-project`         | `scaffolding:setup-lean-project`      |
+| `plugins/shifting/skills/setup-lean-*`| `plugins/scaffolding/skills/setup-lean-*` |
+
+Adopters who only used the bare-name `/setup-lean-mathlib` (or invoked it
+through `/setup`) are unaffected — the skill name and behavior are unchanged.
+Anything that explicitly namespaced `shifting:setup-lean-*` (the trajectory
+pipeline did, for example) has been updated in-tree to point at the new
+location.
+
+### New: setup-completion marker
+
+The same change introduced `.claude/orbital-setup.json` as the single source of
+truth for "is the environment provisioned?". Run `scaffolding:setup` (aka
+`/setup`) once and the marker is written; thereafter every shifting skill that
+used to inline-probe `which swipl` consults the marker via
+`plugins/scaffolding/skills/setup/scripts/check-setup.sh`. A new SessionStart
+hook in `scaffolding` announces the marker state into session context.
+
+The marker is **not** the artifact-staleness gatekeeper (`SHIFTING_GATEKEEPER`).
+Those serve independent purposes — the gatekeeper polices pipeline-artifact
+freshness on every Read/Bash; the marker records one-time setup completeness.
+
 ## Cleanup
 
 This file can be removed in a future maintenance pass once the rename has been live long enough that the GitHub redirect is unlikely to be load-bearing for any user.

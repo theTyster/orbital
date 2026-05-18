@@ -43,8 +43,10 @@ This skill is the stage-0 primitive at the boundary between the orchestration su
 
 ## Current Environment
 
-`which swipl` returns: !`which swipl`
+Setup marker: !`CHECK="${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh"; [ -x "$CHECK" ] && "$CHECK" --summary || echo "orbital: scaffolding plugin not installed; setup state unknown"`
 `ls thoughts/existing-world.pl` returns: !`ls thoughts/existing-world.pl 2>/dev/null || echo "(not yet created)"`
+
+If the marker reports that `swipl` is missing or that orbital is not set up, stop and ask the user to run `/setup` rather than reaching for `which swipl` directly. The marker is the single source of truth.
 
 ## Input
 

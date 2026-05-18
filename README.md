@@ -24,14 +24,15 @@ f. explain                — Explain whatever was done at any pipeline stage in
 Step c has two alternative proof backends — use Lean for mathematical/abstract proofs, Prolog for model-based verification of relational/structural properties.
 
 Also includes:
-- **setup-lean-mathlib** — Set up and manage Lean 4 projects using a shared system-wide Mathlib installation
-- **setup-lean-project** — Create a thin Lean 4 project referencing the shared Mathlib clone
 - **measure-entailment** — Score how well two or more resources adhere to each other using Prolog-based relational analysis (shared facts, gaps, contradictions, extensions)
 
 ### orbital-scaffolding
 
-C4 architectural modeling and Prolog-based codebase analysis.
+Adopter onboarding, environment provisioning, and C4 architectural modeling. Owns the marketplace-wide `setup` flow plus the Lean toolchain bootstrapping that the shifting pipeline depends on.
 
+- **setup** — First-time bootstrap. Interviews the adopter, creates `thoughts/`, appends `.gitignore` entries, writes the `.claude/orbital-setup.json` marker, and delegates to the Lean setup skills below if needed. Re-run with `--check` as a health audit.
+- **setup-lean-mathlib** — Set up and manage a shared system-wide Mathlib clone at `~/.lean/mathlib4`. Avoids re-downloading Mathlib for every project.
+- **setup-lean-project** — Create a thin Lean 4 project at `thoughts/lean/` referencing the shared Mathlib clone.
 - **c4-find-patterns** — Map a codebase to C4 ontology facts
 - **c4-define-patterns** — Verify a C4 facts file with structural queries
 - **c4-condense-patterns** — Transform Prolog analysis into an implementation plan
@@ -52,14 +53,18 @@ Standalone developer utilities.
 
 ## Prerequisites
 
-- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-invariants and setup-lean-mathlib. Use `setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
+- **Lean 4** (via [elan](https://github.com/leanprover/elan)): Required for prove-invariants. Use `scaffolding:setup-lean-mathlib` to install a shared Mathlib clone, avoiding repeated multi-hour compilations.
 - **SWI-Prolog** (`swipl`): Required for close-world, decompose-proposition, and the `trajectory:pipeline` skill.
+
+All of the above are verified by `scaffolding:setup` — run that once and the result is recorded in `.claude/orbital-setup.json` so downstream skills don't re-probe.
 
 ## Installation
 
 ```bash
 claude /install-plugin https://github.com/theTyster/orbital
 ```
+
+After install, run `/setup` in your project. It interviews you about which plugins you'll use, then provisions the silent prerequisites (`thoughts/` directory, `.gitignore` entries, Lean toolchain) idempotently.
 
 ## Versioning
 

@@ -4,6 +4,10 @@ C4 architectural modeling and Prolog-based codebase analysis.
 
 ## Skills
 
+### Adopter onboarding
+
+- **setup** — First-time bootstrap for a fresh orbital install. Interviews the adopter, creates `thoughts/`, appends `.gitignore` entries, and delegates to the Lean setup skills if the proof backend is wanted. Re-runnable as a doctor / health check via `--check`.
+
 ### Phase skills (individual loops)
 
 - **c4-find-patterns** — Map a codebase to C4 ontology facts (explore, identify, write, validate)
