@@ -6,6 +6,8 @@ description: >
 user-invocable: true
 context: fork
 agent: general-purpose
+model: opus
+effort: medium
 allowed-tools: Write, Read, Glob, Grep, Agent
 argument-hint: [topic, description, or path to source document]
 ---

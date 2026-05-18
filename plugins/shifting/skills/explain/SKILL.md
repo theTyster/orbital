@@ -5,6 +5,8 @@ description: >
 user-invocable: true
 context: fork
 agent: general-purpose
+model: opus
+effort: max
 allowed-tools: Read, Glob, Grep, Write
 argument-hint: "[optional: thoughts/ directory, specific file, or codebase directory]"
 ---

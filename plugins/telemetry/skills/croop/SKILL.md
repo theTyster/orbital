@@ -3,6 +3,8 @@ name: croop
 description: >
   Use this skill (or /croop) whenever the user wants a bounded refinement loop with an explicit stop condition — "every N minutes for M hours until Y", "closed loop", "refinement loop until done", or "iterate until score reaches Z". Schedules a prompt on a recurring inner interval bounded by an outer duration that auto-cancels. Requires a measurable stop condition; unlike /loop.
 user-invocable: true
+model: sonnet
+effort: medium
 allowed-tools: CronCreate, CronList, CronDelete
 argument-hint: <outer_duration> [inner_interval] <prompt>
 ---

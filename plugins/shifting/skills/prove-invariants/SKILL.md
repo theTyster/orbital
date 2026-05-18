@@ -6,7 +6,7 @@ user-invocable: true
 context: fork
 agent: general-purpose
 model: opus
-effort: max
+effort: xhigh
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[thoughts/target-world.pl path]"
 ---

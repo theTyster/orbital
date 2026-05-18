@@ -3,6 +3,8 @@ name: setup-lean-mathlib
 user-invocable: true
 description: >
   Infrastructure setup, NOT a pipeline stage. Sets up a shared Mathlib clone at `~/.lean/mathlib4` to satisfy the `mathlib_clone` environment requirement of `prove-invariants`. Use whenever the user needs to set up or fix a Lean 4 + Mathlib environment — "new lean project", "add mathlib", "lean4 setup", "update mathlib", toolchain mismatches, or lakefile issues. The shared clone avoids recompiling Mathlib from scratch for every project.
+model: opus
+effort: medium
 ---
 
 # setup-lean-mathlib

@@ -3,6 +3,8 @@ name: setup-lean-project
 description: >
   Project scaffolding for the Lean-based proof stage, NOT a pipeline stage. Initializes a thin Lean 4 project at `thoughts/lean/` referencing the shared Mathlib clone at `~/.lean/mathlib4`. Satisfies the `lean_project_built` environment requirement of `prove-invariants` (the project must exist with `.lake/build/` populated). Run once before `prove-invariants` if no project exists. Triggered by: "set up/create lean project", "initialize lean", or when `thoughts/lean/` is missing.
 user-invocable: true
+model: opus
+effort: medium
 argument-hint: "[optional: target directory, default: thoughts/lean]"
 ---
 
