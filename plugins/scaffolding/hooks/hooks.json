@@ -1,0 +1,16 @@
+{
+  "description": "Scaffolding plugin SessionStart hook. Reads the orbital setup marker at .claude/orbital-setup.json once per session and injects a one-line status into Claude's session context so downstream skills can verify 'is setup done?' without re-probing the filesystem on every invocation. Fail-open if jq is missing.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/announce-setup.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
