@@ -7,12 +7,12 @@ description: >
   "take this ticket from KB to implementation". Sequences close-world →
   decompose-proposition → model-obligations → prove-invariants →
   instantiate-properties → realize-specification, then closes with `explain`
-  to present what occurred. Orchestrator runs at Sonnet/medium effort and
+  to present what occurred. Orchestrator runs at Opus/max effort and
   delegates each stage to its dedicated skill so the artifact chain stays
   intact.
 user-invocable: true
-model: sonnet
-effort: medium
+model: opus
+effort: max
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill, Agent, TaskCreate, TaskUpdate, TaskList
 argument-hint: "[ticket: a single sentence or paragraph describing the change, invariant, or proposition to drive end-to-end] [optional: target codebase directory, defaults to cwd]"
 ---
