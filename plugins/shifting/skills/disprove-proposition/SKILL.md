@@ -3,6 +3,10 @@ name: disprove-proposition
 description: >
   Open an adversarial dialog against a specific claim — a Prolog claim ID, a Lean theorem, a failing test, or an English proposition — and search for counter-evidence within budget. Not a pipeline stage; a debate move available at any point. Emits `thoughts/disproof_results.pl` with one of three verdicts: `refuted` (witness deposited to `thoughts/counterexamples.pl`), `inconclusive` (partial evidence recorded), or `abstained` (no progress within budget; reason recorded). Triggers on user phrases like "disprove this", "try to refute", "find a counterexample for", "construct counter-evidence", "open an adversarial dialog about", "challenge this claim".
 user-invocable: true
+context: fork
+agent: general-purpose
+model: opus
+effort: max
 allowed-tools: Bash, Read, Grep, Write, Agent
 argument-hint: "[target — claim_id | theorem_name | test_name | english_proposition] [optional: source_file]"
 ---

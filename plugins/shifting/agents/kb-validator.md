@@ -3,9 +3,9 @@ name: kb-validator
 description: >
   Use this agent when a `.pl` file has just been written or appended and must pass strict-load + referential integrity + constraint-firing tiers before downstream consumption — typical triggers include "validate this KB", "check the new facts file loads cleanly", "run the five-tier check on existing-world.pl". Emits a JSON digest with tier1_pass, tier2_orphans[], tier3_spotchecks[], tier4_constraint_fires[], tier5_uncovered_predicates[]. Do NOT use for KB construction (use agent-of-truth) or for query projection (use pl-fact-extractor). See "When to invoke" in the agent body for worked scenarios.
 tools: Bash, Read, Write
-model: haiku
+model: sonnet
 color: yellow
-effort: low
+effort: medium
 ---
 
 # Kb Validator Agent

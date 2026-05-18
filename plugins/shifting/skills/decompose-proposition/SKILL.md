@@ -5,6 +5,8 @@ description: >
 user-invocable: true
 context: fork
 agent: general-purpose
+model: opus
+effort: high
 allowed-tools: Bash, Write, Agent
 argument-hint: "[existing-world.pl path] [proposition or question to explore]"
 ---

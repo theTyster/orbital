@@ -5,6 +5,8 @@ description: >
 user-invocable: true
 context: fork
 agent: general-purpose
+model: opus
+effort: high
 allowed-tools: Bash, Read, Grep, Glob, Write, Agent
 argument-hint: "[source code, requirements, domain rules, or any logical system to document]"
 ---

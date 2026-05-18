@@ -3,6 +3,8 @@ name: realize-specification
 description: >
   Use this skill whenever the user wants to implement code from proven formal properties — "drive the TDD suite to green", "implement the skipped tests", "implement from proof", or "make these tests pass". Unskips one test at a time and orchestrates sub-agents to realize the specification, routing each test by its `test_category` (projection vs behavioral_claim) and the ontology label (`claim_label/2`) of its cited claim in `hypothesis.pl`.
 user-invocable: true
+model: opus
+effort: high
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, Agent
 argument-hint: "[test file path] [target codebase directory — REQUIRED] (optionally reads thoughts/hypothesis.pl, thoughts/lean_proof_results.pl)"
 ---

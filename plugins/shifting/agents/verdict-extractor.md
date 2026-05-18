@@ -3,9 +3,9 @@ name: verdict-extractor
 description: >
   Use this agent when the headline adherence verdict counts must be extracted from `adherence_facts.pl` (plus optionally `hypothesis.pl` for label-aware queries) into structured rows — typical triggers include "get the Pattern 3 violations", "extract the prescriptive fulfillment counts", "pull the verdict rows from this adherence run". Emits a JSON digest with `counterfactual_violations[]`, `counterfactual_honored_count`, `prescriptive_unfulfilled[]`, `prescriptive_negation_violations[]`, `descriptive_drift[]`. Do NOT use for raw KB projection (use `pl-fact-extractor`) or for verdict computation (the queries are fixed; this agent runs them, doesn't invent them). See "When to invoke" in the agent body for worked scenarios.
 tools: Bash, Read, Write
-model: haiku
+model: sonnet
 color: blue
-effort: low
+effort: medium
 ---
 
 # Verdict Extractor Agent

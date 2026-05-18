@@ -5,7 +5,8 @@ description: >
 user-invocable: true
 context: fork
 agent: general-purpose
-model: sonnet
+model: opus
+effort: max
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Agent
 argument-hint: "[hypothesis.pl path] [existing-world.pl path]"
 ---

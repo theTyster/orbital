@@ -5,6 +5,8 @@ description: >
 user-invocable: true
 context: fork
 agent: general-purpose
+model: opus
+effort: high
 allowed-tools: Read, Glob, Grep, Write, Agent, Bash
 argument-hint: "[optional: target codebase directory; without it, pseudotest format is used]"
 ---

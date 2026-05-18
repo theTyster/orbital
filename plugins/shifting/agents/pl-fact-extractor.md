@@ -3,9 +3,9 @@ name: pl-fact-extractor
 description: >
   Use this agent when a Prolog artifact must be queried for a small set of named facts and the caller wants a structured digest, not raw swipl output — typical triggers include "extract claim_label facts from hypothesis.pl", "get the theorem_verdict tuples", "project these predicates as JSON". Returns `{facts: [...], counts: {...}}` per fact_spec entry. Do NOT use for discovery (use `agent-of-questions`) or for KB construction (use `agent-of-truth`). See "When to invoke" in the agent body for worked scenarios.
 tools: Bash, Read
-model: haiku
+model: sonnet
 color: green
-effort: low
+effort: medium
 ---
 
 # Pl Fact Extractor Agent
