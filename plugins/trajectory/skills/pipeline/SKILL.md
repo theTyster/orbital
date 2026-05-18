@@ -1,35 +1,48 @@
 ---
 name: pipeline
 description: >
-  Run a single ticket through the entire orbital-shifting pipeline end-to-end —
-  "run the full pipeline on this ticket", "drive this ticket through close-world to explain",
-  "single-ticket pipeline", "orchestrate the logic pipeline for one ticket",
-  "take this ticket from KB to implementation". Sequences close-world →
+  Run a single ticket through some contiguous slice of the orbital-shifting
+  pipeline. Defaults to the full end-to-end sequence (close-world →
   decompose-proposition → model-obligations → prove-invariants →
-  instantiate-properties → realize-specification, then closes with `explain`
-  to present what occurred. Orchestrator runs at Opus/max effort and
-  delegates each stage to its dedicated skill so the artifact chain stays
-  intact.
+  instantiate-properties → realize-specification → explain) when no scope is
+  given. When the user names an entry or exit stage — or when `thoughts/`
+  already holds upstream artifacts from a prior run — runs only the in-scope
+  stages and still closes with `explain`. Triggers: "run the full pipeline on
+  this ticket", "drive this ticket from close-world through
+  decompose-proposition", "pick up from model-obligations", "just run
+  prove-invariants forward", "continue the pipeline where we left off", "take
+  this ticket from KB to implementation", "stop after decompose-proposition",
+  "only run through prove-invariants", "close-world and decompose only",
+  "single-ticket pipeline".
+  Orchestrator runs at Opus/max effort and delegates each in-scope stage to
+  its dedicated skill so the artifact chain stays intact.
 user-invocable: true
 model: opus
 effort: max
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Skill, Agent, TaskCreate, TaskUpdate, TaskList
-argument-hint: "[ticket: a single sentence or paragraph describing the change, invariant, or proposition to drive end-to-end] [optional: target codebase directory, defaults to cwd]"
+argument-hint: "[ticket: a single sentence or paragraph describing the change, invariant, or proposition to drive] [optional: target codebase dir, defaults to cwd] [optional: start_stage and/or end_stage if running a partial slice]"
 ---
 
 # pipeline
 
-Run **one ticket** through the full orbital-shifting pipeline and finish with a
-plain-language explanation. The orchestrator is thin: each stage is delegated
+Run **one ticket** through some contiguous slice of the orbital-shifting
+pipeline and finish with a plain-language explanation. The default slice is
+the entire pipeline (stages 1 → 6), but the orchestrator supports partial
+runs in either direction — starting mid-pipeline when upstream artifacts
+already exist, stopping early when the ticket only calls for the first few
+stages, or both. The orchestrator is thin: each in-scope stage is delegated
 to its dedicated skill, which owns its own artifacts and sub-agents. The
-orchestrator's job is to sequence stages, hand the right paths forward, gate
-on artifact existence, parameterise each primitive at startup, read each
-stage's gate-target descriptor, and stop early on hard failures with a partial
-`explain` instead of crashing.
+orchestrator's job is to **determine the scope**, sequence the in-scope
+stages, hand the right paths forward, gate on artifact existence,
+parameterise each primitive at startup, read each stage's gate-target
+descriptor, and stop early on hard failures with a partial `explain` instead
+of crashing.
 
-> **Scope.** Exactly one ticket. The parallel multi-enhancement orchestrator
-> previously named `multi-plan` has been retired; this is now the canonical
-> orchestration skill in this plugin.
+> **Scope.** Exactly one ticket. The slice of the pipeline run on that ticket
+> can be any contiguous subrange of stages 1 → 6 (with stage 6, `explain`,
+> always running as the closing narrator). The parallel multi-enhancement
+> orchestrator previously named `multi-plan` has been retired; this is now
+> the canonical orchestration skill in this plugin.
 
 **Read first:** `references/orchestration-substrate.md` is the canonical wire
 format for this skill's contract with the seven `shifting` primitives. It
@@ -47,7 +60,22 @@ The body below *applies* that contract; the references doc *declares* it.
 2. **Target codebase directory** — defaults to the current working directory.
    `realize-specification` needs this explicitly; capture it up front.
 
-If either is missing or ambiguous, halt and ask. Do not invent a ticket.
+If either of the above is missing or ambiguous, halt and ask. Do not invent a
+ticket.
+
+### Optional inputs (scope)
+
+3. **`start_stage`** — the first stage to run (default: auto-detected, see
+   "Pipeline scope" below). Accepts a stage id (`close-world`,
+   `decompose-proposition`, `model-obligations`, `prove-invariants`,
+   `instantiate-properties`, `realize-specification`).
+4. **`end_stage`** — the last in-scope stage before `explain` runs (default:
+   `realize-specification`). Same id set as `start_stage`; must be ≥
+   `start_stage` in pipeline order.
+
+If only one of `start_stage` / `end_stage` is given, the other takes its
+default. If neither is given **and** no upstream artifacts exist in
+`thoughts/`, the orchestrator runs the full pipeline (stages 1 → 6).
 
 ## Orchestration substrate role
 
@@ -95,23 +123,112 @@ when the run's success criteria warrant it. The 12 emitted descriptors and
 the orchestrator parameters each stage accepts are catalogued in
 `references/orchestration-substrate.md`.
 
-## Lean prerequisites
+## Pipeline scope
 
-Stage 3b requires a Lean 4 project with Mathlib. Before stage 3b runs, check:
+Before any stage runs, the orchestrator picks a contiguous subrange
+`[start_stage … end_stage]` of stages 1 → 6 to execute. Stage 6 (`explain`)
+**always** runs at the end, regardless of scope — it is the presentation
+layer for whatever artifacts exist on disk.
+
+### Resolution order
+
+The orchestrator resolves `start_stage` / `end_stage` in this priority order
+(first match wins):
+
+1. **Explicit user signal.** The ticket text, the invocation arguments, or a
+   prior turn names entry or exit stages — e.g., "pick up from
+   model-obligations", "just run prove-invariants forward", "stop after
+   decompose-proposition", "from close-world through prove-invariants",
+   "continue where we left off". Honour the named stages verbatim.
+2. **Resumable artifact state.** Scan `thoughts/` for the artifacts in the
+   chain table above. If a contiguous prefix of stages already has its
+   primary output on disk and matches the ticket's intent, default
+   `start_stage` to the stage **immediately after** the last present
+   artifact. Surface this inference to the user in one sentence before
+   running ("`thoughts/existing-world.pl` and `thoughts/hypothesis.pl`
+   already exist; resuming from model-obligations") and proceed unless the
+   user objects.
+3. **Default — full pipeline.** No user signal, no resumable artifacts in
+   `thoughts/`: run stages 1 → 6 in order. This is the historical behaviour
+   and remains the assumption when nothing else is specified.
+
+If the user signal and the on-disk state conflict (e.g., user says "start at
+prove-invariants" but `thoughts/target-world.pl` is missing), halt and ask
+whether to fill the gap from an earlier stage or supply the missing artifact
+manually. Do not silently start with a missing upstream.
+
+### Entry-point gating
+
+When `start_stage` is not stage 1, the orchestrator must verify the upstream
+artifact exists **and is non-empty** before invoking the entry stage:
+
+| Entry stage | Required upstream artifact(s) |
+|-------------|--------------------------------|
+| `decompose-proposition` | `thoughts/existing-world.pl` |
+| `model-obligations` | `thoughts/existing-world.pl`, `thoughts/hypothesis.pl` |
+| `prove-invariants` | `thoughts/target-world.pl` (and `thoughts/model_results.pl` if it was produced) |
+| `instantiate-properties` | `thoughts/lean_proof_results.pl` (and `thoughts/lean/Proofs/`) |
+| `realize-specification` | At least one test file under `thoughts/tests/` |
+
+If a required upstream artifact is missing at entry, halt and ask. The
+orchestrator does not back-fill an earlier stage unless the user confirms.
+
+### Exit-point semantics
+
+`end_stage` caps the last in-scope stage before `explain`. After `end_stage`
+completes (or is skipped because its gate fails), control passes directly to
+`shifting:explain` against whatever artifacts exist on disk. No stages
+between `end_stage` and `realize-specification` run, even if their inputs
+happen to be present.
+
+### Non-adjacent loopback within a partial scope
+
+If a stage emits an `upstream_gap/3` whose `recovery_hint(TargetSkill, _)`
+names a stage **earlier than the current `start_stage`**, the orchestrator
+must surface the gap to the user before honouring it — honouring would
+expand the scope beyond the user's declared entry point. The user decides
+whether to widen the scope, decline the recovery, or override the suggested
+`TargetSkill` with an in-scope stage.
+
+## Setup prerequisites
+
+The pipeline assumes `scaffolding:setup` has been run for this project. That
+single bootstrap writes `.claude/orbital-setup.json`, which records whether
+the Prolog and Lean dependencies are provisioned. Before stage 1, check:
 
 ```sh
-test -d thoughts/lean/.lake/build && test -d ~/.lean/mathlib4
+test -f .claude/orbital-setup.json
 ```
 
-If either is missing, invoke `shifting:setup-lean-mathlib` and/or
-`shifting:setup-lean-project` once, then proceed. These setup skills are
-infrastructure, not pipeline stages — running them is idempotent.
+If absent, invoke `scaffolding:setup` once and let it interview the user about
+which backends are needed. The pipeline can run with just the Prolog backend
+(skipping stage 3b); the marker records what was provisioned.
+
+Stage 3b specifically requires the Lean toolchain. Before stage 3b runs,
+consult the marker:
+
+```sh
+"${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh" mathlib_clone \
+  && "${CLAUDE_PLUGIN_ROOT}/../scaffolding/skills/setup/scripts/check-setup.sh" lean_project
+```
+
+If either is missing, invoke `scaffolding:setup-lean-mathlib` and/or
+`scaffolding:setup-lean-project` once, then proceed. These setup skills are
+infrastructure, not pipeline stages — running them is idempotent and they
+update the marker on completion.
 
 ## Orchestration sequence
 
-Maintain one task per pipeline stage via TaskCreate; mark each `in_progress`
-when you enter it and `completed` when its output artifact is verified on
-disk. Use TaskUpdate, not commentary.
+Each numbered stage below runs **only if it falls within the resolved
+`[start_stage … end_stage]` scope** (see "Pipeline scope" above). Stages
+outside the scope are skipped without invocation; their gate checks are
+still consulted at entry to confirm upstream artifacts exist on disk. Stage
+6 (`explain`) always runs.
+
+Maintain one task per in-scope pipeline stage via TaskCreate; mark each
+`in_progress` when you enter it and `completed` when its output artifact is
+verified on disk. Use TaskUpdate, not commentary. Do not create tasks for
+out-of-scope stages.
 
 ### Stage 1 — close-world
 
@@ -279,14 +396,15 @@ gaps and need no disprove. Do not couple them.
 
 ## Effort and model
 
-Orchestrator runs at `model: sonnet`, `effort: medium`. The heavy reasoning
+Orchestrator runs at `model: opus`, `effort: max` (per the 2026-05 audit that
+reserved opus/max for orchestrators and audit skills). The heavy reasoning
 (Lean tactics, claim decomposition, sub-agent fan-out) lives inside each
 delegated skill, where the appropriate models and efforts are already
 declared. Do not override sub-skill models from here.
 
 When this skill itself spawns Agent calls (e.g., to inspect Prolog gates),
 pass `model: "sonnet"` and `effort: "medium"` explicitly per repository
-convention.
+convention — sub-agent inspections are tactical, not orchestrative.
 
 ## Context budget (hard stop at 120k tokens)
 
@@ -313,19 +431,25 @@ report.
 
 ## Failure handling
 
-- **Missing upstream artifact** → stop, run `explain`, report the gap.
+- **Missing upstream artifact at entry** → see "Pipeline scope → Entry-point
+  gating" above. Short version: halt and ask; never silently back-fill.
+- **Missing upstream artifact mid-run** → stop, run `explain`, report the gap.
 - **Hard refutation** at stage 3a or 3b → stop, run `explain`, surface the
   refuted obligations / unprovable verdicts to the user as the headline.
 - **Sub-agent or skill error** → record the stage and error, run `explain`
   against partial state, then surface the error.
 - **Adjacent loopback** (e.g., `prove-invariants` → `model-obligations`,
   `realize-specification` → `instantiate-properties`) belongs to the
-  primitive; the looped-back skill records its own decision.
+  primitive; the looped-back skill records its own decision. If the
+  adjacent predecessor is **outside the current scope**, the primitive's
+  loopback request is escalated to the orchestrator and surfaced to the
+  user as a scope-widening proposal.
 - **Non-adjacent loopback** (e.g., `prove-invariants` →
   `decompose-proposition`, `realize-specification` → `decompose-proposition`)
   is **this skill's call**. Surface the gap to the user with a one-sentence
-  rationale, propose the loopback, and act only on confirmation. Never
-  silently retry a non-adjacent stage.
+  rationale, propose the loopback (and any scope widening it implies), and
+  act only on confirmation. Never silently retry a non-adjacent stage and
+  never silently widen the user-declared scope.
 
 ## Hard rules
 
@@ -336,7 +460,8 @@ and that list as a bug in this skill, not in the references doc.
 
 ## What this skill is not
 
-- Not a multi-ticket fan-out — the parallel multi-enhancement orchestrator (`multi-plan`) has been retired; revive it from `thoughts/archive/multi-plan-skill-design.md` if needed.
+- Not a multi-ticket fan-out — the parallel multi-enhancement orchestrator (`multi-plan`) was retired.
 - Not a prover — proving is `prove-invariants`.
 - Not a refactor planner — refactoring lives inside `realize-specification`.
+- Not start-to-finish-only — partial slices (entry mid-pipeline, early exit, or both) are first-class. Full pipeline is the default when no scope signal is given.
 - Not a substitute for human review of `thoughts/explanation.md`.
