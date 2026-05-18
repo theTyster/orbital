@@ -2,6 +2,8 @@
 name: make-commits
 description: Create logical commits of unstaged changes.
 user-invocable: true
+model: sonnet
+effort: medium
 allowed-tools: Agent
 ---
 
