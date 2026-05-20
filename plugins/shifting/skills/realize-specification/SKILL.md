@@ -32,7 +32,7 @@ The test file's tags use **`test_category(projection | behavioral_claim)`** — 
 
 ## Orchestrator contract
 
-Stage 5. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+Stage 6. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
 
 **Orchestrator parameters accepted:** `refutation_shape_briefing` (refutation classes the orchestrator wants attacked on the implementation outputs); `halt_condition`; `success_criteria` (e.g., "all targeted tests pass; zero regressions").
 

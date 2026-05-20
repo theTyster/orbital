@@ -8,8 +8,8 @@
   "plugins": [
     {
       "name": "shifting",
-      "description": "Formal logic reasoning pipeline: closed-world KB construction, proposition decomposition, model-based and Lean 4 proof verification, property instantiation as TDD tests, and proof-grounded specification realization. The Lean toolchain bootstrap skills (`setup-lean-mathlib`, `setup-lean-project`) moved to the `scaffolding` plugin in 5.0.0 so a single `scaffolding:setup` flow owns marketplace-wide provisioning.",
-      "version": "5.0.0",
+      "description": "Formal logic reasoning pipeline — seven staged primitives (closed-world KB construction, proposition decomposition, target-world model construction, Lean 4 proof verification, property instantiation as TDD tests, proof-grounded specification realization, terminal adherence scoring) plus the unstaged `explain` closer and the unstaged `disprove-proposition` debate move. Skill descriptions are tailored toward dispatch from the `trajectory:pipeline` orchestrator (which supports modular partial slices); direct invocation is reserved for explicit single-stage requests. The Lean toolchain bootstrap skills (`setup-lean-mathlib`, `setup-lean-project`) moved to the `scaffolding` plugin in 5.0.0 so a single `scaffolding:setup` flow owns marketplace-wide provisioning.",
+      "version": "5.2.0",
       "source": "./plugins/shifting",
       "author": {
         "name": "ty",
@@ -43,8 +43,8 @@
     },
     {
       "name": "trajectory",
-      "description": "End-to-end orchestration of the shifting pipeline. Runs a single ticket through close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification, finishing with explain. Renamed from `orchestrate`; the parallel multi-enhancement skill has been retired in favor of the single-ticket flow. Defers Lean toolchain setup to `scaffolding:setup-lean-mathlib` / `scaffolding:setup-lean-project` (relocated from shifting in 5.0.0).",
-      "version": "4.3.0",
+      "description": "End-to-end orchestration of the seven-stage shifting pipeline. Runs a single ticket through some contiguous slice of close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification → measure-entailment, then always finishes with the `explain` closer (unstaged narrator that runs regardless of scope). Defaults to the full sequence when no scope is given; supports partial runs (entry mid-pipeline, early exit, or both) when the user names entry/exit stages or when `thoughts/` already holds upstream artifacts from a prior run. Renamed from `orchestrate`; the parallel multi-enhancement skill has been retired in favor of the single-ticket flow. Defers Lean toolchain setup to `scaffolding:setup-lean-mathlib` / `scaffolding:setup-lean-project` (relocated from shifting in 5.0.0).",
+      "version": "4.5.0",
       "source": "./plugins/trajectory",
       "author": {
         "name": "ty",

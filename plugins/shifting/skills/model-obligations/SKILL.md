@@ -51,7 +51,7 @@ Two orthogonal ontology dimensions carry across the boundary: the claim-origin l
 
 ## Orchestrator contract
 
-This skill is stage 3a. Carrier from predecessor: `thoughts/hypothesis.pl`. The orchestration-substrate wire format is `plugins/trajectory/references/orchestration-substrate.md`.
+This skill is stage 3. Carrier from predecessor: `thoughts/hypothesis.pl`. The orchestration-substrate wire format is `plugins/trajectory/references/orchestration-substrate.md`.
 
 **Carrier-only reads.** The carrier is `hypothesis.pl`; it carries the metadata pointer to `existing-world.pl` that this skill follows transitively to read the substrate facts. No optional reads of other skill outputs are permitted — what hypothesis.pl points at is in scope; everything else is not.
 

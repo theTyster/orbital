@@ -17,7 +17,7 @@ argument-hint: "[optional: target codebase directory; without it, pseudotest for
 
 Turn each universal Lean property into a `projection` test that samples the proof at a specific fixture, or emit a `behavioral_claim` test for an I/O / state / concurrency / timing claim that no upstream proof ever expressed. The implementor runs the suite, watches it fail, and drives their code toward green. No separate plan document is produced — the test file is the deliverable.
 
-**Pipeline position:** Stage 5 of 7. Consumes `thoughts/lean/Proofs/*.lean` (primary input), `thoughts/lean_proof_results.pl` (required), and optionally `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl` — all of these are **Prolog facts files, not markdown**. Produces `thoughts/tests/{file}`. Downstream: `realize-specification` un-skips one test at a time.
+**Pipeline position:** Stage 5 of 7 in `trajectory:pipeline`. Consumes `thoughts/lean/Proofs/*.lean` (primary input), `thoughts/lean_proof_results.pl` (required), and optionally `thoughts/hypothesis.pl`, `thoughts/model_results.pl`, `thoughts/target-world.pl` — all of these are **Prolog facts files, not markdown**. Produces `thoughts/tests/{file}`. Downstream: `realize-specification` un-skips one test at a time.
 
 **Boundary semantics: `lean → tdd`** (carrier: `thoughts/lean_proof_results.pl`).
 
@@ -42,7 +42,7 @@ Structured artifacts are **Prolog facts files** (`.pl`) — query them via `Agen
 
 ## Orchestrator contract
 
-Stage 4. Carrier: `lean_proof_results.pl` + `thoughts/lean/Proofs/`. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+Stage 5. Carrier: `lean_proof_results.pl` + `thoughts/lean/Proofs/`. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
 
 **Orchestrator parameters accepted:** `refutation_shape_briefing` (e.g., "include CWA-fragile counterfactual removal tests even when necessity lemmas are extraneous"); `halt_condition`.
 

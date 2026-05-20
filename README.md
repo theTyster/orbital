@@ -10,21 +10,23 @@ This repository contains 4 plugins, decomposed by concern domain:
 
 ### orbital-shifting
 
-Formal logic reasoning pipeline — from Prolog translation through proof verification to TDD tests and implementation review.
+Formal logic reasoning pipeline — from Prolog translation through proof verification to TDD tests, implementation review, and terminal adherence scoring. Seven staged primitives plus an always-runs closer:
 
 ```
-a. close-world    — Translate a codebase into a Prolog knowledge base
-b. decompose-proposition  — Ingest a proposition and create a hypothesis based on the Prolog KB
-c. model-obligations / prove-invariants — Formally verify the hypothesis (loops back to b if unprovable)
-d. instantiate-properties     — Combine proven logical patterns into TDD tests that verify those patterns
-e. realize-specification — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
-f. explain                — Explain whatever was done at any pipeline stage in plain language for non-technical review
+1. close-world             — Translate a codebase into a Prolog knowledge base
+2. decompose-proposition   — Ingest a proposition and create a hypothesis based on the Prolog KB
+3. model-obligations       — Build the target-world model substrate (counterfactuals + obligations)
+4. prove-invariants        — Formally verify each property in Lean4 (adjacent loopback to stage 3 if unprovable)
+5. instantiate-properties  — Combine proven logical patterns into TDD tests that verify those patterns
+6. realize-specification   — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
+7. measure-entailment      — Score how well the implementation entails the original proposition (Pattern 3 detection, prescriptive fulfillment, gaps, contradictions, extensions)
+   Closer: explain         — Always-runs plain-language narrator for whatever artifacts exist on disk, for non-technical review
 ```
 
-Step c has two alternative proof backends — use Lean for mathematical/abstract proofs, Prolog for model-based verification of relational/structural properties.
+Stage 4 (`prove-invariants`) uses Lean for mathematical/abstract proofs; stage 3 (`model-obligations`) handles model-based verification of relational/structural properties via Prolog. `measure-entailment` is also valid stand-alone for ad-hoc resource comparison (spec vs. impl, doc vs. code) with an optional `--prime` source-of-truth.
 
-Also includes:
-- **measure-entailment** — Score how well two or more resources adhere to each other using Prolog-based relational analysis (shared facts, gaps, contradictions, extensions)
+Additional skill outside the staged pipeline:
+- **disprove-proposition** — Adversarial debate move against a specific claim (Prolog claim id, Lean theorem, failing test, or English proposition). Invoked by the orchestrator against gate-target descriptors, or by the user directly to challenge an artifact.
 
 ### orbital-scaffolding
 
@@ -42,7 +44,7 @@ Adopter onboarding, environment provisioning, and C4 architectural modeling. Own
 
 End-to-end orchestration of the orbital-shifting pipeline.
 
-- **pipeline** — Run a single ticket through the full pipeline (close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification) and finish with `explain`. Renamed from `single-ticket-pipeline`. The previous `multi-plan` parallel orchestrator has been retired; its design is preserved at `thoughts/archive/multi-plan-skill-design.md`.
+- **pipeline** — Run a single ticket through some contiguous slice of the seven-stage pipeline (close-world → decompose-proposition → model-obligations → prove-invariants → instantiate-properties → realize-specification → measure-entailment) and always finish with the `explain` closer. Defaults to the full sequence when no scope is given; supports partial runs (entry mid-pipeline, early exit, or both) when the user names entry/exit stages or when `thoughts/` already holds upstream artifacts from a prior run. Renamed from `single-ticket-pipeline`. The previous `multi-plan` parallel orchestrator was retired.
 
 ### orbital-telemetry
 

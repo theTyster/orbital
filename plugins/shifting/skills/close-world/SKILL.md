@@ -15,7 +15,7 @@ argument-hint: "[source code, requirements, domain rules, or any logical system 
 
 **Logical operation:** `close-world` (CWA application) — apply the closed-world assumption to source material, producing a descriptive KB where everything absent is false.
 
-**Pipeline position:** Stage 1 of 7. Primary input: `source_material` (env-provided). Primary output: `thoughts/existing-world.pl`. Downstream: `decompose-proposition` (stage 2) consumes `existing-world.pl`.
+**Pipeline position:** Stage 1 of 7 in `trajectory:pipeline`. Primary input: `source_material` (env-provided). Primary output: `thoughts/existing-world.pl`. Downstream: `decompose-proposition` (stage 2) consumes `existing-world.pl`.
 
 The three ingredients the KB must contain — and nothing else — are:
 

@@ -48,7 +48,7 @@ Pattern 3 detection is the headline addition: without label awareness, a counter
 
 ## Orchestrator contract
 
-Stage 6, terminal. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+Stage 7, terminal. Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
 
 **Orchestrator parameters accepted:** `success_criteria` (e.g., "zero Pattern 3 violations; ≥80% adherence to hypothesis prime"); `halt_condition`. No `refutation_shape_briefing` — the report itself enumerates the refutation surfaces inline.
 

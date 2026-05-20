@@ -55,7 +55,7 @@ The pipeline predecessor of this skill is `model-obligations` (which produces `t
 
 ## Orchestrator contract
 
-Stage 3b. Carrier from predecessor: `thoughts/target-world.pl` (the SOLE input — see §"Reading the input" below). Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
+Stage 4. Carrier from predecessor: `thoughts/target-world.pl` (the SOLE input — see §"Reading the input" below). Orchestration-substrate wire format: `plugins/trajectory/references/orchestration-substrate.md`.
 
 **Orchestrator parameters accepted:** `refutation_shape_briefing` (e.g., "attack vacuous theorems"; "target absent-premise propagations"); `halt_condition`.
 

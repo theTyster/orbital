@@ -4,20 +4,25 @@ Formal logic reasoning pipeline: Prolog translation, hypothesis exploration, Lea
 
 ## Pipeline
 
+Seven staged primitives orchestrated by `trajectory:pipeline`, plus the unstaged `explain` closer that always runs:
+
 ```
-a. close-world             — Translate a codebase into a Prolog knowledge base
-b. decompose-proposition   — Ingest a proposition and create a hypothesis based on the Prolog KB
-c. model-obligations / prove-invariants — Formally verify the hypothesis (loops back to b if unprovable)
-d. instantiate-properties  — Combine logical patterns into TDD tests that verify those patterns
-e. realize-specification   — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
-f. explain                 — Explain whatever was done at any pipeline stage in plain language for non-technical review
+1. close-world             — Translate a codebase into a Prolog knowledge base
+2. decompose-proposition   — Ingest a proposition and create a hypothesis based on the Prolog KB
+3. model-obligations       — Build the target-world model substrate (counterfactuals + obligations)
+4. prove-invariants        — Formally verify each property in Lean4 (adjacent loopback to stage 3 if unprovable)
+5. instantiate-properties  — Combine proven logical patterns into TDD tests that verify those patterns
+6. realize-specification   — Orchestrate sub-agents to drive the TDD suite to green, refactoring against the proofs as the spec
+7. measure-entailment      — Score how well the implementation entails the original proposition (Pattern 3 detection, prescriptive fulfillment, gaps, contradictions, extensions)
+   Closer: explain         — Always-runs plain-language narrator for whatever artifacts exist on disk
 ```
 
-Step c has two alternative proof backends — use Lean for mathematical/abstract proofs, Prolog for model-based verification of relational/structural properties.
+Stage 4 (`prove-invariants`) uses Lean for mathematical/abstract proofs; stage 3 (`model-obligations`) handles model-based verification of relational/structural properties via Prolog. The canonical entry point for users is `trajectory:pipeline`, which now supports modular partial slices.
 
 ## Additional Skills
 
-- **measure-entailment** — Score how well two or more resources adhere to each other using Prolog-based relational analysis
+- **measure-entailment** is also valid stand-alone for ad-hoc resource comparison (spec vs. impl, doc vs. code) with an optional `--prime` source-of-truth — same skill, two valid framings.
+- **disprove-proposition** — Adversarial debate move against a specific claim (Prolog claim id, Lean theorem, failing test, or English proposition). Structurally outside the seven-stage pipeline; invoked by the orchestrator against gate-target descriptors or by the user directly to challenge an artifact.
 
 The Lean toolchain bootstrap skills (`setup-lean-mathlib`, `setup-lean-project`) used to live here; they moved to the `scaffolding` plugin in 5.0.0 so a single `scaffolding:setup` flow owns all marketplace-wide provisioning. Invoke them as `scaffolding:setup-lean-mathlib` and `scaffolding:setup-lean-project`, or just run `/setup` once and let it delegate.
 

@@ -2,18 +2,20 @@
 name: pipeline
 description: >
   Run a single ticket through some contiguous slice of the orbital-shifting
-  pipeline. Defaults to the full end-to-end sequence (close-world →
+  pipeline's seven staged primitives, finishing with `explain` as the
+  always-runs closer. Defaults to the full end-to-end sequence (close-world →
   decompose-proposition → model-obligations → prove-invariants →
-  instantiate-properties → realize-specification → explain) when no scope is
-  given. When the user names an entry or exit stage — or when `thoughts/`
-  already holds upstream artifacts from a prior run — runs only the in-scope
-  stages and still closes with `explain`. Triggers: "run the full pipeline on
-  this ticket", "drive this ticket from close-world through
-  decompose-proposition", "pick up from model-obligations", "just run
-  prove-invariants forward", "continue the pipeline where we left off", "take
-  this ticket from KB to implementation", "stop after decompose-proposition",
-  "only run through prove-invariants", "close-world and decompose only",
-  "single-ticket pipeline".
+  instantiate-properties → realize-specification → measure-entailment, then
+  `explain`) when no scope is given. When the user names an entry or exit
+  stage — or when `thoughts/` already holds upstream artifacts from a prior
+  run — runs only the in-scope stages and still closes with `explain`.
+  Triggers: "run the full pipeline on this ticket", "drive this ticket from
+  close-world through decompose-proposition", "pick up from
+  model-obligations", "just run prove-invariants forward", "continue the
+  pipeline where we left off", "take this ticket from KB to implementation",
+  "stop after decompose-proposition", "only run through prove-invariants",
+  "close-world and decompose only", "run through measure-entailment", "score
+  adherence after realize-specification", "single-ticket pipeline".
   Orchestrator runs at Opus/max effort and delegates each in-scope stage to
   its dedicated skill so the artifact chain stays intact.
 user-invocable: true
@@ -26,23 +28,25 @@ argument-hint: "[ticket: a single sentence or paragraph describing the change, i
 # pipeline
 
 Run **one ticket** through some contiguous slice of the orbital-shifting
-pipeline and finish with a plain-language explanation. The default slice is
-the entire pipeline (stages 1 → 6), but the orchestrator supports partial
-runs in either direction — starting mid-pipeline when upstream artifacts
-already exist, stopping early when the ticket only calls for the first few
-stages, or both. The orchestrator is thin: each in-scope stage is delegated
-to its dedicated skill, which owns its own artifacts and sub-agents. The
-orchestrator's job is to **determine the scope**, sequence the in-scope
-stages, hand the right paths forward, gate on artifact existence,
-parameterise each primitive at startup, read each stage's gate-target
-descriptor, and stop early on hard failures with a partial `explain` instead
-of crashing.
+pipeline's seven staged primitives and finish with the always-runs `explain`
+closer. The default slice is the entire pipeline (stages 1 → 7), but the
+orchestrator supports partial runs in either direction — starting
+mid-pipeline when upstream artifacts already exist, stopping early when the
+ticket only calls for the first few stages, or both. The orchestrator is
+thin: each in-scope stage is delegated to its dedicated skill, which owns
+its own artifacts and sub-agents. The orchestrator's job is to **determine
+the scope**, sequence the in-scope stages, hand the right paths forward,
+gate on artifact existence, parameterise each primitive at startup, read
+each stage's gate-target descriptor, and stop early on hard failures with a
+partial `explain` instead of crashing.
 
 > **Scope.** Exactly one ticket. The slice of the pipeline run on that ticket
-> can be any contiguous subrange of stages 1 → 6 (with stage 6, `explain`,
-> always running as the closing narrator). The parallel multi-enhancement
-> orchestrator previously named `multi-plan` has been retired; this is now
-> the canonical orchestration skill in this plugin.
+> can be any contiguous subrange of stages 1 → 7. `explain` is the unstaged
+> closer — it always runs after the in-scope stages, regardless of scope,
+> producing the human-readable narrative for whatever artifacts exist on
+> disk. The parallel multi-enhancement orchestrator previously named
+> `multi-plan` has been retired; this is now the canonical orchestration
+> skill in this plugin.
 
 **Read first:** `references/orchestration-substrate.md` is the canonical wire
 format for this skill's contract with the seven `shifting` primitives. It
@@ -68,14 +72,16 @@ ticket.
 3. **`start_stage`** — the first stage to run (default: auto-detected, see
    "Pipeline scope" below). Accepts a stage id (`close-world`,
    `decompose-proposition`, `model-obligations`, `prove-invariants`,
-   `instantiate-properties`, `realize-specification`).
-4. **`end_stage`** — the last in-scope stage before `explain` runs (default:
-   `realize-specification`). Same id set as `start_stage`; must be ≥
-   `start_stage` in pipeline order.
+   `instantiate-properties`, `realize-specification`, `measure-entailment`).
+4. **`end_stage`** — the last in-scope stage before the `explain` closer
+   (default: `measure-entailment`). Same id set as `start_stage`; must be ≥
+   `start_stage` in pipeline order. `explain` is not a valid `end_stage` —
+   it is the always-runs closer, not a scope-bounded stage.
 
 If only one of `start_stage` / `end_stage` is given, the other takes its
 default. If neither is given **and** no upstream artifacts exist in
-`thoughts/`, the orchestrator runs the full pipeline (stages 1 → 6).
+`thoughts/`, the orchestrator runs the full pipeline (stages 1 → 7) and
+finishes with the `explain` closer.
 
 ## Orchestration substrate role
 
@@ -108,11 +114,12 @@ hand-off contract — never rename, never relocate.
 |-------|-------|----------------|
 | 1 | `shifting:close-world` | `thoughts/existing-world.pl` |
 | 2 | `shifting:decompose-proposition` | `thoughts/hypothesis.pl` |
-| 3a | `shifting:model-obligations` | `thoughts/target-world.pl`, `thoughts/model_results.pl` |
-| 3b | `shifting:prove-invariants` | `thoughts/lean/Proofs/*.lean`, `thoughts/lean_proof_results.pl` |
-| 4 | `shifting:instantiate-properties` | `thoughts/tests/*` |
-| 5 | `shifting:realize-specification` | source edits + `thoughts/implementation_log.md` |
-| 6 | `shifting:explain` | `thoughts/explanation.md` |
+| 3 | `shifting:model-obligations` | `thoughts/target-world.pl`, `thoughts/model_results.pl` |
+| 4 | `shifting:prove-invariants` | `thoughts/lean/Proofs/*.lean`, `thoughts/lean_proof_results.pl` |
+| 5 | `shifting:instantiate-properties` | `thoughts/tests/*` |
+| 6 | `shifting:realize-specification` | source edits + `thoughts/implementation_log.md` |
+| 7 | `shifting:measure-entailment` | `thoughts/adherence_facts.pl`, `thoughts/adherence_report.md` |
+| Closer | `shifting:explain` | `thoughts/explanation.md` |
 
 Before invoking each stage, verify the upstream artifact exists. After each
 stage, verify its declared output exists before advancing.
@@ -126,9 +133,10 @@ the orchestrator parameters each stage accepts are catalogued in
 ## Pipeline scope
 
 Before any stage runs, the orchestrator picks a contiguous subrange
-`[start_stage … end_stage]` of stages 1 → 6 to execute. Stage 6 (`explain`)
+`[start_stage … end_stage]` of stages 1 → 7 to execute. The `explain` closer
 **always** runs at the end, regardless of scope — it is the presentation
-layer for whatever artifacts exist on disk.
+layer for whatever artifacts exist on disk and is structurally outside the
+seven-stage prescription (see substrate §"The two layers").
 
 ### Resolution order
 
@@ -149,8 +157,8 @@ The orchestrator resolves `start_stage` / `end_stage` in this priority order
    already exist; resuming from model-obligations") and proceed unless the
    user objects.
 3. **Default — full pipeline.** No user signal, no resumable artifacts in
-   `thoughts/`: run stages 1 → 6 in order. This is the historical behaviour
-   and remains the assumption when nothing else is specified.
+   `thoughts/`: run stages 1 → 7 in order, then the `explain` closer. This
+   is the assumption when nothing else is specified.
 
 If the user signal and the on-disk state conflict (e.g., user says "start at
 prove-invariants" but `thoughts/target-world.pl` is missing), halt and ask
@@ -169,17 +177,20 @@ artifact exists **and is non-empty** before invoking the entry stage:
 | `prove-invariants` | `thoughts/target-world.pl` (and `thoughts/model_results.pl` if it was produced) |
 | `instantiate-properties` | `thoughts/lean_proof_results.pl` (and `thoughts/lean/Proofs/`) |
 | `realize-specification` | At least one test file under `thoughts/tests/` |
+| `measure-entailment` | `thoughts/implementation_log.md` + target codebase directory (and `thoughts/hypothesis.pl` for pipeline-terminal mode's label-aware verdicts) |
 
 If a required upstream artifact is missing at entry, halt and ask. The
 orchestrator does not back-fill an earlier stage unless the user confirms.
 
 ### Exit-point semantics
 
-`end_stage` caps the last in-scope stage before `explain`. After `end_stage`
-completes (or is skipped because its gate fails), control passes directly to
-`shifting:explain` against whatever artifacts exist on disk. No stages
-between `end_stage` and `realize-specification` run, even if their inputs
-happen to be present.
+`end_stage` caps the last in-scope staged primitive before the `explain`
+closer runs. After `end_stage` completes (or is skipped because its gate
+fails), control passes directly to `shifting:explain` against whatever
+artifacts exist on disk. No stages between `end_stage` and
+`measure-entailment` run, even if their inputs happen to be present.
+`explain` itself cannot be named as `end_stage` — it is the always-runs
+closer, not a scope-bounded stage.
 
 ### Non-adjacent loopback within a partial scope
 
@@ -202,9 +213,9 @@ test -f .claude/orbital-setup.json
 
 If absent, invoke `scaffolding:setup` once and let it interview the user about
 which backends are needed. The pipeline can run with just the Prolog backend
-(skipping stage 3b); the marker records what was provisioned.
+(skipping stage 4); the marker records what was provisioned.
 
-Stage 3b specifically requires the Lean toolchain. Before stage 3b runs,
+Stage 4 specifically requires the Lean toolchain. Before stage 4 runs,
 consult the marker:
 
 ```sh
@@ -222,8 +233,9 @@ update the marker on completion.
 Each numbered stage below runs **only if it falls within the resolved
 `[start_stage … end_stage]` scope** (see "Pipeline scope" above). Stages
 outside the scope are skipped without invocation; their gate checks are
-still consulted at entry to confirm upstream artifacts exist on disk. Stage
-6 (`explain`) always runs.
+still consulted at entry to confirm upstream artifacts exist on disk. The
+`explain` closer always runs after the in-scope stages — it is structurally
+outside the seven-stage chain.
 
 Maintain one task per in-scope pipeline stage via TaskCreate; mark each
 `in_progress` when you enter it and `completed` when its output artifact is
@@ -257,9 +269,9 @@ v1/v2/... namespace if a re-decomposition is anticipated), `halt_condition`.
 
 Gate: `thoughts/hypothesis.pl` must exist and contain at least one `claim/2`
 fact. If decomposition refuses (e.g., proposition already entailed by KB),
-record that, skip stages 3–5, and run `explain`.
+record that, skip stages 3–7, and run the `explain` closer.
 
-### Stage 3a — model-obligations
+### Stage 3 — model-obligations
 
 Invoke `shifting:model-obligations` with `thoughts/hypothesis.pl` and
 `thoughts/existing-world.pl`. Output: `thoughts/target-world.pl` and
@@ -272,9 +284,9 @@ required obligation, stop and run `explain` — the model has already shown the
 ticket cannot be realized as written. A `gap` verdict is not the same as
 `inconsistent`: surface the gap_reason and decide per run whether the gap
 warrants a non-adjacent loopback to `decompose-proposition` (this skill's
-call, user-gated) or proceeds to stage 3b on the consistent subset.
+call, user-gated) or proceeds to stage 4 on the consistent subset.
 
-### Stage 3b — prove-invariants
+### Stage 4 — prove-invariants
 
 Confirm Lean prerequisites (see above), then invoke
 `shifting:prove-invariants` with `thoughts/target-world.pl`. Output:
@@ -290,7 +302,7 @@ not the primitive's — surface the unprovable verdicts to the user, propose
 the non-adjacent loopback with a one-sentence rationale, and act only on
 confirmation. Default on no answer: finish with `explain`.
 
-### Stage 4 — instantiate-properties
+### Stage 5 — instantiate-properties
 
 Invoke `shifting:instantiate-properties` with the target codebase
 directory. Output: skipped tests under `thoughts/tests/`.
@@ -300,9 +312,9 @@ Orchestrator parameters to pass: `refutation_shape_briefing`, `halt_condition`.
 Gate: at least one test file must exist under `thoughts/tests/`. If empty,
 record and proceed to `explain` (no tests means nothing for stage 5 to drive).
 
-### Stage 5 — realize-specification
+### Stage 6 — realize-specification
 
-For each test file produced in stage 4, invoke
+For each test file produced in stage 5, invoke
 `shifting:realize-specification` with that test file path and the target
 codebase directory. Run them sequentially — `realize-specification` already
 manages its own sub-agents and is not safe to fan out.
@@ -312,22 +324,41 @@ Orchestrator parameters to pass: `refutation_shape_briefing`, `halt_condition`,
 
 Gate: after each invocation, check `thoughts/implementation_log.md` and the
 suite-runner digest. If `thoughts/implementation_blocked.md` appears, stop the
-loop and proceed to `explain` with the blocked state included.
+loop and proceed to the `explain` closer with the blocked state included.
 
-### Stage 6 — explain
+### Stage 7 — measure-entailment
+
+Invoke `shifting:measure-entailment` against the implemented codebase using
+`thoughts/implementation_log.md` (from `realize-specification`) as the
+carrier, with `thoughts/hypothesis.pl` directly loaded for label-aware
+verdicts (Pattern 3 detection, prescriptive fulfillment / negation
+violations). Output: `thoughts/adherence_facts.pl` and
+`thoughts/adherence_report.md`.
+
+Orchestrator parameters to pass: `success_criteria` (e.g., "zero Pattern 3
+violations; all prescriptive claims fulfilled"), `halt_condition`.
+
+Gate: `thoughts/adherence_report.md` must exist. The verdict is data, not a
+hard halt — even a report showing many violations is a successful Stage 7
+output; the orchestrator passes the report forward to the `explain` closer
+without re-interpreting the verdicts. measure-entailment is terminal: it
+has no adjacent loopback target (gaps surface as report verdicts, not
+recovery signals).
+
+### Closer — explain
 
 Invoke `shifting:explain` with the target codebase / `thoughts/`
-directory. This stage **always runs**, even on partial pipelines — it is the
-presentation layer for whatever artifacts exist. Output:
-`thoughts/explanation.md`.
+directory. The closer **always runs**, even on partial pipelines and even
+when staged primitives errored out — it is the presentation layer for
+whatever artifacts exist. Output: `thoughts/explanation.md`.
 
-`explain` is unstaged with respect to the disprove-gate contract — it is the
-narrator, not a primitive in the descriptor chain. Pass no orchestrator
+`explain` is unstaged with respect to the disprove-gate contract — it is
+the narrator, not a primitive in the descriptor chain. Pass no orchestrator
 parameters; it reads what is on disk.
 
 After `explain` completes, summarize for the user in one short paragraph: the
-ticket as understood, the furthest stage reached, and the path to
-`thoughts/explanation.md`.
+ticket as understood, the furthest stage reached, the headline adherence
+verdict if Stage 7 ran, and the path to `thoughts/explanation.md`.
 
 ## Disprove gating
 
@@ -434,8 +465,9 @@ report.
 - **Missing upstream artifact at entry** → see "Pipeline scope → Entry-point
   gating" above. Short version: halt and ask; never silently back-fill.
 - **Missing upstream artifact mid-run** → stop, run `explain`, report the gap.
-- **Hard refutation** at stage 3a or 3b → stop, run `explain`, surface the
-  refuted obligations / unprovable verdicts to the user as the headline.
+- **Hard refutation** at stage 3 or 4 → stop, run the `explain` closer,
+  surface the refuted obligations / unprovable verdicts to the user as the
+  headline.
 - **Sub-agent or skill error** → record the stage and error, run `explain`
   against partial state, then surface the error.
 - **Adjacent loopback** (e.g., `prove-invariants` → `model-obligations`,
