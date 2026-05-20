@@ -1,7 +1,7 @@
 ---
 name: model-obligations
 description: >
-  Use this skill to construct the target-world model that Lean will later prove against — "build the target world", "apply counterfactuals and obligations", "construct the model substrate", "derive model verdicts". Reads thoughts/existing-world.pl and thoughts/hypothesis.pl, applies counterfactual negations and prescriptive obligations, and emits thoughts/target-world.pl plus thoughts/model_results.pl.
+  Stage 3 of `trajectory:pipeline` (the seven-stage pipeline). Reads `thoughts/existing-world.pl` and `thoughts/hypothesis.pl`, applies counterfactual negations and prescriptive obligations, and emits `thoughts/target-world.pl` (the substrate Lean later proves against) plus `thoughts/model_results.pl` (per-property verdicts). The canonical entry point is `trajectory:pipeline`, which dispatches here when stage 3 is in scope. Invoke this skill directly only when re-running model construction against an existing hypothesis — typically an adjacent loopback from `prove-invariants` — or when the user asks to "rebuild the target world from the current hypothesis without re-decomposing."
 user-invocable: true
 context: fork
 agent: general-purpose

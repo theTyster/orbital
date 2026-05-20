@@ -1,7 +1,7 @@
 ---
 name: explain
 description: >
-  Cross-cutting support resource — produces a plain-language explanation of orbital-shifting work for non-technical review. Triggers: "explain what we did", "explain the proof", "summarize for my PM", "write this up for a stakeholder". NOT a pipeline stage and has no place in the linear flow; invoke it at any time, against whatever artifacts already exist. Cited by `prove-invariants` as a downstream readability resource, but never consumed by any other skill.
+  Cross-cutting support resource for non-technical review — produces a plain-language narrative of orbital-shifting work. NOT a pipeline stage and has no position in the linear flow; invoke at any time, against whatever artifacts exist on disk. Within a pipeline run, `trajectory:pipeline` invokes this skill as its closing narrator (always runs, regardless of scope). Invoke directly outside an orchestrated context when a stakeholder, PM, or reviewer needs to understand the work without reading Prolog or Lean — "explain what we did", "explain the proof", "summarize for my PM", "write this up for a stakeholder". Cited by `prove-invariants` as a downstream readability resource, but never consumed by any other skill.
 user-invocable: true
 context: fork
 agent: general-purpose

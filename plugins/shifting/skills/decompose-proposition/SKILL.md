@@ -1,7 +1,7 @@
 ---
 name: decompose-proposition
 description: >
-  Explore a proposition against a Prolog KB through a counterfactual lens: identify which existing-world KB facts would need to be false, and which new facts would need to become provable, for the proposition to hold. Takes an existing-world `.pl` file and a proposition; decomposes it into falsifiable sub-hypotheses and emits `thoughts/hypothesis.pl` — a Prolog facts file carrying labeled claims (descriptive / counterfactual / prescriptive), query evidence, and formal-property sketches.
+  Stage 2 of `trajectory:pipeline` (the seven-stage pipeline). Reads `thoughts/existing-world.pl` and a proposition, then explores the proposition through a counterfactual lens — which existing-world facts would need to be false, and which new facts would need to become provable, for the proposition to hold. Emits `thoughts/hypothesis.pl`: labeled claims (descriptive / counterfactual / prescriptive), query evidence, and formal-property sketches. The canonical entry point is `trajectory:pipeline`, which dispatches here when stage 2 is in scope. Invoke this skill directly only to refine a hypothesis against an existing KB without running model-obligations or later stages — e.g., "re-decompose this proposition against the existing KB", "rebuild hypothesis.pl from this new proposition".
 user-invocable: true
 context: fork
 agent: general-purpose

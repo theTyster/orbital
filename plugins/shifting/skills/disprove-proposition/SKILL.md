@@ -1,7 +1,7 @@
 ---
 name: disprove-proposition
 description: >
-  Open an adversarial dialog against a specific claim — a Prolog claim ID, a Lean theorem, a failing test, or an English proposition — and search for counter-evidence within budget. Not a pipeline stage; a debate move available at any point. Emits `thoughts/disproof_results.pl` with one of three verdicts: `refuted` (witness deposited to `thoughts/counterexamples.pl`), `inconclusive` (partial evidence recorded), or `abstained` (no progress within budget; reason recorded). Triggers on user phrases like "disprove this", "try to refute", "find a counterexample for", "construct counter-evidence", "open an adversarial dialog about", "challenge this claim".
+  Adversarial debate move — NOT a pipeline stage. Opens an adversarial dialog against a specific claim (a Prolog `claim/2` id, a Lean theorem, a failing test, or an English proposition) and searches for counter-evidence within budget. Emits `thoughts/disproof_results.pl` with one of three verdicts: `refuted` (witness deposited to `thoughts/counterexamples.pl`), `inconclusive` (partial evidence recorded), or `abstained` (no progress within budget; reason recorded). Within an active pipeline run, `trajectory:pipeline` is the only legal invoker — it decides when to attack a gate-target descriptor. Invoke this skill directly only outside an orchestrated context, when the user asks to "disprove this", "try to refute", "find a counterexample for", "construct counter-evidence", "open an adversarial dialog about", or "challenge this claim" — typically against an artifact from a prior run.
 user-invocable: true
 context: fork
 agent: general-purpose
