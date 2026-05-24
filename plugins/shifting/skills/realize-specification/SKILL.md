@@ -23,7 +23,7 @@ The tests and proofs are the specification. Refactoring existing code to satisfy
 
 ## Inputs
 
-**Carrier-only contract.** The sole carrier from the predecessor (`instantiate-properties`) is `thoughts/tests/` — the test file plus the `manifest.pl` that accompanies it. Each test carries `test_category(projection | behavioral_claim)` plus a carried-forward ontology label and (for projections) negation-provenance annotation. Predicates from `hypothesis.pl`, `lean_proof_results.pl`, and `model_results.pl` are *transitively cited* via the test-comment tags and the manifest's `cites_artifact/2` records — the `realize-test-briefer` sub-agent follows those references when assembling each per-test briefing. The orchestrator does not read upstream `.pl` files directly.
+**Carrier-only contract.** The sole carrier from the predecessor (`instantiate-properties`) is `thoughts/tests/` — the test file plus the `manifest.pl` that accompanies it (**always emitted, even on the happy path** — schema at `../../references/pipeline-schema/manifest.md`; producer contract at `../instantiate-properties/SKILL.md` § "10. Emit the Manifest"). Each test carries `test_category(projection | behavioral_claim)` plus a carried-forward ontology label and (for projections) negation-provenance annotation. Predicates from `hypothesis.pl`, `lean_proof_results.pl`, and `model_results.pl` are *transitively cited* via the test-comment tags and the manifest's `descends_from/2` records — the `realize-test-briefer` sub-agent follows those references when assembling each per-test briefing. The orchestrator does not read upstream `.pl` files directly.
 
 - **Carrier**: `thoughts/tests/{file}` + `thoughts/tests/manifest.pl` — the skipped TDD suite from `instantiate-properties`.
 - **Stage-0 env**: `target_codebase_dir` (orchestrator-supplied) — the directory whose source files will be modified. There is no default; if the caller did not provide it, halt and ask.
@@ -105,11 +105,31 @@ Every sub-agent delegation in this skill — to Explore, the realize-* trio, or 
 
 ## Process
 
-### Stage 0 — Codebase survey + counterfactual locator
+### Stage 0 — Pre-flight + codebase survey + counterfactual locator
 
-Two read-only sub-agents run in parallel — `Agent(Explore)` writes a structured `survey.md` (code layout, existing modules, exact project commands, adjacent constraints, test-runner notes, behavioral-contract infrastructure if any) and `Agent(realize-counterfactual-scanner)` in `initial` mode emits the `counterfactual_locator.json` / `.md` table.
+**Pre-flight: carrier check.** Before any sub-agent dispatch, verify the stage-5→stage-6 carrier exists and is well-formed:
 
-Verbatim sub-agent briefs and the survey-section header contract live in **`references/stage0-survey.md`**. Skip 0b if `hypothesis.pl` does not exist (a behavioral-only test file). The orchestrator records only the paths and counts; the contents stay in the scratch dir.
+1. `thoughts/tests/manifest.pl` MUST exist.
+2. It MUST contain at least one `descends_from/2` row.
+
+```bash
+test -f thoughts/tests/manifest.pl || {
+  echo "halt: thoughts/tests/manifest.pl missing — producer contract violated. See instantiate-properties § '10. Emit the Manifest' and references/pipeline-schema/manifest.md."
+  exit 1
+}
+swipl --on-warning=status --on-error=status \
+  -g "consult('thoughts/tests/manifest.pl'), (clause(descends_from(_,_),_) -> halt(0) ; halt(2))" \
+  -t "halt(1)" 2>&1 || {
+  echo "halt: thoughts/tests/manifest.pl failed to load or contains no descends_from/2 rows. Producer must emit at least one row naming lean_proof_results.pl. See instantiate-properties § '10. Emit the Manifest' and references/pipeline-schema/manifest.md."
+  exit 1
+}
+```
+
+If either check fails, halt loud with attribution to `instantiate-properties` § "10. Emit the Manifest". Do NOT attempt to synthesize a manifest from test-comment tags — the missing or empty carrier is a producer-side bug, not a recoverable consumer-side condition. Schema: `../../references/pipeline-schema/manifest.md`. This pre-flight converts the previous silent stage-6 halt (which surfaced deep inside the parallel sub-agent dispatch below) into a single loud halt with clear attribution.
+
+**Parallel sub-agent dispatch.** After the pre-flight passes, two read-only sub-agents run in parallel — `Agent(Explore)` writes a structured `survey.md` (code layout, existing modules, exact project commands, adjacent constraints, test-runner notes, behavioral-contract infrastructure if any) and `Agent(realize-counterfactual-scanner)` in `initial` mode emits the `counterfactual_locator.json` / `.md` table.
+
+Verbatim sub-agent briefs and the survey-section header contract live in **`references/stage0-survey.md`**. Skip the counterfactual locator if `hypothesis.pl` does not exist (a behavioral-only test file). The orchestrator records only the paths and counts; the contents stay in the scratch dir.
 
 ### Stage 1 — Baseline (`Agent(realize-suite-runner)` in `baseline` mode)
 

@@ -1,8 +1,8 @@
-# Stage 0 — codebase survey + counterfactual locator briefings
+# Stage 0 sub-agent briefs — codebase survey + counterfactual locator
 
-Two read-only sub-agents run in parallel. Both write to `thoughts/.realize_scratch/`.
+Two read-only sub-agents run in parallel after the SKILL's Stage 0 pre-flight (carrier-check) passes. Both write to `thoughts/.realize_scratch/`. The pre-flight itself is defined in `../SKILL.md` § "Stage 0 — Pre-flight + codebase survey + counterfactual locator" and is not duplicated here.
 
-## Stage 0a — `Agent(Explore)` brief
+## Survey brief — `Agent(Explore)`
 
 > Survey this codebase to prepare for a TDD implementation pass against a generated test file at {path}. Write your findings to `thoughts/.realize_scratch/survey.md` as a structured markdown document with these sections (use these exact headers — the briefer agent will pick slices by header):
 >
@@ -15,7 +15,7 @@ Two read-only sub-agents run in parallel. Both write to `thoughts/.realize_scrat
 >
 > Return only the path you wrote to and a one-paragraph summary. Do not edit any source.
 
-## Stage 0b — `Agent(realize-counterfactual-scanner)` in `initial` mode brief
+## Counterfactual-locator brief — `Agent(realize-counterfactual-scanner)` in `initial` mode
 
 > Build the counterfactual locator table for this realize-specification run.
 >
@@ -26,6 +26,6 @@ Two read-only sub-agents run in parallel. Both write to `thoughts/.realize_scrat
 >
 > Emit `counterfactual_locator.json` and `counterfactual_locator.md`. Return counts and path.
 
-If `hypothesis.pl` does not exist (a behavioral-only test file), skip 0b and note it in the run log.
+If `hypothesis.pl` does not exist (a behavioral-only test file), skip the counterfactual-locator brief and note it in the run log.
 
 The orchestrator records only the paths and counts. The contents stay in the scratch dir.
