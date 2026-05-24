@@ -37,7 +37,7 @@ descends_from('test_admin_surface.py', 'thoughts/target-world.pl').
 ### 2. `upstream_gap(EmittingStage, GapDescriptor, RecoveryHint)` — optional
 
 Gap-emission sidecar — unchanged from the existing
-`instantiate-properties` line-59 contract. Empty when the producer run
+`instantiate-properties` contract. Empty when the producer run
 is clean. See `../../skills/instantiate-properties/SKILL.md` §
 "Orchestrator contract → Upstream gap emissions" for the full
 catalogue.
