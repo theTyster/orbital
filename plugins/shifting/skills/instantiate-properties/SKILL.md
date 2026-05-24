@@ -56,7 +56,7 @@ Stage 5. Carrier: `lean_proof_results.pl` + `thoughts/lean/Proofs/`. Orchestrati
 - `upstream_gap(instantiate_properties, gap_descriptor(schema_insufficient, claim(ClaimId, extraneous_counterfactual)), recovery_hint(decompose_proposition, refutation_shape_briefing([prune_extraneous_counterfactual])))` — when `necessity_lemma_status(_, _, extraneous)` shows the hypothesis was over-specified. (Replaces the prior LOOPBACK SIGNAL prose at §7b for the extraneous case.)
 - `upstream_gap(instantiate_properties, gap_descriptor(schema_insufficient, claim(ClaimId, insufficient_counterfactuals)), recovery_hint(decompose_proposition, refutation_shape_briefing([enumerate_more_counterfactuals])))` — when an INSUFFICIENT conditional proof needs more counterfactual claims.
 
-Emit gap facts into `thoughts/tests/manifest.pl` (the carrier-widened manifest accompanying the tests directory). The orchestrator decides per gap whether to honor the recovery_hint.
+Append `upstream_gap/3` facts to `thoughts/tests/manifest.pl`. The manifest is emitted unconditionally at the close of stage 5 (see Step 10 "Emit the manifest"); gap rows are appended *after* the citation block when gaps surface. Schema: `../../references/pipeline-schema/manifest.md`. The orchestrator decides per gap whether to honor the recovery_hint.
 
 ## Process
 
@@ -181,6 +181,36 @@ Two distinct outputs, kept separate (different audiences):
 
 Write to `thoughts/tests/{filename}`. **Emit real framework tests whenever `target_codebase_dir` is set**; pseudotest format is the fallback for unset target or no detectable test infrastructure.
 
+### 10. Emit the Manifest
+
+**Always run this step at the close of every invocation, including clean runs with zero upstream gaps.** The manifest is the load-bearing carrier signal that stage 5 completed; `realize-specification` halts loud when it is missing. Schema: `../../references/pipeline-schema/manifest.md`.
+
+Write `thoughts/tests/manifest.pl` containing two record families, in this order:
+
+1. **Citation records** — one `descends_from(TestFileBasename, ArtifactPath)` row per `.pl` artifact Step 1 actually consulted. The `pl-fact-extractor` briefing's `pl_paths` field is the natural source — no new discovery work needed. At minimum: a row for `lean_proof_results.pl` (the mandatory stage-5 carrier, always read).
+2. **Gap records** — any `upstream_gap/3` facts that surfaced earlier in the run, appended *after* the citation block. Empty on the happy path.
+
+Example shape for a clean happy-path run with both `lean_proof_results.pl` and `hypothesis.pl` consulted:
+
+```prolog
+% thoughts/tests/manifest.pl
+% Emitted by instantiate-properties at the close of stage 5.
+% Schema: plugins/shifting/references/pipeline-schema/manifest.md
+
+descends_from('test_<basename>.py', 'thoughts/lean_proof_results.pl').
+descends_from('test_<basename>.py', 'thoughts/hypothesis.pl').
+
+% No upstream gaps this run.
+```
+
+Use the `Write` tool directly — no agent delegation needed for a short Prolog file. After writing, smoke-test the load:
+
+```bash
+swipl --on-warning=status --on-error=status -g "consult('thoughts/tests/manifest.pl'), halt" -t "halt(1)"
+```
+
+Halt loud if the load fails. The carrier MUST be valid Prolog or the consumer's Stage-0 pre-flight cannot read it.
+
 ## Output Format
 
 The full test-file template (header block, per-test comment-block schema, phase ordering, framework-specific skip idioms, `LOOPBACK SIGNALS` and `COVERAGE GAPS` blocks, filename conventions, pseudotest fallback) lives in **`references/test-templates.md`**. Load it before writing.
@@ -193,7 +223,10 @@ Three contracts the templates enforce:
 
 ## Output
 
-One test file at `thoughts/tests/{filename}` (create the directory if it doesn't exist; language-appropriate filename per `references/test-templates.md`).
+Two artifacts under `thoughts/tests/` (create the directory if it doesn't exist):
+
+- **Test file** at `thoughts/tests/{filename}` — language-appropriate filename per `references/test-templates.md`.
+- **Manifest** at `thoughts/tests/manifest.pl` — emitted unconditionally per Step 10; schema at `../../references/pipeline-schema/manifest.md`. Carries the `descends_from/2` citation chain plus any `upstream_gap/3` records.
 
 Report breakdown:
 
