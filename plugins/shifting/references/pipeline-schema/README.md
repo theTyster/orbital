@@ -27,6 +27,7 @@ Every arrow labelled with an artifact is a schema boundary.
 | [`target-world.md`](target-world.md) | `thoughts/target-world.pl` | `model-obligations` | `prove-invariants` |
 | [`model-results.md`](model-results.md) | `thoughts/model_results.pl` | `model-obligations` | `instantiate-properties` |
 | [`lean-proof-results.md`](lean-proof-results.md) | `thoughts/lean_proof_results.pl` | `prove-invariants` | `instantiate-properties` |
+| [`manifest.md`](manifest.md) | `thoughts/tests/manifest.pl` | `instantiate-properties` | `realize-specification` |
 | [`cross-skill-map.md`](cross-skill-map.md) | — | — | — |
 
 Start with `cross-skill-map.md` for the quick name-translation table across artifacts, then drill into the specific file you're emitting or consuming.
