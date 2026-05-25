@@ -33,7 +33,7 @@ The orchestrator passes:
 - `failure_output_path` — path to a file containing the captured failure output from the targeted test running unskipped
 - `target_codebase_dir`
 
-Halt and ask if any required input is missing. Never invent a path. In particular, if `manifest_path` is missing or the file contains no `descends_from/2` row for `test_file`'s basename, return `status: blocked` — that is a producer-side contract violation, not a recoverable consumer-side condition.
+Halt and ask if any required input is missing. Never invent a path. In particular, if `manifest_path` is missing, fails to load, or contains no `descends_from/2` row for `test_file`'s basename, return `status: blocked` — that is a producer-side contract violation, not a recoverable consumer-side condition.
 
 ## Discovery Discipline
 
@@ -44,16 +44,23 @@ Use the same Prolog query discipline as `agent-of-questions` — query through `
 The manifest is the authoritative carrier from `instantiate-properties`; consult it first to learn which upstream `.pl` files this test descends from. Test-comment tags name *claims* / *theorems* / *fixtures*; the manifest names the *files* those references resolve into.
 
 ```bash
-# Get the descends_from set for this test's basename
+# Get the descends_from set for this test's basename.
+# Exit 0 = at least one row matched (paths printed to stdout, one per line).
+# Exit non-zero = producer-side contract violation: no row for this basename,
+#                 manifest failed to load, or any other consult/query error.
+#                 All non-zero cases route to status: blocked.
+# (The missing-file case never reaches here — the orchestrator's Stage-0
+#  pre-flight halts loud on missing manifest before this agent is dispatched.)
 TEST_BASENAME="$(basename '<test_file>')"
 swipl --on-warning=status --on-error=status \
   -g "consult('<manifest_path>'), \
-      forall(descends_from('${TEST_BASENAME}', P), format('~w~n', [P])), \
-      halt" \
+      ( clause(descends_from('${TEST_BASENAME}', _), _) \
+        -> forall(descends_from('${TEST_BASENAME}', P), format('~w~n', [P])), halt(0) \
+        ;  halt(2) )" \
   -t "halt(1)" 2>&1
 ```
 
-Use the returned paths (and ONLY those paths) for the queries below. If no rows resolve, return `status: blocked` per the §"Inputs" contract.
+Use the printed paths (and ONLY those paths) for the queries below. On any non-zero exit, return `status: blocked` per the §"Inputs" contract — the orchestrator will treat it as a Stage 4 loopback signal back to `instantiate-properties`.
 
 ### Step 2 — Query the resolved upstream artifacts
 
