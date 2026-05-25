@@ -101,7 +101,7 @@ Test-suite runner. Runs the project's full test command, compares the result to 
 
 ### realize-test-briefer
 
-Per-test briefing builder. Reads one skipped test plus the Prolog artifacts it cites (`lean_proof_results.pl`, `hypothesis.pl`, optionally `model_results.pl`, `existing-world.pl`, `target-world.pl`) and emits a self-contained briefing file ready for an implementation sub-agent. Routes the briefing to one of three shapes — addition, removal, behavioral — based on `test_category` and the cited claim's `claim_label`. Read-only against the codebase; writes only into the realize-specification scratch directory.
+Per-test briefing builder. Reads one skipped test plus the stage-5 manifest at `manifest_path` (typically `thoughts/tests/manifest.pl`), resolving its `descends_from/2` rows to the cited `.pl` set — `lean_proof_results.pl`, `hypothesis.pl`, optionally `model_results.pl`, `existing-world.pl`, `target-world.pl` — then queries the resolved artifacts for the facts the briefing needs and emits a self-contained briefing file ready for an implementation sub-agent. Routes the briefing to one of three shapes — addition, removal, behavioral — based on `test_category` and the cited claim's `claim_label`. Read-only against the codebase; writes only into the realize-specification scratch directory.
 
 **Used by**: realize-specification
 

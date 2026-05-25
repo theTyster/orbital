@@ -29,23 +29,41 @@ The orchestrator passes:
 - `scratch_dir` — usually `thoughts/.realize_scratch/`
 - `survey_path` — path to the Stage 0 survey markdown (codebase map, project commands, behavioral-contract infrastructure)
 - `counterfactual_locator_path` — path to the counterfactual locator table (JSON or markdown) emitted by the counterfactual scanner
-- `prolog_paths` — paths to: `lean_proof_results.pl` (or `model_results.pl`), `hypothesis.pl`, and any domain-vocabulary `.pl` files
+- `manifest_path` — path to the stage-5 manifest, typically `thoughts/tests/manifest.pl`. Carries the `descends_from(TestFileBasename, ArtifactPath)` rows you use to resolve which upstream `.pl` files this specific test cites. Schema: `../../references/pipeline-schema/manifest.md`.
 - `failure_output_path` — path to a file containing the captured failure output from the targeted test running unskipped
 - `target_codebase_dir`
 
-Halt and ask if any required input is missing. Never invent a path.
+Halt and ask if any required input is missing. Never invent a path. In particular, if `manifest_path` is missing or the file contains no `descends_from/2` row for `test_file`'s basename, return `status: blocked` — that is a producer-side contract violation, not a recoverable consumer-side condition.
 
 ## Discovery Discipline
 
 Use the same Prolog query discipline as `agent-of-questions` — query through `swipl` rather than reading `.pl` files directly when the goal is to extract specific facts.
 
+### Step 1 — Resolve citations via the manifest
+
+The manifest is the authoritative carrier from `instantiate-properties`; consult it first to learn which upstream `.pl` files this test descends from. Test-comment tags name *claims* / *theorems* / *fixtures*; the manifest names the *files* those references resolve into.
+
+```bash
+# Get the descends_from set for this test's basename
+TEST_BASENAME="$(basename '<test_file>')"
+swipl --on-warning=status --on-error=status \
+  -g "consult('<manifest_path>'), \
+      forall(descends_from('${TEST_BASENAME}', P), format('~w~n', [P])), \
+      halt" \
+  -t "halt(1)" 2>&1
+```
+
+Use the returned paths (and ONLY those paths) for the queries below. If no rows resolve, return `status: blocked` per the §"Inputs" contract.
+
+### Step 2 — Query the resolved upstream artifacts
+
 ```bash
 PROLOG="<path-to-shared-prolog-dir>"
 
-# Inspect the cited theorem
+# Inspect the cited theorem (only if lean_proof_results.pl is in the descends_from set)
 swipl -g "use_module('${PROLOG}/introspect'), kb_describe(theorem_verdict/2)" -t halt lean_proof_results.pl
 
-# Resolve the cited claim's label
+# Resolve the cited claim's label (only if hypothesis.pl is in the descends_from set)
 swipl -g "use_module('${PROLOG}/introspect'), kb_find(<ClaimId>)" -t halt hypothesis.pl
 
 # Pull the claim_label
@@ -54,7 +72,7 @@ swipl -g "claim_label(<ClaimId>, L), format('~w~n', [L])" -t halt hypothesis.pl
 # Pull negation_provenance if claim_label is counterfactual
 swipl -g "negation_provenance(<ClaimId>, P), format('~w~n', [P])" -t halt hypothesis.pl
 
-# Domain vocabulary (named entities the test references)
+# Domain vocabulary (named entities the test references) — only if existing-world.pl / target-world.pl are in the descends_from set
 swipl -g "use_module('${PROLOG}/introspect'), kb_find(<entity>)" -t halt existing-world.pl target-world.pl
 ```
 

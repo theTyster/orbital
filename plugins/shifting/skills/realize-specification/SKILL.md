@@ -160,12 +160,11 @@ For each skipped test in the generated file, top-to-bottom (order is load-bearin
 > scratch_dir: `thoughts/.realize_scratch/`
 > survey_path: `thoughts/.realize_scratch/survey.md`
 > counterfactual_locator_path: `thoughts/.realize_scratch/counterfactual_locator.json`
-> prolog_paths:
->   - `thoughts/lean_proof_results.pl` (or `thoughts/model_results.pl`)
->   - `thoughts/hypothesis.pl`
->   - any domain `.pl` files
+> manifest_path: `thoughts/tests/manifest.pl`
 > failure_output_path: (filled in after 2c — see below)
 > target_codebase_dir: {dir}
+
+The agent reads `manifest.pl`'s `descends_from/2` rows for `test_file`'s basename to discover which upstream `.pl` files this test cites. The orchestrator no longer hard-codes a `prolog_paths` list — the manifest is the authoritative source.
 
 The briefer returns `briefing_path`, `briefing_shape`, `test_category`, `claim_label`, `negation_provenance`, `notes`. If it returns `status: blocked`, treat as Stage 4 loopback.
 
