@@ -39,7 +39,7 @@ fi
 # CANONICAL SENTINEL: ps -p <pid> -o command= will show exactly
 #   sleep 2147483647
 # kill-pid.sh §ps-command-check (Task 3) and diagnose-state.sh's
-# is_sleep_infinity helper (Task 6) MUST grep for the string above,
+# is_canonical_sentinel helper (Task 6) MUST grep for the string above,
 # NOT 'sleep infinity'.
 sleep 2147483647 </dev/null >/dev/null 2>&1 &
 PID=$!
