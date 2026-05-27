@@ -1,8 +1,8 @@
 # mission-control
 
-Cross-session communication substrate. A central mind-map session ("Mission
-Control") and N project sessions ("Astronauts") run strict-turn-taking
-conversations through per-pair state directories on a single machine.
+Cross-session communication substrate. A central Mission Control session and
+N project sessions ("Astronauts") run strict-turn-taking conversations through
+per-pair state directories on a single machine.
 The plugin's contribution is the *protocol* — a small, fail-loud state
 machine using Unix PIDs as turn-handoff semaphores and markdown files as
 the message payload.
@@ -11,10 +11,10 @@ See `docs/2026-05-25-design.md` for the full design.
 
 ## Commands
 
-- **`/mission-control:initialize <peer> "<message>"`** — Mind-map side only. Bootstrap a new pair; the message is the operator's handshake content.
+- **`/mission-control:initialize <peer> "<message>"`** — Mission Control side only. Bootstrap a new pair; the message is the operator's handshake content.
 - **`/mission-control:launch-sequence`** — Peer side only. Complete the handshake. Requires the plugin to be enabled in the peer project.
 - **`/mission-control:status`** — Either side. Read-only diagnostic of all active pairs.
-- **`/mission-control:end-mission [--purge]`** — Mind-map side only. Archive (default) or purge (`--purge`) all pairs.
+- **`/mission-control:end-mission [--purge]`** — Mission Control side only. Archive (default) or purge (`--purge`) all pairs.
 
 ## Skill
 
@@ -29,14 +29,33 @@ See `docs/2026-05-25-design.md` for the full design.
 ## Setup
 
 Both sides must have the plugin enabled in their `.claude/settings.json`.
-There is no manual configuration: the slash commands create the state
-directories on first invocation.
+The slash commands create the state directories on first invocation.
+
+### Channel state location
+
+The Mission Control side stores per-channel state under
+`${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/`. The default is
+`$HOME/.mission-control/`. To use a different location, either set
+`MISSION_CONTROL_ROOT` in your shell rc:
+
+```bash
+export MISSION_CONTROL_ROOT="/path/to/your/dir"
+```
+
+or symlink the default to your preferred location:
+
+```bash
+ln -s /path/to/your/dir ~/.mission-control
+```
+
+The Astronaut side always stores its single state file at
+`./thoughts/.mission-control-state.json` relative to the project root.
 
 ## Naming (NASA-coherent)
 
 | Term | Role |
 |---|---|
-| Mission Control | The mind-map session |
+| Mission Control | The central coordinator session |
 | Astronaut | A peer project session |
 | FlightDirector | The skill running the turn-loop |
 | Mission | One pairing arc (`initialize` → `end-mission`) |

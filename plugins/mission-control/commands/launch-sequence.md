@@ -12,7 +12,7 @@ after Mission Control has invoked `/mission-control:initialize <peer> "<message>
 The channel slug is derived from the basename of the current working directory.
 This assumes the operator runs the command from the project root — if not, the
 pre-flight will catch the mismatch when
-`~/Documents/mind-map/.mission-control/<slug>/` does not exist. If the operator
+`${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/<slug>/` does not exist. If the operator
 wants a different slug (e.g., because the project directory name differs from
 what Mission Control used), surface and ask before proceeding.
 
@@ -27,12 +27,12 @@ Peer=$(printf '%s' "$peer" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
 Derive canonical paths up front:
 
 ```bash
-mm_channel_dir="$HOME/Documents/mind-map/.mission-control/$peer"
+mc_channel_dir="${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/$peer"
 peer_state="./thoughts/.mission-control-state.json"
 to_mc_md="./thoughts/to-MissionControl.md"
 from_mc_md="./thoughts/from-MissionControl.md"
-mm_to_peer_md="$mm_channel_dir/to-${Peer}.md"
-mm_from_peer_md="$mm_channel_dir/from-${Peer}.md"
+mc_to_peer_md="$mc_channel_dir/to-${Peer}.md"
+mc_from_peer_md="$mc_channel_dir/from-${Peer}.md"
 ```
 
 ## Pre-flight
@@ -59,12 +59,12 @@ if [[ -f "$peer_state" ]]; then
 fi
 ```
 
-**Refusal 2 — missing Mission Control bootstrap.** If the mind-map channel
+**Refusal 2 — missing Mission Control bootstrap.** If the Mission Control channel
 directory does not exist, Mission Control has not yet run
 `/mission-control:initialize`:
 
 ```bash
-if [[ ! -d "$mm_channel_dir" ]]; then
+if [[ ! -d "$mc_channel_dir" ]]; then
   echo "Mission Control has not initialized channel '$peer' yet (commands/launch-sequence.md §pre-flight) — ask the operator to run /mission-control:initialize $peer \"<message>\" first" >&2
   exit 1
 fi
@@ -91,20 +91,20 @@ cat > "$to_mc_md" <<EOF
 EOF
 ```
 
-### Step 3 — Symlink peer's outbound into mind-map's channel directory
+### Step 3 — Symlink peer's outbound into Mission Control's channel directory
 
-This lets mind-map read our outbound as `from-<Peer>.md`:
+This lets Mission Control read our outbound as `from-<Peer>.md`:
 
 ```bash
-ln -sf "$(pwd)/thoughts/to-MissionControl.md" "$mm_from_peer_md"
+ln -sf "$(pwd)/thoughts/to-MissionControl.md" "$mc_from_peer_md"
 ```
 
-### Step 4 — Symlink mind-map's outbound into our project
+### Step 4 — Symlink Mission Control's outbound into our project
 
-This lets us read mind-map's outbound as `from-MissionControl.md`:
+This lets us read Mission Control's outbound as `from-MissionControl.md`:
 
 ```bash
-ln -sf "$mm_to_peer_md" "$from_mc_md"
+ln -sf "$mc_to_peer_md" "$from_mc_md"
 ```
 
 ### Step 5 — Write peer's initial state.json
@@ -227,7 +227,7 @@ that the process is the canonical sentinel before issuing the kill. Step 7
 already injected `their_uuid = MM_UUID`, so the UUID check will pass.
 
 Killing `MM_PID` unblocks the `wait $MPID` (initialize.md's local name for the
-same value) that mind-map's background job is sitting on, surfacing
+same value) that Mission Control's background job is sitting on, surfacing
 `event=peer-spoke` on that side and completing the handshake.
 
 ### Step 13 — Load the FlightDirector skill
@@ -248,7 +248,7 @@ first time in the integration test at Task 12.
   plugin being enabled in the peer project's `.claude/settings.json`. The
   `${CLAUDE_PLUGIN_ROOT}` references throughout this body resolve correctly only
   when the plugin is natively installed (reviewer note Q#3 resolution). The
-  mind-map's `/mission-control:initialize` output prints a reminder to that
+  Mission Control's `/mission-control:initialize` output prints a reminder to that
   effect.
 - **Peer state is a single file, not a directory.** `./thoughts/.mission-control-state.json`
   is a single hidden file — per reviewer caveat on the spec's open question #2.
@@ -257,4 +257,4 @@ first time in the integration test at Task 12.
 - **Slug defaults to `basename "$(pwd)"`.** If the operator wants a different
   slug (because the project directory name differs from the slug Mission Control
   used), they should clarify before running. The pre-flight Refusal 2 on missing
-  `$mm_channel_dir` will catch wrong-slug cases and surface the mismatch.
+  `$mc_channel_dir` will catch wrong-slug cases and surface the mismatch.

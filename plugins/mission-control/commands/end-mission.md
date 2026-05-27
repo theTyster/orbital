@@ -4,7 +4,7 @@ argument-hint: "[--purge]"
 allowed-tools: Bash, Read
 ---
 
-Global teardown of all active mission-control channels (mind-map side only).
+Global teardown of all active mission-control channels (Mission Control side only).
 Default behavior: archive every active pair under `.archive/<timestamp>/`.
 With `--purge`, skip the archive and delete instead.
 
@@ -23,11 +23,11 @@ esac
 
 ## Pre-flight
 
-If the mind-map channel root does not exist there are no active channels to
+If the Mission Control channel root does not exist there are no active channels to
 tear down. This is not an error — exit cleanly:
 
 ```bash
-MC_ROOT="$HOME/Documents/mind-map/.mission-control"
+MC_ROOT="${MISSION_CONTROL_ROOT:-$HOME/.mission-control}"
 if [[ ! -d "$MC_ROOT" ]]; then
   echo "No active channels."
   exit 0
@@ -107,7 +107,7 @@ for D in "$MC_ROOT"/*/; do
 
     # ── (c) Best-effort kill our own PID ────────────────────────────────────
     # kill-pid.sh validates against state.json[their_uuid], which is the
-    # PEER's UUID — not our own.  Since this is the mind-map side, state.json
+    # PEER's UUID — not our own.  Since this is the Mission Control side, state.json
     # was written with our_uuid (not their_uuid), so kill-pid.sh would always
     # reject the call.  Pre-injecting their_uuid = our_uuid would mutate a
     # file we are about to archive/purge and is unnecessary complexity.
@@ -177,13 +177,13 @@ fi
   its next FlightDirector dispatch, rather than leaving it to infer teardown from
   a broken symlink alone.
 - **Peer-side cleanup is NOT performed.** This command only cleans up the
-  mind-map side. The peer notices the broken symlink (or missing channel) on its
+  Mission Control side. The peer notices the broken symlink (or missing channel) on its
   next session and handles its own state accordingly.
-- **Mind-map side only.** If invoked from a peer-side project, the pre-flight
-  finds no `~/Documents/mind-map/.mission-control/` and exits cleanly with
+- **Mission Control side only.** If invoked from a peer-side project, the pre-flight
+  finds no `${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/` and exits cleanly with
   `No active channels.` — no error, no partial work.
 - **Why `kill` directly instead of `kill-pid.sh`.** `kill-pid.sh` validates
-  against `state.json[their_uuid]` (the peer's UUID). On the mind-map side,
+  against `state.json[their_uuid]` (the peer's UUID). On the Mission Control side,
   state.json holds `.our_uuid` but not `.their_uuid`, so `kill-pid.sh` would
   always refuse. Pre-injecting `their_uuid = our_uuid` would mutate state
   immediately before archiving/purging it — unnecessary and confusing. A plain

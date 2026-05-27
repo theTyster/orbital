@@ -12,8 +12,8 @@ channel. Read-only — no state mutations.
 This command runs on either side (Mission Control / Astronaut) but inspects
 different roots depending on context:
 
-- **Mission Control side (mind-map):** iterate every subdirectory under
-  `~/Documents/mind-map/.mission-control/` that does NOT start with `.`
+- **Mission Control side (Mission Control):** iterate every subdirectory under
+  `${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/` that does NOT start with `.`
   (i.e., exclude `.archive/` and any other dot-prefixed entries). Each
   subdirectory's `state.json` is one channel.
 - **Astronaut side (project):** check for `./thoughts/.mission-control-state.json`.
@@ -21,8 +21,8 @@ different roots depending on context:
   single channel.
 
 When both roots are present (e.g., a developer running this command from inside
-the mind-map repository while also having an astronaut state file), iterate the
-mind-map side first and include the astronaut file in the same sweep.
+the Mission Control repository while also having an astronaut state file), iterate the
+Mission Control side first and include the astronaut file in the same sweep.
 
 If neither root exists (or both exist but are empty / the astronaut file is
 absent), print exactly:
@@ -124,9 +124,9 @@ uuid-corrupt attributed by scripts/diagnose-state.sh
 
 If all diagnoses are `healthy` or `not-init`, omit the legend entirely.
 
-## Mind-map subdirectory exclusion
+## Mission Control subdirectory exclusion
 
-When iterating `~/Documents/mind-map/.mission-control/*/`:
+When iterating `${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/*/`:
 
 - Skip any entry whose basename starts with `.` (this covers `.archive` and any
   future dot-prefixed system directories).
@@ -136,7 +136,7 @@ When iterating `~/Documents/mind-map/.mission-control/*/`:
 ## Step-by-step algorithm
 
 1. Collect candidate state paths:
-   a. If `~/Documents/mind-map/.mission-control/` exists, for each non-dot
+   a. If `${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/` exists, for each non-dot
       subdirectory `<dir>` under it, add `<dir>/state.json` to the list.
    b. If `./thoughts/.mission-control-state.json` exists, add it to the list.
 2. If the list is empty, print `No active channels.` and stop.

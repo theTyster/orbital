@@ -4,7 +4,7 @@ argument-hint: "<peer-slug> \"<initial message>\""
 allowed-tools: Bash, Read, Write, Skill
 ---
 
-Bootstrap a new mission-control channel from this (mind-map) session.
+Bootstrap a new mission-control channel from this (Mission Control) session.
 
 ## Argument parsing
 
@@ -51,7 +51,7 @@ Peer=$(printf '%s' "$peer" | awk '{print toupper(substr($0,1,1)) substr($0,2)}')
 Derive the canonical paths up front:
 
 ```bash
-channel_dir="$HOME/Documents/mind-map/.mission-control/$peer"
+channel_dir="${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/$peer"
 state_json="$channel_dir/state.json"
 to_peer_md="$channel_dir/to-${Peer}.md"
 ```
