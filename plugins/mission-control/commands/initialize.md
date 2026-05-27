@@ -156,9 +156,8 @@ Invoke the Skill tool:
 skill: "mission-control:FlightDirector"
 ```
 
-**Forward-looking note:** `FlightDirector` does not exist yet — it will land in
-Task 11. This step is correct to include here; it will be exercised for the
-first time in the integration test at Task 12.
+`FlightDirector` is loaded into the session for the remainder of the
+mission. It owns the turn-loop dispatch from this point on.
 
 ### Step 8 — Print operator instruction
 
