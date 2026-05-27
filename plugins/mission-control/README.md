@@ -64,6 +64,22 @@ The Astronaut side always stores its single state file at
 | Splashdown | Graceful close of one pair |
 | End of Mission | Global teardown |
 
+## Testing
+
+Three layers (per `docs/2026-05-25-design.md` §Testing):
+
+1. **Unit smoke tests** — `scripts/test/test_*.sh`. Each script has its own
+   test. Run all:
+   ```bash
+   for t in plugins/mission-control/scripts/test/test_*.sh; do "$t"; done
+   ```
+2. **One-sided integration** — `scripts/test/integration/test_one-sided.sh`.
+   Simulates the peer side via direct file writes + kill calls; exercises
+   the five-script ensemble through a full handshake + 1 turn cycle.
+3. **Manual two-session integration** — `docs/manual-test-checklist.md`.
+   Steps the operator follows once to exercise the parts that need real
+   Claude sessions (the auto-notification mechanism).
+
 ## Status
 
 v1.0.0 — initial implementation. Heartbeat, cross-machine, and SessionEnd
