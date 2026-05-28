@@ -1,5 +1,7 @@
 ---
-description: Global teardown of all mission-control channels. Default archives; --purge deletes.
+name: end-mission
+description: Global teardown of all mission-control channels — invoked explicitly as `/mission-control:end-mission [--purge]`, or whenever the user asks to tear down, end, close, or wind down all mission-control channels. Default archives; `--purge` deletes.
+user-invocable: true
 argument-hint: "[--purge]"
 allowed-tools: Bash, Read
 ---
@@ -82,7 +84,7 @@ for D in "$MC_ROOT"/*/; do
   fi
 
   if [[ "$PARSE_OK" = false ]]; then
-    echo "(commands/end-mission.md §per-channel-loop) — $channel: state corrupt; proceeding with teardown" >&2
+    echo "(skills/end-mission/SKILL.md §per-channel-loop) — $channel: state corrupt; proceeding with teardown" >&2
   fi
 
   if [[ "$PARSE_OK" = true ]]; then
@@ -100,9 +102,9 @@ for D in "$MC_ROOT"/*/; do
         "$OUR_PID" \
         "$OUR_UUID" \
         "$STATE" \
-      || echo "(commands/end-mission.md §per-channel-loop) — $channel: farewell append failed (continuing)" >&2
+      || echo "(skills/end-mission/SKILL.md §per-channel-loop) — $channel: farewell append failed (continuing)" >&2
     else
-      echo "(commands/end-mission.md §per-channel-loop) — $channel: to-${Peer}.md not found; skipping farewell" >&2
+      echo "(skills/end-mission/SKILL.md §per-channel-loop) — $channel: to-${Peer}.md not found; skipping farewell" >&2
     fi
 
     # ── (c) Best-effort kill our own PID ────────────────────────────────────

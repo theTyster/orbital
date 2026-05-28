@@ -1,5 +1,7 @@
 ---
-description: Bootstrap a new mission-control channel to the named peer with an initial message.
+name: initialize
+description: Bootstrap a new mission-control channel from Mission Control. Only invoke when explicitly requested as `/mission-control:initialize <peer-slug> "<message>"` — this command spawns a background PID and mutates filesystem state; do NOT auto-trigger from natural-language descriptions of channel setup.
+user-invocable: true
 argument-hint: "<peer-slug> \"<initial message>\""
 allowed-tools: Bash, Read, Write, Skill
 ---
@@ -35,7 +37,7 @@ fi
 
 # Validate — both tokens must be non-empty:
 if [[ -z "$peer" || -z "$rest" ]]; then
-  echo 'usage: /mission-control:initialize <peer-slug> "<initial message>" (commands/initialize.md §argument-parsing) — provide both peer-slug and an initial message' >&2
+  echo 'usage: /mission-control:initialize <peer-slug> "<initial message>" (skills/initialize/SKILL.md §argument-parsing) — provide both peer-slug and an initial message' >&2
   exit 1
 fi
 ```
@@ -62,7 +64,7 @@ Refuse to proceed if `state.json` already exists for this peer:
 
 ```bash
 if [[ -f "$state_json" ]]; then
-  echo "channel '$peer' already initialized; run /mission-control:status or /mission-control:end-mission first (commands/initialize.md §pre-flight)" >&2
+  echo "channel '$peer' already initialized; run /mission-control:status or /mission-control:end-mission first (skills/initialize/SKILL.md §pre-flight)" >&2
   exit 1
 fi
 ```

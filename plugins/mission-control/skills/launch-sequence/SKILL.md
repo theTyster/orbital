@@ -1,5 +1,7 @@
 ---
-description: Complete a mission-control handshake initiated by Mission Control.
+name: launch-sequence
+description: Complete a mission-control handshake on the Astronaut (peer) side. Only invoke when explicitly requested as `/mission-control:launch-sequence` — this command spawns a background PID and signals the Mission Control session; do NOT auto-trigger from natural-language descriptions of joining a channel.
+user-invocable: true
 argument-hint: "(no arguments)"
 allowed-tools: Bash, Read, Write, Skill
 ---
@@ -48,7 +50,7 @@ if [[ -f "$peer_state" ]]; then
   diag=$("${CLAUDE_PLUGIN_ROOT}/scripts/diagnose-state.sh" "$peer_state" | jq -r '.diagnosis')
   case "$diag" in
     healthy|awaiting-handshake)
-      echo "channel already active (diagnosis=$diag); run /mission-control:status or end the prior mission first (commands/launch-sequence.md §pre-flight)" >&2
+      echo "channel already active (diagnosis=$diag); run /mission-control:status or end the prior mission first (skills/launch-sequence/SKILL.md §pre-flight)" >&2
       exit 1
       ;;
     # Other diagnoses (parse-error, not-init, peer-crashed, self-crashed,
@@ -65,7 +67,7 @@ directory does not exist, Mission Control has not yet run
 
 ```bash
 if [[ ! -d "$mc_channel_dir" ]]; then
-  echo "Mission Control has not initialized channel '$peer' yet (commands/launch-sequence.md §pre-flight) — ask the operator to run /mission-control:initialize $peer \"<message>\" first" >&2
+  echo "Mission Control has not initialized channel '$peer' yet (skills/launch-sequence/SKILL.md §pre-flight) — ask the operator to run /mission-control:initialize $peer \"<message>\" first" >&2
   exit 1
 fi
 ```
@@ -147,7 +149,7 @@ header=$(printf '%s\n' "$handshake" | grep -m1 '^## seq=0 ')
 MM_PID=$(printf '%s' "$header" | grep -oE 'pid=[0-9]+' | head -n1 | sed 's/^pid=//')
 MM_UUID=$(printf '%s' "$header" | grep -oE 'uuid=[^ ]+' | head -n1 | sed 's/^uuid=//')
 if [[ -z "$MM_PID" || ! "$MM_PID" =~ ^[0-9]+$ || -z "$MM_UUID" ]]; then
-  echo "could not parse MM_PID/MM_UUID from handshake header (commands/launch-sequence.md §steps) — handshake-init block may be malformed" >&2
+  echo "could not parse MM_PID/MM_UUID from handshake header (skills/launch-sequence/SKILL.md §steps) — handshake-init block may be malformed" >&2
   exit 1
 fi
 ```
