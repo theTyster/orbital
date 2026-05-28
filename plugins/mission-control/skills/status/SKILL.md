@@ -82,8 +82,8 @@ row as:
 Then **continue iterating** the remaining channels. Do NOT abort the whole
 status sweep because one channel is corrupt.
 
-Use `(skills/status/SKILL.md §iteration)` as the attribution prefix in any
-error message printed to stderr for that row.
+Use `(skills/status/SKILL.md §per-pair-fault-isolation)` as the attribution
+prefix in any error message printed to stderr for that row.
 
 ## Table format
 
@@ -96,8 +96,8 @@ Print a markdown table with this header:
 
 One row per channel. The `Last in / out seq` cell is `<last_in> / <last_out>`.
 
-When `state_exists` is `false` (i.e., `diagnosis` is `not-init`), all numeric
-fields render as `-`.
+When `diagnosis` is `not-init` (i.e., the channel has no `state.json`), all
+numeric fields render as `-`.
 
 Example rows:
 

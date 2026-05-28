@@ -36,10 +36,12 @@ prior take-turn completes. Its stdout contains the canonical line:
 channel=<peer> event=peer-spoke
 ```
 
-Claude Code surfaces this as a completion notification. On seeing such a
-notification, immediately dispatch the FlightDirector flow against the `<peer>`
-channel. The peer name is the exact token between `channel=` and the space
-before `event=`.
+Claude Code surfaces this as a completion notification. The notification body
+includes the path to the background task's output file but does NOT inline the
+file's contents — use the **Read** tool against that path to extract the
+`channel=<peer> event=peer-spoke` line, then immediately dispatch the
+FlightDirector flow against the `<peer>` channel. The peer name is the exact
+token between `channel=` and the space before `event=`.
 
 ### User-triggered
 
