@@ -9,7 +9,7 @@
     {
       "name": "shifting",
       "description": "Formal logic reasoning pipeline — seven staged primitives (closed-world KB construction, proposition decomposition, target-world model construction, Lean 4 proof verification, property instantiation as TDD tests, proof-grounded specification realization, terminal adherence scoring) plus the unstaged `explain` closer and the unstaged `disprove-proposition` debate move. Skill descriptions are tailored toward dispatch from the `trajectory:pipeline` orchestrator (which supports modular partial slices); direct invocation is reserved for explicit single-stage requests. The Lean toolchain bootstrap skills (`setup-lean-mathlib`, `setup-lean-project`) moved to the `scaffolding` plugin in 5.0.0 so a single `scaffolding:setup` flow owns marketplace-wide provisioning.",
-      "version": "5.2.0",
+      "version": "5.3.0",
       "source": "./plugins/shifting",
       "author": {
         "name": "ty",
