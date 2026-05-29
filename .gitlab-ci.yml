@@ -1,0 +1,14 @@
+# GitLab Pages — publishes the orbital-shifting slide deck (orbital-shifting.html) as a static site.
+# The deck is served at the Pages root URL (https://<group>.<pages-domain>/<project>/).
+# Deploys only from the default branch (main).
+pages:
+  stage: deploy
+  image: alpine:latest
+  script:
+    - mkdir -p public
+    - cp orbital-shifting.html public/index.html
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
