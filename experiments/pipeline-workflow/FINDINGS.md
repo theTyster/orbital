@@ -107,3 +107,112 @@ upstream artifacts after downstream ones exist). The Workflow's freshness check 
   shared Mathlib clone with no rebuild.
 - **Risk "inversion smell":** held (C-2 confirmed in the realized substrate; full re-attack deferred,
   see F-5).
+
+## Re-statement / pre-kimmy re-probe findings (2026-05-30)
+
+Executing the MC-agreed pre-kimmy sequence (re-probes → model rebuild → re-prove → adversary re-run).
+Updates F-5. The re-probes were run via the **Workflow tool** (dogfooding the deliverable's host).
+
+### F-6 — C-2 regression-guard landed (re-probe 1a)
+
+`foldDigest` (the pure assembler that replaced the lossy-projection AGENT) was realization-only +
+untested. Promoted to a tested mechanic `lib/digest-fold.js` (verbatim-mirrored inline in
+`realized/orbital-pipeline.realized.mjs` — 44-line body diff-clean) + lock-test
+`self-spec/tests/digest_fold.c2_regression_guard.test.js` (8 tests, green). Locks the two C-2
+violations the pre-build re-attack found: (a) `gapClass` is content-agnostic (a fixed constant
+fallback) and NEVER derived from substrate identity (`__agentType`/stage) — it keys `withinLoopLimit`,
+a control decision; (b) `coreObligation=true` forces halt even on a gap-routed result (hard-stop axis,
+never demoted to a loopback). Plus: the verdict is carried verbatim or null, never derived. Closes the
+C-2 regression-guard half of F-5 bullet 1.
+
+### F-7 — behavioral tests are NON-VACUOUS (re-probe 1b) — with two thin-coverage caveats
+
+Mutation-tested all 5 properties that went vacuous in Lean (I-1, I-3, I-4, I-5, I-6): for each, a
+minimal genuine violation of the implementing mechanic was applied and the suite re-run. **All 5 have
+≥1 dedicated test that turns RED under the violation** — so the behavioral layer is non-vacuous (no
+double-false-green pairing vacuous proofs with thin tests). Caveats (thin *redundancy*, not
+gate-failures — each still meets MC's "would actually FAIL on violation" bar):
+- **I-1 hard-stop coverage rests entirely on `crit8`**; `explain_always_runs` (happy-path fixture) and
+  `explain_is_terminal` (static query) are each individually thin for the hard-stop case.
+- **I-4 sufficiency test `scope_narrowing_fact_absent` is fixture-thin** — its fixture
+  (`target=1 < startIdx=3`) dodges a narrowing mutation; only the necessity test caught it.
+
+Closes the BEHAVIORAL half of F-5 bullet 2 (the Lean re-statement is steps 2–4 of the sequence).
+
+### F-8 — Workflow `isolation:'worktree'` LEAKED a mutation into the main tree (tool finding)
+
+1b ran as a Workflow with `isolation:'worktree'` on 5 parallel mutation agents. Only **3** worktrees
+were created for the 5 agents, and the **I-6 agent's mutation (commenting out `runMandatoryDisprove`)
+LEAKED into the main-tree `orbital-pipeline.workflow.js`** — caught by a post-run determinism re-run
+(24/24 → a deterministic 23/24 with `disprove_floor` red), reverted via `git checkout`, leftover
+locked worktrees pruned. **Implication: `isolation:'worktree'` is NOT a reliable isolation guarantee
+for parallel file-mutating agents in this runtime.** For the upcoming parallel Lean re-proofs /
+adversaries (steps 3–4): do NOT rely on worktree isolation — FREEZE the shared `TargetWorld.lean`
+(read-only) and have parallel agents write DISJOINT per-invariant files (`Proofs/I*.lean`,
+`lean_disproofs/*`), which is conflict-free regardless of isolation, and verify the main tree after
+every parallel batch. Directly relevant to kimmy: a mutation-heavy workflow must not assume isolation.
+
+### F-9 — persisted test had a stale require path
+
+`self-spec/tests/orbital_pipeline.proof_properties.test.js` required
+`../../experiments/pipeline-workflow/orbital-pipeline.workflow.js` — valid only from the original
+dogfood location (`thoughts/tests/`), broken from the persisted `self-spec/tests/`. Fixed to
+`../../orbital-pipeline.workflow.js` (24/24 baseline restored). Implication: the persist step should
+re-base relative import paths to the persisted location.
+
+### F-10 — re-statement COMPLETE: all 7 invariants non-vacuous + adversary-survive
+
+The model rebuild → re-prove → adversary re-run sequence is done (all via the Workflow tool). Outcome:
+- `TargetWorld.lean` rebuilt NON-DEGENERATE: Run/DisproveAttempt → 2 inhabitants; StartIdx 3→1→0;
+  varying Spend/Reserve; attempt-dependent Target/OwnOutput; RunAttempt over both runs; + CF predicates
+  (`ReachesExplainCF`, `StartIdxCF1`, `SpendCF`, `TargetCF`, `RunAttemptCF`). Full `lake build` = 8259
+  jobs, exit 0.
+- I-1/I-4/I-5/I-6 re-proven non-vacuously (each with a CF necessity lemma); I-3 preserved (the proven
+  template); I-2 preserved; I-7 extended for `a1`. I-5's reserve half was re-stated from the vacuous
+  EXISTENTIAL (`∀a ∃s r …`) to the UNIVERSAL (`∀a s r, Spend a s → Reserve a r → r ≤ s`).
+- ALL 7 adversaries RE-RUN over the frozen model → **7/7 SURVIVE** (the original vacuity/degenerate
+  witnesses can no longer be inhabited; negations positively inhabited). 29 probes under
+  `lean_disproofs/*_postrebuild*`.
+
+Two SUPERVISION CATCHES — caught by orchestrator model-review + the full-build gate, NOT by the
+per-stage adversary (which only attacked its own invariant):
+- **I-1 D-8 inversion.** The rebuild made `ReachesExplain` non-total ("hard-stop r1 doesn't reach
+  explain") — contradicting D-8 (explain runs on EVERY path; `crit8` + the implementation confirm) and
+  making `i1_explain_always_runs` FALSE. Fixed: `ReachesExplain` total + `ReachesExplainCF` necessity
+  witness. The I-4-only template-check adversary would NOT have caught this — orchestrator model-review
+  is a necessary gate (the rebuild agent confidently mis-modelled the invariant).
+- **I-7 `a1` cascade.** Adding `a1` to `DisproveAttempt` (for I-5/I-6) broke I-7's `∀ a` proof (a1 case
+  unsolved). Caught by the FULL-library `lake build` (per-module builds had passed). A model change
+  cascades to "preserved" invariants; the full build is the gate, not per-module builds.
+
+HONEST RESIDUAL CAVEATS (the boundary of what the formal layer establishes):
+- **CF-augmentation fidelity:** each necessity lemma's teeth rest on a CF predicate authored by
+  constructor-omission (e.g. `ReachesExplainCF` omits r1); the teeth are only as strong as the
+  modeller's fidelity — a standard CWA-augmentation caveat shared across I-1/I-4/I-5/I-6.
+- **I-1 sufficiency antecedent is discardable BY DESIGN** (D-8 makes explain unconditional); non-vacuity
+  is carried by the necessity lemma + the structural terminal half, not the bare implication.
+- **I-2 by-fiat encoding:** Requires/StageOrder are constructor-faithful transcriptions; Lean confirms
+  the chain is internally proper but cannot witness that the 7 edges mirror the implementation's actual
+  runtime artifact dependencies — a translation/behavioral concern outside the theorem.
+- Liveness verified over exactly 2 outcome classes (complete / hard_stop).
+
+### F-11 — DEFERRED: target-world.pl shares the original I-1 / D-8 error (Prolog↔Lean divergence)
+
+The Prolog model `self-spec/target-world.pl` still carries the ORIGINAL D-8 error the Lean just shed:
+it has `op_reaches_step(r0, s_explain)` ONLY (omits r1) and frames I-1 as "every NORMALLY-terminating
+run reaches explain" (`op_terminates(r0)`; `r1 = op_hard_stop`, excluded from the antecedent). This
+contradicts D-8 (explain runs on every path, incl. hard-stop — the implementation + `crit8` confirm),
+so the Prolog and (now-corrected) Lean models diverge on I-1. The faithful `.pl` fix: add
+`op_reaches_step(r1, s_explain)`; add an `explain_skipped_on_hard_stop` CF (`cf_fact/2` +
+`negation_provenance(_, contradicts)`) — minding the `.pl`'s cf-count validation `forall` (it currently
+asserts over a fixed cf_fact set); and reframe the `i1_violation` rule so a HALTING run (normal OR
+hard-stop) that fails to reach explain is a violation. DEFERRED: the `.pl` is the model-obligations
+PROLOG layer (a separate verification path), NOT the Lean gate kimmy's formal NorthStar rests on; the
+fix touches the `.pl`'s internal validation machinery and warrants a careful pass, not a momentum edit.
+
+### KIMMY GATE — SATISFIED at the formal-verification layer
+
+All 7 Lean invariants are non-vacuous + adversary-survive over a non-degenerate model. The flagship
+Workflow no longer rests on hollow proofs. (Behavioral test layer confirmed non-vacuous in F-7; C-2
+regression-guarded in F-6.) Remaining before a real kimmy run: the deferred `.pl` reconciliation (F-11,
+non-blocking for the Lean gate) and operator/MC go on a concrete ticket.
