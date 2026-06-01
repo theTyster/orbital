@@ -7,7 +7,7 @@ area: shifting
 created: 2026-05-29
 tags: [skill, agents, context-fork, inline-fallback, fidelity]
 related:
-  - experiments/pipeline-workflow/FINDINGS.md
+  - ~/Projects/mine/sagittarius/FINDINGS.md  # formerly experiments/pipeline-workflow/FINDINGS.md (split out 2026-06-01)
   - plugins/shifting/agents/
   - docs/tickets/ticket-initialize-arg-substitution-and-wait.md
 ---

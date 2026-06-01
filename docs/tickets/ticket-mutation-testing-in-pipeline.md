@@ -7,7 +7,7 @@ area: shifting
 created: 2026-05-29
 tags: [mutation-testing, prove-invariants, vacuity, ephemeral, feedback, sagittarius]
 related:
-  - experiments/pipeline-workflow/FINDINGS.md
+  - ~/Projects/mine/sagittarius/FINDINGS.md  # formerly experiments/pipeline-workflow/FINDINGS.md (split out 2026-06-01)
   - docs/tickets/ticket-constrain-adversary-write-access.md
 ---
 

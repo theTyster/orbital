@@ -40,7 +40,7 @@ Implement at two layers:
    each system prompt — "you write refutation/probe files under <dir> ONLY; you must never
    edit canonical proof/KB/source files; to demonstrate a counterexample, author a NEW probe
    file, do not modify the artifact under attack."
-2. **The realized pipeline disprove briefs** (`experiments/pipeline-workflow/realized/…` +
+2. **The realized pipeline disprove briefs** (`~/Projects/mine/sagittarius/realized/…`, split out of `experiments/pipeline-workflow/` on 2026-06-01 +
    any workflow that dispatches adversaries): repeat the constraint inline (already done in
    the `template-check-i4` workflow's adversary brief — "write probe files under
    `self-spec/lean_disproofs/` ONLY; NEVER edit canonical Proofs/ files"). Make it standard.

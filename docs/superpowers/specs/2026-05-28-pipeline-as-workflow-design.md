@@ -4,6 +4,11 @@
 **Branch:** `experiment/pipeline-workflow`
 **Status:** Design — pending user review.
 
+> **Migration note (2026-06-01):** the experiment described here was split into its own repo at
+> `~/Projects/mine/sagittarius` (via `git filter-repo`, full history preserved). Paths below such as
+> `experiments/pipeline-workflow/…` now live at that repo's root; a copy of this spec travels with it
+> at `sagittarius/docs/design-spec.md`.
+
 > This spec encodes **decisions, constraints, requirements, and invariants — not code.**
 > Code changes; decisions about the code should be firmer. It is written to be **consumed by the
 > orbital-shifting pipeline**: `close-world` extracts the declarations below as facts,
