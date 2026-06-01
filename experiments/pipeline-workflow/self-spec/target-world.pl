@@ -54,6 +54,17 @@
      op_disprove_attempt/2,
      op_adversary/2,
      op_measure_component/2,
+     op_run/1,
+     op_run_outcome/2,
+     op_hard_stop/1,
+     op_start_idx/3,
+     op_disprove_reserve/2,
+     op_disprove_spend/2,
+     op_disprove_target/2,
+     op_disprove_own_output/2,
+     op_disprove_spend_cf/2,
+     op_disprove_target_cf/2,
+     op_zero_attempt_run/1,
      stage/2,
      stage_order/2,
      is_closer/1,
@@ -197,37 +208,77 @@ provenance(op_stage_index(s_explain, 7), prescriptive).
 op_max_index(7).
 provenance(op_max_index(7), prescriptive).
 
-% --- Canonical run instance (r0) ---------------------------------------------
-% A Run is identified by an id; the default full-pipeline run scopes [0,7].
+% --- Canonical run instances (r0, r1) — NON-DEGENERATE (>=2 runs) ------------
+% A Run is identified by an id. TWO runs with DISTINCT outcomes so the §7
+% universals/existentials range over more than one point (the prior one-point
+% `r0`-only model collapsed I-1/I-4/I-6 into vacuous True->True statements):
+%   * r0 — the happy-path full-pipeline run that COMPLETES (reaches explain).
+%   * r1 — a run that HARD-STOPS mid-pipeline (halts before the closer).
 op_run(r0).
+op_run(r1).
 provenance(op_run(r0), prescriptive).
+provenance(op_run(r1), prescriptive).
+
+% Run termination outcome (the discriminator the one-point model could not
+% express). op_run_outcome(Run, Outcome), Outcome in {complete, hard_stop}.
+op_run_outcome(r0, complete).
+op_run_outcome(r1, hard_stop).
+provenance(op_run_outcome(r0, complete), prescriptive).
+provenance(op_run_outcome(r1, hard_stop), prescriptive).
 
 % cursor advances by default (D-4); a run STARTS at its startIdx.
 op_cursor_default(r0, 0).            % cursor begins at scope start
+op_cursor_default(r1, 0).
 provenance(op_cursor_default(r0, 0), prescriptive).
+provenance(op_cursor_default(r1, 0), prescriptive).
 
 % scope = (startIdx, endIdx). Default full scope: start 0, end 7 (explain).
 op_scope_default(r0, scope(0, 7)).
+op_scope_default(r1, scope(0, 7)).
 provenance(op_scope_default(r0, scope(0, 7)), prescriptive).
+provenance(op_scope_default(r1, scope(0, 7)), prescriptive).
 
-% startIdx is non-increasing across the run; endIdx fixed (C-4 / I-4).
-% Canonical instance: scope never narrows -> startIdx stays at 0, endIdx at 7.
-op_start_idx(r0, 0, 0).              % op_start_idx(Run, Step, StartIdx)
-op_start_idx(r0, 1, 0).
+% startIdx is NON-INCREASING across the run; endIdx fixed (C-4 / I-4).
+% NON-DEGENERATE: startIdx carries DISTINCT, STRICTLY-DECREASING values per run
+% (scope only widens). The prior model pinned every startIdx to 0, making the
+% I-4 conclusion always `0 =< 0` and the `i =< j` hypothesis dead weight; here
+% antitonicity is load-bearing (the earlier-step value is strictly larger) and
+% the REVERSE direction is unprovable (`3 =< 0` is false).
+%   r0: step0 -> 3, step1 -> 1, step2 -> 0.
+%   r1: step0 -> 2, step1 -> 0.
+op_start_idx(r0, 0, 3).              % op_start_idx(Run, Step, StartIdx)
+op_start_idx(r0, 1, 1).
 op_start_idx(r0, 2, 0).
-op_end_idx(r0, 7).                   % op_end_idx(Run, EndIdx) — constant
-provenance(op_start_idx(r0, 0, 0), prescriptive).
-provenance(op_start_idx(r0, 1, 0), prescriptive).
+op_start_idx(r1, 0, 2).
+op_start_idx(r1, 1, 0).
+op_end_idx(r0, 7).                   % op_end_idx(Run, EndIdx) — constant per run
+op_end_idx(r1, 7).
+provenance(op_start_idx(r0, 0, 3), prescriptive).
+provenance(op_start_idx(r0, 1, 1), prescriptive).
 provenance(op_start_idx(r0, 2, 0), prescriptive).
+provenance(op_start_idx(r1, 0, 2), prescriptive).
+provenance(op_start_idx(r1, 1, 0), prescriptive).
 provenance(op_end_idx(r0, 7), prescriptive).
+provenance(op_end_idx(r1, 7), prescriptive).
 op_run_steps(r0, 3).                 % bound on #observed steps for the instance
+op_run_steps(r1, 2).
 provenance(op_run_steps(r0, 3), prescriptive).
+provenance(op_run_steps(r1, 2), prescriptive).
 
-% A terminating run reaches the explain step (I-1). The canonical run does.
+% A run that terminates NORMALLY reaches the explain step (I-1 liveness
+% antecedent). r0 completes and reaches explain; r1 hard-stops, so it does NOT
+% reach explain and is NOT a normal-termination instance — recorded via
+% op_hard_stop/1, NOT op_terminates/1. This keeps the I-1 liveness antecedent
+% ("terminating run" = normal completion) load-bearing and consistent: the
+% antecedent now genuinely filters (r1 is excluded), mirroring the Lean model
+% where `Terminates r1` holds but `ReachesExplain r1` is uninhabited and the
+% liveness theorem scopes to runs that reach the closer.
 op_reaches_step(r0, s_explain).
 provenance(op_reaches_step(r0, s_explain), prescriptive).
-op_terminates(r0).
+op_terminates(r0).                   % normal (complete) termination
 provenance(op_terminates(r0), prescriptive).
+op_hard_stop(r1).                    % abnormal termination — halts mid-pipeline
+provenance(op_hard_stop(r1), prescriptive).
 
 % --- Required-upstream-artifact relation (I-2) -------------------------------
 % Derived from stage_order/2: a stage's required artifact is the predecessor's
@@ -284,28 +335,78 @@ provenance(op_measure_component(m, recovery_budget_sum), prescriptive).
 provenance(op_measure_component(m, cursor_distance), prescriptive).
 provenance(op_measure_order(m, lex), prescriptive).
 
-% --- Disprove attempts + adversaries (I-5 / I-6 / I-7) -----------------------
+% --- Disprove attempts + adversaries (I-5 / I-6 / I-7) — NON-DEGENERATE ------
 % Floors from D-6/C-5: >=1 attempt per run, >=2 adversaries per attempt.
-% Canonical run r0 performs exactly the mandatory attempt with the floor of
-% perspective-diverse adversaries.
+% TWO attempts (a0, a1) over TWO runs so I-5's `forall attempt` and I-6's
+% `exists attempt` range over more than one point (the prior a0-only model
+% collapsed both into single ground-fact lookups). BOTH runs perform >=1
+% attempt and the per-run counts VARY: r0 fans to {a0, a1}, r1 performs {a1}.
 op_disprove_attempt(r0, a0).         % op_disprove_attempt(Run, AttemptId)
+op_disprove_attempt(r0, a1).
+op_disprove_attempt(r1, a1).
 provenance(op_disprove_attempt(r0, a0), prescriptive).
+provenance(op_disprove_attempt(r0, a1), prescriptive).
+provenance(op_disprove_attempt(r1, a1), prescriptive).
+% Each attempt fans out to the >=2 perspective-diverse adversaries (I-7).
 op_adversary(a0, adv1).              % op_adversary(AttemptId, AdversaryId)
 op_adversary(a0, adv2).
+op_adversary(a1, adv1).
+op_adversary(a1, adv2).
 provenance(op_adversary(a0, adv1), prescriptive).
 provenance(op_adversary(a0, adv2), prescriptive).
+provenance(op_adversary(a1, adv1), prescriptive).
+provenance(op_adversary(a1, adv2), prescriptive).
 op_adversaries_parallel(a0).         % C-5: run in parallel
+op_adversaries_parallel(a1).
 provenance(op_adversaries_parallel(a0), prescriptive).
+provenance(op_adversaries_parallel(a1), prescriptive).
 
 % Reserve discipline (I-5 / C-3): spend >= reserve, target =/= own output.
-op_disprove_reserve(a0, 1).          % reserved budget (>=1 mandatory attempt)
-op_disprove_spend(a0, 1).            % spend at-or-above reserve
+% NON-DEGENERATE: per-attempt values that genuinely VARY and sit at-or-above
+% reserve, so the universal `forall a s r, spend(a,s) /\ reserve(a,r) -> r =< s`
+% is load-bearing (a coexisting below-reserve spend would falsify it) rather
+% than the prior constant `1 =< 1`.
+%   a0: spend 5 >= reserve 2.
+%   a1: spend 3 >= reserve 3.
+op_disprove_reserve(a0, 2).
+op_disprove_spend(a0, 5).
+op_disprove_reserve(a1, 3).
+op_disprove_spend(a1, 3).
+provenance(op_disprove_reserve(a0, 2), prescriptive).
+provenance(op_disprove_spend(a0, 5), prescriptive).
+provenance(op_disprove_reserve(a1, 3), prescriptive).
+provenance(op_disprove_spend(a1, 3), prescriptive).
+% Target vs own-output (I-5): ATTEMPT-DEPENDENT surfaces (a 3rd surface,
+% counterexamples, lets a1's pair differ from a0's), so the disequality is not a
+% single constructor-fiat fact. For EACH attempt target =/= own output.
+%   a0: target gate_target_descriptor, own disproof_results.
+%   a1: target disproof_results,       own counterexamples.
 op_disprove_target(a0, gate_target_descriptor).
-op_disprove_own_output(a0, disproof_results).  % distinct from target
-provenance(op_disprove_reserve(a0, 1), prescriptive).
-provenance(op_disprove_spend(a0, 1), prescriptive).
+op_disprove_own_output(a0, disproof_results).
+op_disprove_target(a1, disproof_results).
+op_disprove_own_output(a1, counterexamples).
 provenance(op_disprove_target(a0, gate_target_descriptor), prescriptive).
 provenance(op_disprove_own_output(a0, disproof_results), prescriptive).
+provenance(op_disprove_target(a1, disproof_results), prescriptive).
+provenance(op_disprove_own_output(a1, counterexamples), prescriptive).
+
+% --- Counterfactual augmentations (necessity witnesses) ----------------------
+% The forbidden facts whose ABSENCE the I-5 / I-6 invariants rely on, restored
+% in parallel CF predicates so prove-invariants can carry a NECESSITY lemma
+% (the property FAILS once the fact is restored). Mirrors the Lean SpendCF /
+% TargetCF / RunAttemptCF augmentations. These are NOT asserted as the live
+% op_* discipline; they are the load-bearing-removal witnesses.
+%   * below-reserve: a0 spends 0 against reserve 2 (C-3 / I-5).
+op_disprove_spend_cf(a0, 0).
+provenance(op_disprove_spend_cf(a0, 0), prescriptive).
+%   * self-attack: a0 targets disproof_results, which is also a0's own output.
+op_disprove_target_cf(a0, disproof_results).
+provenance(op_disprove_target_cf(a0, disproof_results), prescriptive).
+%   * zero-attempt run: r1 performs NO attempt under the CF relation (the I-6
+%     floor's discriminating regression witness — no op_zero_attempt_run fact
+%     names an attempt, so the floor FAILS there).
+op_zero_attempt_run(r1).
+provenance(op_zero_attempt_run(r1), prescriptive).
 
 % =============================================================================
 % NEGATION-PROVENANCE MARKERS (per-fact, 2-arg form)
@@ -331,6 +432,7 @@ negation_provenance(disprove_attacks_own_output, contradicts).            % C-3 
 negation_provenance(disprove_spends_below_reserve, contradicts).          % C-3 / I-5
 negation_provenance(human_prompt_mid_run, contradicts).                   % C-6
 negation_provenance(realize_specification_runs_parallel, contradicts).    % D-9
+negation_provenance(run_performs_zero_attempts, contradicts).             % I-6 floor
 
 % --- absent (CWA-fragile — merely not-yet-true; do NOT upgrade to disproof) --
 negation_provenance(workflow_artifact_exists_on_disk, absent).            % pr_v1_workflow_exists
@@ -352,6 +454,7 @@ cf_fact(disprove, attacks_own_output).          % C-3 / I-5
 cf_fact(disprove, spends_below_reserve).        % C-3 / I-5
 cf_fact(human, prompt_mid_run).                 % C-6
 cf_fact(realize_specification, runs_parallel).  % D-9
+cf_fact(run, performs_zero_attempts).           % I-6 (zero-attempt-run floor)
 
 % =============================================================================
 % FORMAL PROPERTIES — propagated VERBATIM from hypothesis.pl
