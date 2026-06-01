@@ -17,8 +17,18 @@ Negated premises (BOTH `negation_provenance(_, contradicts)` in target-world.pl)
 
 Because the premises are `contradicts` (structurally necessary, not CWA-fragile),
 each earns a NECESSITY lemma: re-introduce the forbidden fact in a CF-augmented
-predicate and show the property FAILS there — proving the counterfactual removal
-is load-bearing.
+predicate (declared in `Proofs.TargetWorld`) and show the property FAILS there —
+proving the counterfactual removal is load-bearing.
+
+NON-DEGENERACY NOTE (why this proof is non-vacuous):
+  * `Spend` / `Reserve` vary genuinely: a0 spends 5 ≥ reserve 2; a1 spends 3 ≥
+    reserve 3. The universal `∀ a s r, Spend a s → Reserve a r → r ≤ s` ranges
+    over both and `omega` must discharge distinct concrete inequalities for each.
+  * `Target` / `OwnOutput` are attempt-dependent: a0 has gate_target_descriptor vs
+    disproof_results; a1 has disproof_results vs counterexamples. The disequality
+    closes by constructor disjointness (`cases`), not by a single constant fiat.
+  * Both necessity lemmas cite the CF predicates from TargetWorld (SpendCF, TargetCF)
+    with concrete witnesses that falsify the sufficiency properties.
 
 Ontology: counterfactual, `.contradicts` (both negated premises).
 -/
@@ -32,54 +42,70 @@ open TargetWorld
 
 /-! ## Sufficiency — the property holds in target-world (forbidden facts absent) -/
 
-/-- Reserve discipline: spend ≥ reserve. Canonical attempt `a0` spends 1, reserves
-    1, so `1 ≤ 1`. -/
+/-- Reserve discipline: every disprove attempt's spend is at or above its reserve.
+
+    UNIVERSAL form (non-vacuous): `∀ a s r, Spend a s → Reserve a r → r ≤ s`.
+    The model provides two genuinely distinct data points:
+      * a0: spend 5 ≥ reserve 2  →  `2 ≤ 5` (closed by `omega`)
+      * a1: spend 3 ≥ reserve 3  →  `3 ≤ 3` (closed by `omega`)
+    A coexisting below-reserve spend (see `i5_needs_no_below_reserve`) would
+    add a case `s < r` that `omega` cannot close — the forbidden fact is
+    load-bearing.
+
+    Goal mentions target-world predicates `Spend` and `Reserve`; closes by
+    constructor citation + arithmetic (`omega`), NOT by `decide`. -/
 @[ontology .counterfactual, .contradicts]
 theorem i5_spend_ge_reserve :
-    ∀ a : DisproveAttempt, ∃ s r : Nat, Spend a s ∧ Reserve a r ∧ r ≤ s := by
-  intro a
-  cases a
-  exact ⟨1, 1, .a0, .a0, Nat.le_refl 1⟩
+    ∀ (a : DisproveAttempt) (s r : Nat), Spend a s → Reserve a r → r ≤ s := by
+  intro a s r hs hr
+  cases hs <;> cases hr <;> omega
 
-/-- No self-attack: target ≠ own output. The two surfaces are distinct
-    enum constructors (`gate_target_descriptor` vs `disproof_results`), so the
-    disequality closes by constructor disjointness — NOT by `decide`. -/
+/-- No self-attack: every attempt's target differs from its own output.
+
+    ATTEMPT-DEPENDENT (non-vacuous): the (target, own-output) pair varies:
+      * a0: gate_target_descriptor vs disproof_results  →  distinct constructors
+      * a1: disproof_results vs counterexamples          →  distinct constructors
+    Each case closes by constructor disjointness — after `cases ht <;> cases ho`
+    the goal `t ≠ o` becomes e.g. `gate_target_descriptor ≠ disproof_results`;
+    `intro h; cases h` then yields `False` via kernel-level index disagreement.
+
+    Goal mentions target-world predicates `Target` and `OwnOutput`; closes by
+    `cases` (constructor citation), NOT by `decide`. -/
 @[ontology .counterfactual, .contradicts]
 theorem i5_target_ne_own_output :
     ∀ (a : DisproveAttempt) (t o : DisproveSurface),
       Target a t → OwnOutput a o → t ≠ o := by
   intro a t o ht ho
-  cases ht
-  cases ho
-  intro h
-  cases h
+  cases ht <;> cases ho <;> intro h <;> cases h
 
 /-! ## Necessity — re-introducing each forbidden fact falsifies the property -/
 
-/-- **CF-augmentation for `disprove_spends_below_reserve`.** Restores an attempt
-    whose spend (0) is below its reserve (1). -/
-inductive SpendCF : DisproveAttempt → Nat → Prop where
-  | a0_below : SpendCF .a0 0          -- restored: spend below reserve
+/-- **Necessity for reserve discipline.** With `disprove_spends_below_reserve`
+    re-introduced (the `SpendCF` predicate from `TargetWorld`), the universal
+    reserve discipline FAILS: `a0` spends 0, which is strictly below its reserve
+    of 2. This makes the EXISTENTIAL `∃ a s r, SpendCF a s ∧ Reserve a r ∧ s < r`
+    inhabited — a direct falsifier of `i5_spend_ge_reserve`.
 
-/-- Necessity: with `disprove_spends_below_reserve` re-introduced, the reserve
-    discipline FAILS — there is an attempt with spend < reserve. Load-bearing. -/
+    Cites `SpendCF.a0_below` (from TargetWorld) and `Reserve.a0`; the arithmetic
+    `0 < 2` is closed by `omega`. No target-world predicate is closed by `decide`.
+    Mirrors `i4_needs_no_scope_narrowing` from I4Monotone. -/
 @[ontology .counterfactual, .contradicts]
 theorem i5_needs_no_below_reserve :
     ∃ (a : DisproveAttempt) (s r : Nat), SpendCF a s ∧ Reserve a r ∧ s < r := by
-  exact ⟨.a0, 0, 1, .a0_below, .a0, Nat.zero_lt_one⟩
+  exact ⟨.a0, 0, 2, .a0_below, .a0, by omega⟩
 
-/-- **CF-augmentation for `disprove_attacks_own_output`.** Restores an attempt
-    whose target coincides with its own output (both `disproof_results`). -/
-inductive TargetCF : DisproveAttempt → DisproveSurface → Prop where
-  | a0_self : TargetCF .a0 .disproof_results   -- restored: target = own output
+/-- **Necessity for no-self-attack.** With `disprove_attacks_own_output`
+    re-introduced (the `TargetCF` predicate from `TargetWorld`), the no-self-attack
+    discipline FAILS: `a0` targets `disproof_results`, which is also `a0`'s own
+    output. This makes `∃ a s, TargetCF a s ∧ OwnOutput a s` inhabited — a direct
+    falsifier of `i5_target_ne_own_output`.
 
-/-- Necessity: with `disprove_attacks_own_output` re-introduced, the no-self-attack
-    discipline FAILS — there is an attempt whose target equals its own output.
-    Load-bearing. -/
+    Cites `TargetCF.a0_self` and `OwnOutput.a0` (both from TargetWorld); `rfl`
+    witnesses the surface equality. No target-world predicate is closed by `decide`.
+    Mirrors `i4_needs_no_scope_narrowing` from I4Monotone. -/
 @[ontology .counterfactual, .contradicts]
 theorem i5_needs_no_self_attack :
-    ∃ (a : DisproveAttempt) (t o : DisproveSurface),
-      TargetCF a t ∧ OwnOutput a o ∧ t = o := by
-  exact ⟨.a0, .disproof_results, .disproof_results, .a0_self, .a0, rfl⟩
+    ∃ (a : DisproveAttempt) (s : DisproveSurface), TargetCF a s ∧ OwnOutput a s := by
+  exact ⟨.a0, .disproof_results, .a0_self, .a0⟩
 
 end Proofs.I5
