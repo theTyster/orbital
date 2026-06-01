@@ -89,7 +89,7 @@ function haltDigest(stage, reason, coreObligation = false) {
 // Resolved lazily so the file loads (all-skipped) before lib/ exists.
 function lib() {
   // eslint-disable-next-line global-require
-  return require("../../experiments/pipeline-workflow/orbital-pipeline.workflow.js");
+  return require("../../orbital-pipeline.workflow.js");
 }
 
 // =============================================================================
