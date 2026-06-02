@@ -44,7 +44,7 @@ Both must have `mission-control` enabled in their `.claude/settings.json`.
 
 ## Stage 3 — Status
 
-- [ ] In Terminal A, run `/mission-control:status`.
+- [ ] In Terminal A, run `/mission-control:mission-status`.
 - [ ] Confirm the table shows `orbital | healthy | <our pid> | <peer pid> | <seqs> | continue`.
 
 ## Stage 4 — Splashdown one channel
@@ -76,7 +76,7 @@ Both must have `mission-control` enabled in their `.claude/settings.json`.
 
 - [ ] **Peer-crashed:** With a healthy channel, manually `kill -9` the peer's
   canonical-sentinel PID (find it via `ps aux | grep "sleep 2147483647"`).
-  Run `/mission-control:status` on the Mission Control side. Confirm the
+  Run `/mission-control:mission-status` on the Mission Control side. Confirm the
   row shows `peer-crashed` and suggests resync.
 - [ ] **UUID mismatch:** Manually edit `state.json` to change `their_uuid`.
   Trigger a turn (impossible to trigger from outside; instead: manually run

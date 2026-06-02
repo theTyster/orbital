@@ -64,7 +64,7 @@ Refuse to proceed if `state.json` already exists for this peer:
 
 ```bash
 if [[ -f "$state_json" ]]; then
-  echo "channel '$peer' already initialized; run /mission-control:status or /mission-control:end-mission first (skills/initialize/SKILL.md §pre-flight)" >&2
+  echo "channel '$peer' already initialized; run /mission-control:mission-status or /mission-control:end-mission first (skills/initialize/SKILL.md §pre-flight)" >&2
   exit 1
 fi
 ```

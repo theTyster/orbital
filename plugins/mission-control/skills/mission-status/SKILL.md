@@ -1,6 +1,6 @@
 ---
-name: status
-description: Diagnostic table of all mission-control channels — invoked explicitly as `/mission-control:status`, or whenever the user asks about channel health, the state of mission-control, or which channels are active. Read-only; never mutates state.
+name: mission-status
+description: Diagnostic table of all mission-control channels — invoked explicitly as `/mission-control:mission-status`, or whenever the user asks about channel health, the state of mission-control, or which channels are active. Read-only; never mutates state.
 user-invocable: true
 argument-hint: "(no arguments)"
 allowed-tools: Bash, Read
@@ -82,7 +82,7 @@ row as:
 Then **continue iterating** the remaining channels. Do NOT abort the whole
 status sweep because one channel is corrupt.
 
-Use `(skills/status/SKILL.md §per-pair-fault-isolation)` as the attribution
+Use `(skills/mission-status/SKILL.md §per-pair-fault-isolation)` as the attribution
 prefix in any error message printed to stderr for that row.
 
 ## Table format

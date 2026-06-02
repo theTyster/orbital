@@ -50,7 +50,7 @@ if [[ -f "$peer_state" ]]; then
   diag=$("${CLAUDE_PLUGIN_ROOT}/scripts/diagnose-state.sh" "$peer_state" | jq -r '.diagnosis')
   case "$diag" in
     healthy|awaiting-handshake)
-      echo "channel already active (diagnosis=$diag); run /mission-control:status or end the prior mission first (skills/launch-sequence/SKILL.md §pre-flight)" >&2
+      echo "channel already active (diagnosis=$diag); run /mission-control:mission-status or end the prior mission first (skills/launch-sequence/SKILL.md §pre-flight)" >&2
       exit 1
       ;;
     # Other diagnoses (parse-error, not-init, peer-crashed, self-crashed,

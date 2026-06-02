@@ -13,7 +13,7 @@ See `docs/2026-05-25-design.md` for the full design.
 
 - **`/mission-control:initialize <peer> "<message>"`** — Mission Control side only. Bootstrap a new pair; the message is the operator's handshake content.
 - **`/mission-control:launch-sequence`** — Peer side only. Complete the handshake. Requires the plugin to be enabled in the peer project.
-- **`/mission-control:status`** — Either side. Read-only diagnostic of all active pairs.
+- **`/mission-control:mission-status`** — Either side. Read-only diagnostic of all active pairs.
 - **`/mission-control:end-mission [--purge]`** — Mission Control side only. Archive (default) or purge (`--purge`) all pairs.
 
 ## Skill

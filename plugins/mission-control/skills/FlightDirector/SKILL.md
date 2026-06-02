@@ -11,7 +11,7 @@ description: >
   `channel=<peer> event=peer-spoke`, (b) the user mentioning FlightDirector
   in natural language ("FlightDirector, status of orbital", "FlightDirector,
   resync kimmy", "FlightDirector, splashdown orbital"), or (c) other commands
-  (`/mission-control:status`, `/mission-control:end-mission`) invoking it
+  (`/mission-control:mission-status`, `/mission-control:end-mission`) invoking it
   internally.
 user-invocable: false
 allowed-tools: Bash, Read, Write, Skill
@@ -64,7 +64,7 @@ target is **all** — iterate every channel under the appropriate state root.
 
 ### Command-triggered
 
-`/mission-control:status` and `/mission-control:end-mission` invoke this skill
+`/mission-control:mission-status` and `/mission-control:end-mission` invoke this skill
 internally for per-channel work. The invoking command passes the channel name
 and intent explicitly.
 
@@ -238,7 +238,7 @@ When Mission Control has N channels active:
 - Each channel's state directory is isolated under
   `${MISSION_CONTROL_ROOT:-$HOME/.mission-control}/<peer>/`. An error in one
   channel must NOT halt processing of another. Apply the same per-pair fault
-  isolation discipline used in `/mission-control:status`: on a fault in one
+  isolation discipline used in `/mission-control:mission-status`: on a fault in one
   channel, emit the halt-loud message for that channel and continue iterating
   the remaining channels.
 - When iterating "all channels", skip any directory entry whose basename starts
@@ -262,7 +262,7 @@ Every error path must print three things before stopping:
    symlink, parse error, etc.).
 2. **Attribution** — the script and section that diagnosed the failure, in the
    form `(skills/FlightDirector/SKILL.md §<section>) — scripts/<name>.sh §<section>`.
-3. **Recovery hint** — exactly one of: `run /mission-control:status` or
+3. **Recovery hint** — exactly one of: `run /mission-control:mission-status` or
    `FlightDirector, resync <peer>` or `/mission-control:end-mission`.
 
 Do NOT silently retry, fabricate state, or fall back to defaults. Failures must
