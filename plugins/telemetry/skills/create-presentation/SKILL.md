@@ -4,7 +4,6 @@ description: >
   Create an HTML-as-PowerPoint presentation from a topic, document, or handoff.
   Use when: "make a presentation", "create slides", "build a deck about X".
 user-invocable: true
-context: fork
 agent: general-purpose
 model: opus
 effort: medium

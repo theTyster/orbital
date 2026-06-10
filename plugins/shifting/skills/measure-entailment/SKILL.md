@@ -3,7 +3,6 @@ name: measure-entailment
 description: >
   Stage 7 of `trajectory:pipeline` (the seven-stage pipeline) — the terminal adherence check. Extracts claims from each input resource as Prolog facts, then scores overlap, gaps, contradictions, and extensions. In pipeline-terminal mode also loads `thoughts/hypothesis.pl` directly and runs label-aware verdicts: Pattern 3 detection (counterfactual claims whose forbidden fact is still present in the implementation), prescriptive fulfillment (required facts present), and prescriptive negation violations. Two valid framings: (1) terminal pipeline step run by the orchestrator after `realize-specification`, scoring how well the implemented codebase entails the original proposition encoded in `thoughts/hypothesis.pl`; and (2) stand-alone, comparing two or more arbitrary resources with an optional `--prime` source-of-truth. The canonical entry point in pipeline-terminal mode is `trajectory:pipeline`, which dispatches here when stage 7 is in scope. Invoke this skill directly when running stand-alone resource comparison or scoring adherence on a completed pipeline whose orchestrator already finished. Emits an intermediate `thoughts/adherence_facts.pl` and the human-reviewed `thoughts/adherence_report.md`.
 user-invocable: true
-context: fork
 agent: general-purpose
 model: opus
 effort: max

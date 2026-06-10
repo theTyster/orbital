@@ -3,7 +3,6 @@ name: realize-specification
 description: >
   Stage 6 of `trajectory:pipeline` (the seven-stage pipeline). Unskips one test at a time from `thoughts/tests/` and orchestrates sub-agents to realize the specification, routing each test by its `test_category` (projection vs behavioral_claim) and the ontology label (`claim_label/2`) of its cited claim in `thoughts/hypothesis.pl`. Modifies source under the target codebase directory and emits `thoughts/implementation_log.md`. The canonical entry point is `trajectory:pipeline`, which dispatches here when stage 6 is in scope. Invoke this skill directly when the user wants to drive an existing skipped test suite to green without re-running upstream stages — "drive the TDD suite to green", "implement the skipped tests", "implement from proof", "make these tests pass".
 user-invocable: true
-context: fork
 model: opus
 effort: high
 allowed-tools: Bash, Read, Glob, Grep, Write, Edit, Agent

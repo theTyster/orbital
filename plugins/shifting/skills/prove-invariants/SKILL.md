@@ -3,7 +3,6 @@ name: prove-invariants
 description: >
   Stage 4 of `trajectory:pipeline` (the seven-stage pipeline). Reads `thoughts/target-world.pl` (the open-world Prolog model emitted by `model-obligations`), translates each formal property into a Lean4 theorem with a mandatory provenance annotation, and proves it via the `lean-spec-writer` and `lean-expert` sub-agents. Emits `thoughts/lean/Proofs/*.lean` and `thoughts/lean_proof_results.pl`. If a property is unprovable, the adjacent loopback target is `model-obligations`; non-adjacent loopback to `decompose-proposition` is the orchestrator's call. The canonical entry point is `trajectory:pipeline`, which dispatches here when stage 4 is in scope. Invoke this skill directly only when re-proving against an existing `target-world.pl` — e.g., "re-run the Lean proofs against the current target world", "machine-check these properties without rebuilding the substrate".
 user-invocable: true
-context: fork
 agent: general-purpose
 model: opus
 effort: xhigh

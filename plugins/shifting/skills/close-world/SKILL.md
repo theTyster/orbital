@@ -3,7 +3,6 @@ name: close-world
 description: >
   Stage 1 (entry) of `trajectory:pipeline` (the seven-stage pipeline). Applies the Closed World Assumption to source material — a codebase, document, or logical system — and produces `thoughts/existing-world.pl`: ground facts, relationship rules, and constraint rules. Everything absent from the output is, by CWA, false. The canonical entry point for orbital-shifting work is `trajectory:pipeline`, which now supports partial runs (entry mid-pipeline, early exit, or both) and dispatches to this skill when stage 1 is in scope. Invoke this skill directly only when the user explicitly asks to build the KB *without* the downstream pipeline — e.g., "translate to prolog and stop there", "just build the existing-world KB", "model this as prolog facts only".
 user-invocable: true
-context: fork
 agent: general-purpose
 model: opus
 effort: high
@@ -31,7 +30,7 @@ The output filename — `thoughts/existing-world.pl` — names what it models: t
 
 This skill is the stage-0 primitive at the boundary between the orchestration substrate and the pipeline. The substrate's wire format is `plugins/trajectory/references/orchestration-substrate.md` — read it before parameterising this skill.
 
-**Orchestrator parameters accepted** (consult at startup; if a needed parameter is missing for the run, halt with `missing_required_parameter` recorded in the output rather than guessing — under `context: fork` there is no user to ask mid-run):
+**Orchestrator parameters accepted** (consult at startup; if a needed parameter is missing for the run, halt with `missing_required_parameter` recorded in the output rather than guessing):
 
 - **`predicate_schema_extension`** — bespoke predicates the orchestrator wants in `existing-world.pl` for this ticket (e.g., `csproj_content_directive/1`, `published_artifact/1` for substrate-audit cases that close-world cannot infer from the source alone). Inject these into the agent-of-truth brief so the extracted KB carries them.
 - **`success_criteria`** — minimum coverage targets, required predicate families. Drives tier-5 of the validation cascade.

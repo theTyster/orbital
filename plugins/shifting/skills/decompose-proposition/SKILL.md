@@ -3,7 +3,6 @@ name: decompose-proposition
 description: >
   Stage 2 of `trajectory:pipeline` (the seven-stage pipeline). Reads `thoughts/existing-world.pl` and a proposition, then explores the proposition through a counterfactual lens — which existing-world facts would need to be false, and which new facts would need to become provable, for the proposition to hold. Emits `thoughts/hypothesis.pl`: labeled claims (descriptive / counterfactual / prescriptive), query evidence, and formal-property sketches. The canonical entry point is `trajectory:pipeline`, which dispatches here when stage 2 is in scope. Invoke this skill directly only to refine a hypothesis against an existing KB without running model-obligations or later stages — e.g., "re-decompose this proposition against the existing KB", "rebuild hypothesis.pl from this new proposition".
 user-invocable: true
-context: fork
 agent: general-purpose
 model: opus
 effort: high
